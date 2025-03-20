@@ -31,7 +31,7 @@ const PRIORITIES = [
   {
     label: "L",
     value: 3,
-    color: "bg-blue-100 hover:bg-blue-200 text-blue-700",
+    color: "bg-gradient-to-r from-blue-100 to-emerald-50 text-blue-700",
     title: "Leverage (L)",
     subtitle: "High Impact, Low Effort 🚀",
     description: "These tasks deliver outsized results with minimal effort. Prioritize them first!"
@@ -39,7 +39,7 @@ const PRIORITIES = [
   {
     label: "N",
     value: 2,
-    color: "bg-gray-100 hover:bg-gray-200 text-gray-700",
+    color: "bg-gradient-to-r from-gray-50 to-slate-50 text-gray-700",
     title: "Neutral (N)",
     subtitle: "Necessary but Balanced ⚖️",
     description: "These tasks are important but don't drastically change outcomes. Handle them after leverage tasks."
@@ -47,7 +47,7 @@ const PRIORITIES = [
   {
     label: "O",
     value: 1,
-    color: "bg-red-100 hover:bg-red-200 text-red-700",
+    color: "bg-gradient-to-r from-red-50 to-orange-50 text-red-700",
     title: "Overhead (O)",
     subtitle: "High Effort, Low Reward ⏳",
     description: "These tasks consume time without significant returns. Avoid or delegate if possible."
@@ -190,28 +190,32 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   };
 
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4">
+    <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4 bg-white bg-opacity-80">
         <div>
           <div className="flex items-center gap-3">
-            <CardTitle className="text-xl font-extrabold text-gray-800">{title}</CardTitle>
+            <CardTitle className="text-2xl font-black text-gray-800 tracking-tight">{title}</CardTitle>
             {totalTime > 0 && (
-              <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex items-center gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-1.5 rounded-full shadow-sm"
+              >
                 <Clock className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-bold text-blue-700">
+                <span className="text-sm font-extrabold text-blue-700">
                   {formatTotalTime(totalTime)}
                 </span>
-              </div>
+              </motion.div>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
+          <p className="text-sm text-gray-500 mt-1 font-medium italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleSort}
-            className="text-gray-600 hover:text-gray-800 font-semibold"
+            className="text-gray-600 hover:text-gray-800 font-bold"
           >
             <ArrowUpDown className="h-4 w-4 mr-1" />
             Sort
@@ -220,14 +224,14 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             variant="outline"
             size="sm"
             onClick={() => {}}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-semibold"
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add More
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+CiAgPHBhdGggZD0iTTAgMGg2MHY2MEgweiIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0zMCAzMG0tMSAwYTEgMSAwIDEgMCAyIDBhMSAxIDAgMSAwIC0yIDB6IiBmaWxsPSJyZ2JhKDIyOSwgMjMxLCAyMzUsIDAuNSkiLz4KPC9zdmc+')] bg-repeat">
         <div className="space-y-2">
           {showConfetti && (
             <motion.div
@@ -242,22 +246,30 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 zIndex: 50
               }}
             >
-              {[...Array(12)].map((_, i) => (
+              {[...Array(20)].map((_, i) => (
                 <motion.div
                   key={i}
                   initial={{ x: 0, y: 0 }}
                   animate={{
-                    x: (Math.random() - 0.5) * 100,
-                    y: Math.random() * -100,
-                    rotate: Math.random() * 360
+                    x: (Math.random() - 0.5) * 200,
+                    y: Math.random() * -200,
+                    rotate: Math.random() * 360,
+                    scale: Math.random() * 0.5 + 0.5
                   }}
-                  transition={{ duration: 1, ease: "easeOut" }}
+                  transition={{ 
+                    duration: Math.random() * 0.5 + 0.5, 
+                    ease: [0.4, 0, 0.2, 1] 
+                  }}
                   style={{
                     position: 'absolute',
-                    width: '8px',
-                    height: '8px',
-                    backgroundColor: ['#FFD700', '#FFA500', '#FF69B4', '#00CED1'][i % 4],
-                    borderRadius: '50%'
+                    width: '10px',
+                    height: '10px',
+                    backgroundColor: [
+                      '#FFD700', '#FFA500', '#FF69B4', '#00CED1',
+                      '#9B59B6', '#2ECC71', '#E74C3C', '#3498DB'
+                    ][i % 8],
+                    borderRadius: Math.random() > 0.5 ? '50%' : '0%',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}
                 />
               ))}
@@ -270,8 +282,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200 cursor-pointer relative"
-                whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+                className="group flex items-center gap-4 py-3 border-b border-dashed border-gray-200 cursor-pointer relative hover:bg-white hover:bg-opacity-60 transition-all duration-300"
+                whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
                 layout
                 onClick={(e) => handleLineClick(index, e)}
@@ -283,7 +295,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                     exit={{ scale: 0, opacity: 0 }}
                     className="absolute -top-2 -right-2"
                   >
-                    <Sparkles className="h-6 w-6 text-yellow-400" />
+                    <Sparkles className="h-6 w-6 text-yellow-400 filter drop-shadow-lg" />
                   </motion.div>
                 )}
 
@@ -296,7 +308,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                     onCheckedChange={(checked) => {
                       toggleComplete(index, checked ? document.activeElement as HTMLElement : document.body);
                     }}
-                    className="h-5 w-5"
+                    className="h-5 w-5 transition-transform duration-200 hover:scale-110"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
@@ -315,7 +327,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         value={activeTask.content}
                         onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                         onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-semibold"
+                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-gray-700 placeholder:text-gray-400"
                         placeholder="What needs to be done?"
                       />
                       <Button
@@ -323,7 +335,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => setActiveTask(null)}
-                        className="h-8 w-8 hover:bg-gray-100"
+                        className="h-8 w-8 hover:bg-gray-100 transition-colors duration-200"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -338,7 +350,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className={`px-2 ${color} font-bold ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
+                                  className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setActiveTask({ ...activeTask, priority: value });
@@ -348,8 +360,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs bg-white border shadow-lg">
-                                <p className="font-bold">{title}</p>
-                                <p className="text-sm font-semibold">{subtitle}</p>
+                                <p className="font-black">{title}</p>
+                                <p className="text-sm font-bold">{subtitle}</p>
                                 <p className="text-xs text-gray-600 mt-1">{description}</p>
                               </TooltipContent>
                             </Tooltip>
@@ -360,7 +372,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-semibold"
+                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Time</option>
@@ -373,7 +385,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300"
+                        className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border-blue-200 hover:border-blue-300 font-bold transform transition-all duration-200 hover:scale-105"
                       >
                         Save
                       </Button>
@@ -382,7 +394,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 ) : (
                   <motion.div
                     className={`flex items-center justify-between w-full cursor-text ${
-                      entry.completed ? 'line-through text-gray-400' : 'text-gray-700 font-semibold'
+                      entry.completed ? 'line-through text-gray-400' : 'text-gray-700 font-bold'
                     }`}
                     layout
                   >
@@ -395,14 +407,14 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         transition={{ delay: 0.1 }}
                       >
                         {entry.priority !== undefined && (
-                          <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${
+                          <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
                             PRIORITIES.find(p => p.value === entry.priority)?.color
                           }`}>
                             {PRIORITIES.find(p => p.value === entry.priority)?.label}
                           </span>
                         )}
                         {entry.eta && (
-                          <span className="flex items-center text-xs text-gray-500 font-semibold">
+                          <span className="flex items-center text-xs text-gray-500 font-bold">
                             <Clock className="h-3 w-3 mr-1" />
                             {entry.eta}
                           </span>
