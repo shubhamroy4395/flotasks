@@ -34,7 +34,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
       {/* Date and Time Bar */}
-      <div className="bg-white border-b border-gray-200 py-4 px-8 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-semibold">{format(currentTime, 'dd-MMM-yyyy')}</h2>
@@ -47,10 +47,10 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Task Section */}
-          <div className="xl:col-span-2">
+          <div className="lg:col-span-2">
             <TaskList
               tasks={tasks || []}
               onSave={(task) => createTask.mutate(task)}
@@ -59,11 +59,11 @@ export default function Home() {
 
           {/* Side Panels */}
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-8">
               <MoodTracker />
               <GratitudeSection />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-8">
               <ReminderSection />
               <TaskList
                 title="Other Tasks"

@@ -175,7 +175,7 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
 
               {activeTask?.index === index ? (
                 <motion.div
-                  className="flex items-center gap-3 w-full"
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   layout
@@ -186,10 +186,10 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 px-3 py-2 rounded-md border border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200 focus:ring-opacity-50 transition-all"
+                    className="flex-1 px-3 py-2 rounded-md border border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200 focus:ring-opacity-50 transition-all min-w-[200px]"
                     placeholder="What needs to be done?"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="flex gap-1">
                       {PRIORITIES.map(({ label, value, color, title }) => (
                         <Button
