@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Trash2 } from "lucide-react";
 
 export function GratitudeSection() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +28,15 @@ export function GratitudeSection() {
     },
   });
 
+  const deleteEntry = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/gratitude/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEntry.trim()) return;
@@ -41,24 +50,7 @@ export function GratitudeSection() {
       </CardHeader>
       <CardContent>
         <AnimatePresence>
-          {!isOpen ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-center mb-4"
-            >
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full"
-                onClick={() => setIsOpen(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                What are you grateful for?
-              </Button>
-            </motion.div>
-          ) : (
+          {isOpen && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -98,15 +90,38 @@ export function GratitudeSection() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-colors"
+                className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-colors group"
                 transition={{ delay: index * 0.1 }}
               >
-                <p className="text-gray-700 font-medium">{entry.content}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-gray-700 font-medium">{entry.content}</p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => deleteEntry.mutate(entry.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
       </CardContent>
+      <CardFooter className="pt-2 pb-4">
+        {!isOpen && (
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-none font-medium"
+            onClick={() => setIsOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Gratitude Entry
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }
