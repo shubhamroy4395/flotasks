@@ -44,7 +44,7 @@ export function MoodTracker() {
           className="flex flex-col gap-3"
           initial={false}
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <AnimatePresence mode="wait">
               {moodInfo && (
                 <motion.div
@@ -52,7 +52,7 @@ export function MoodTracker() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform`}
+                  className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform min-h-[80px] flex items-center justify-center`}
                 >
                   <div className="flex items-center justify-center gap-3">
                     <span className="text-4xl">{currentMood}</span>

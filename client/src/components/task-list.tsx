@@ -189,8 +189,22 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     }));
   };
 
+  const addMoreTasks = () => {
+    setEntries(prev => [
+      ...prev,
+      ...Array(5).fill(null).map((_, i) => ({
+        id: prev.length + i + 1,
+        content: "",
+        isEditing: false,
+        completed: false,
+        priority: 0,
+        eta: ""
+      }))
+    ]);
+  };
+
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400">
+    <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4 bg-white bg-opacity-80">
         <div>
           <div className="flex items-center gap-3">
@@ -223,7 +237,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {}}
+            onClick={addMoreTasks}
             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold"
           >
             <Plus className="h-4 w-4 mr-1" />
