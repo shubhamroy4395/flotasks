@@ -75,23 +75,21 @@ export function ReminderSection() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {TIME_OPTIONS.map((option) => (
-                      <Button
-                        key={option.label}
-                        type="button"
-                        variant="outline"
-                        className={`${
-                          selectedTime?.label === option.label 
-                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                            : ''
-                        }`}
-                        onClick={() => setSelectedTime(option)}
-                      >
+                  <select
+                    value={selectedTime?.label || ""}
+                    onChange={(e) => {
+                      const option = TIME_OPTIONS.find(opt => opt.label === e.target.value);
+                      setSelectedTime(option || null);
+                    }}
+                    className="w-full rounded-md border px-3 py-2 text-sm bg-transparent"
+                  >
+                    <option value="">Select time</option>
+                    {TIME_OPTIONS.map(option => (
+                      <option key={option.label} value={option.label}>
                         {option.label}
-                      </Button>
+                      </option>
                     ))}
-                  </div>
+                  </select>
                   <Button 
                     type="submit" 
                     className="w-full font-medium"
