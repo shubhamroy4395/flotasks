@@ -42,33 +42,36 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const handleLineClick = (index: number) => {
-    if (activeTask?.index === index) return;
     const entry = entries[index];
     setActiveTask({
       index,
-      content: entry.content,
-      priority: entry.priority,
-      eta: entry.eta
+      content: entry.content || "",
+      priority: entry.priority || 0,
+      eta: entry.eta || ""
     });
   };
 
   const handleSave = () => {
-    if (!activeTask || !activeTask.content.trim()) return;
+    if (!activeTask) return;
 
-    onSave({
-      content: activeTask.content,
-      priority: activeTask.priority,
-      category: "todo"
-    });
+    const { content, priority, eta } = activeTask;
+
+    if (content.trim()) {
+      onSave({
+        content,
+        priority,
+        category: "todo"
+      });
+    }
 
     setEntries(prev => 
       prev.map((entry, i) => 
         i === activeTask.index 
           ? { 
               ...entry, 
-              content: activeTask.content,
-              priority: activeTask.priority,
-              eta: activeTask.eta,
+              content: content.trim(),
+              priority,
+              eta,
               isEditing: false 
             }
           : entry
@@ -156,6 +159,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
               whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
               transition={{ duration: 0.2 }}
               layout
+              onClick={() => !activeTask && handleLineClick(index)}
             >
               <span className="text-sm text-gray-400 w-6 font-mono">
                 {String(index + 1).padStart(2, '0')}
@@ -223,7 +227,6 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                   className={`flex items-center justify-between w-full cursor-text ${
                     entry.completed ? 'line-through text-gray-400' : 'text-gray-700'
                   }`}
-                  onClick={() => handleLineClick(index)}
                   layout
                 >
                   <span>{entry.content || " "}</span>

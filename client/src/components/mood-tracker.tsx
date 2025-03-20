@@ -41,32 +41,34 @@ export function MoodTracker() {
       </CardHeader>
       <CardContent>
         <motion.div 
-          className="flex flex-col items-center gap-3"
+          className="flex flex-col gap-3"
           initial={false}
         >
-          <AnimatePresence mode="wait">
-            {moodInfo && (
-              <motion.div
-                key={currentMood}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className={`w-full p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform`}
-              >
-                <div className="flex items-center justify-center gap-3">
-                  <span className="text-4xl">{currentMood}</span>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {moodInfo.label}
-                  </h3>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div className="flex items-center justify-between gap-3">
+            <AnimatePresence mode="wait">
+              {moodInfo && (
+                <motion.div
+                  key={currentMood}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform`}
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-4xl">{currentMood}</span>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {moodInfo.label}
+                    </h3>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <EmojiPicker
-            selected={currentMood}
-            onSelect={(emoji) => createMood.mutate(emoji)}
-          />
+            <EmojiPicker
+              selected={currentMood}
+              onSelect={(emoji) => createMood.mutate(emoji)}
+            />
+          </div>
         </motion.div>
       </CardContent>
     </Card>
