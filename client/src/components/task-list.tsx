@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
@@ -154,9 +154,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     setActiveTask(null);
   };
 
-  const toggleComplete = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
+  const toggleComplete = (index: number, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
     setConfettiPosition({ x: rect.x, y: rect.y });
 
     setEntries(prev =>
@@ -291,15 +290,16 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 <span className="text-sm text-gray-400 w-6 font-mono font-bold">
                   {String(index + 1).padStart(2, '0')}
                 </span>
-                <Checkbox
-                  checked={entry.completed}
-                  onCheckedChange={(checked) => {
-                    const e = {stopPropagation: () => {}} as React.MouseEvent;
-                    toggleComplete(index, e);
-                  }}
-                  className="h-5 w-5"
-                  onClick={(e) => e.stopPropagation()}
-                />
+                <div className="relative">
+                  <Checkbox
+                    checked={entry.completed}
+                    onCheckedChange={(checked) => {
+                      toggleComplete(index, checked ? document.activeElement as HTMLElement : document.body);
+                    }}
+                    className="h-5 w-5"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
 
                 {activeTask?.index === index ? (
                   <motion.div
