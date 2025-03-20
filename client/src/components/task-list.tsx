@@ -18,7 +18,7 @@ const PRIORITIES = [
   { 
     label: "L", 
     value: 3, 
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100", 
+    color: "bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/50 dark:hover:bg-blue-900/70 dark:text-blue-300", 
     title: "Leverage (L)",
     subtitle: "High Impact, Low Effort 🚀",
     description: "These tasks deliver outsized results with minimal effort. Prioritize them first!"
@@ -26,7 +26,7 @@ const PRIORITIES = [
   { 
     label: "N", 
     value: 2, 
-    color: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100", 
+    color: "bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300", 
     title: "Neutral (N)",
     subtitle: "Necessary but Balanced ⚖️",
     description: "These tasks are important but don't drastically change outcomes. Handle them after leverage tasks."
@@ -34,7 +34,7 @@ const PRIORITIES = [
   { 
     label: "O", 
     value: 1, 
-    color: "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100", 
+    color: "bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/50 dark:hover:bg-red-900/70 dark:text-red-300", 
     title: "Overhead (O)",
     subtitle: "High Effort, Low Reward ⏳",
     description: "These tasks consume time without significant returns. Avoid or delegate if possible."
@@ -218,7 +218,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => setActiveTask(null)}
-                        className="h-8 w-8"
+                        className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -233,7 +233,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className={`px-2 ${color} dark:opacity-90 ${activeTask.priority === value ? 'ring-2 ring-offset-2 dark:ring-offset-gray-800' : ''}`}
+                                  className={`px-2 ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2 dark:ring-offset-gray-900' : ''}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setActiveTask({ ...activeTask, priority: value });
@@ -242,10 +242,10 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                                   {label}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <p className="font-semibold">{title}</p>
-                                <p className="text-sm">{subtitle}</p>
-                                <p className="text-xs text-gray-500 mt-1">{description}</p>
+                              <TooltipContent className="max-w-xs bg-white dark:bg-gray-800 border dark:border-gray-700">
+                                <p className="font-semibold dark:text-white">{title}</p>
+                                <p className="text-sm dark:text-gray-300">{subtitle}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>
                               </TooltipContent>
                             </Tooltip>
                           ))}
@@ -255,7 +255,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-gray-200 dark:border-gray-700 px-2 py-1 text-sm bg-transparent dark:text-gray-300"
+                        className="rounded-md border-gray-200 dark:border-gray-700 px-2 py-1 text-sm bg-transparent dark:text-gray-300 dark:bg-gray-800"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Time</option>
@@ -268,7 +268,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30 ml-auto"
+                        className="ml-auto bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
                       >
                         Save
                       </Button>
@@ -292,7 +292,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         {entry.priority !== undefined && (
                           <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
                             PRIORITIES.find(p => p.value === entry.priority)?.color
-                          } dark:opacity-90`}>
+                          }`}>
                             {PRIORITIES.find(p => p.value === entry.priority)?.label}
                           </span>
                         )}
