@@ -28,15 +28,10 @@ export default function Home() {
     };
   }, []);
 
-  // Clear data on initial load (but not on refresh)
+  // Clear all data on every refresh
   useEffect(() => {
-    const isFirstLoad = !sessionStorage.getItem('hasLoaded');
-    if (isFirstLoad) {
-      // Clear all data
-      queryClient.clear();
-      // Mark that we've loaded once this session
-      sessionStorage.setItem('hasLoaded', 'true');
-    }
+    // Clear all data from the cache
+    queryClient.clear();
   }, [queryClient]);
 
   useEffect(() => {
