@@ -43,9 +43,17 @@ export default function Home() {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4 px-6 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold dark:text-white">{format(currentTime, 'dd-MMM-yyyy')}</h2>
-            <span className="text-gray-500 dark:text-gray-400">|</span>
-            <span className="text-xl text-gray-600 dark:text-gray-300">{format(currentTime, 'HH:mm:ss')}</span>
+            <h2 className="text-2xl font-semibold dark:text-white">
+              {format(currentTime, 'EEEE')}
+            </h2>
+            <span className="text-gray-500 dark:text-gray-400">•</span>
+            <span className="text-xl text-gray-600 dark:text-gray-300">
+              {format(currentTime, 'dd-MMM-yyyy')}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">•</span>
+            <span className="text-xl text-gray-600 dark:text-gray-300 font-mono">
+              {format(currentTime, 'HH:mm:ss')}
+            </span>
           </div>
           <ThemeToggle />
         </div>

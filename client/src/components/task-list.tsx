@@ -198,7 +198,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
                 {activeTask?.index === index ? (
                   <motion.div
-                    className="flex flex-col w-full gap-3"
+                    className="flex flex-col w-full gap-2"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     layout
@@ -213,10 +213,19 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
                         placeholder="What needs to be done?"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setActiveTask(null)}
+                        className="h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 w-full">
-                      <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
                         <TooltipProvider>
                           {PRIORITIES.map(({ label, value, color, title, subtitle, description }) => (
                             <Tooltip key={label}>
@@ -243,27 +252,26 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         </TooltipProvider>
                       </div>
 
-                      <div className="flex items-center gap-2 ml-auto">
-                        <select
-                          value={activeTask.eta}
-                          onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                          className="rounded-md border px-3 py-2 text-sm bg-transparent dark:text-gray-300 dark:border-gray-600"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <option value="">Time</option>
-                          {TIME_SLOTS.map(slot => (
-                            <option key={slot} value={slot}>{slot}</option>
-                          ))}
-                        </select>
+                      <select
+                        value={activeTask.eta}
+                        onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
+                        className="rounded-md border-gray-200 dark:border-gray-700 px-2 py-1 text-sm bg-transparent dark:text-gray-300"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="">Time</option>
+                        {TIME_SLOTS.map(slot => (
+                          <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
 
-                        <Button
-                          onClick={handleSave}
-                          size="sm"
-                          className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                        >
-                          Save
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={handleSave}
+                        size="sm"
+                        variant="outline"
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30 ml-auto"
+                      >
+                        Save
+                      </Button>
                     </div>
                   </motion.div>
                 ) : (
