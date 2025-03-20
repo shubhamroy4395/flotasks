@@ -55,7 +55,7 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
 
   const handleSave = () => {
     if (!activeTask) return;
-    const { content, priority, eta } = activeTask;
+    const { content, priority } = activeTask;
 
     if (content.trim()) {
       onSave({
@@ -68,13 +68,7 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
     setEntries(prev =>
       prev.map((entry, i) =>
         i === activeTask.index
-          ? {
-              ...entry,
-              content: content.trim(),
-              priority,
-              eta,
-              isEditing: false
-            }
+          ? { ...entry, content: content.trim(), priority, isEditing: false }
           : entry
       )
     );
@@ -120,7 +114,7 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 flex-wrap gap-4">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
         <div>
           <CardTitle className="font-semibold">{title}</CardTitle>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
@@ -146,120 +140,77 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
           </Button>
         </div>
       </CardHeader>
-      <motion.div
-        className="p-6 space-y-2 min-h-[400px]"
-        layout
-      >
+      <div className="p-4 space-y-2">
         <AnimatePresence mode="sync">
           {entries.map((entry, index) => (
             <motion.div
               key={entry.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200"
-              whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-              transition={{ duration: 0.2 }}
-              layout
+              className="group flex items-center gap-4 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
               onClick={(e) => handleLineClick(index, e)}
             >
-              <span className="text-sm text-gray-400 w-8 font-mono">
+              <span className="text-sm text-gray-400 w-6">
                 {String(index + 1).padStart(2, '0')}
               </span>
+
               <Checkbox
                 checked={entry.completed}
                 onCheckedChange={() => toggleComplete(index, event as React.MouseEvent)}
                 className="h-5 w-5"
-                onClick={(e) => e.stopPropagation()}
               />
 
               {activeTask?.index === index ? (
-                <motion.div
-                  className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  layout
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="flex-1 flex items-center gap-2">
                   <Input
                     autoFocus
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 px-3 py-2 rounded-md border border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200 focus:ring-opacity-50 transition-all min-w-[200px]"
+                    className="flex-1"
                     placeholder="What needs to be done?"
                   />
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="flex gap-1">
-                      {PRIORITIES.map(({ label, value, color, title }) => (
-                        <Button
-                          key={label}
-                          size="sm"
-                          variant="ghost"
-                          className={`w-8 h-8 p-0 flex items-center justify-center ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
-                          onClick={() => setActiveTask({ ...activeTask, priority: value })}
-                          title={title}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                    <select
-                      value={activeTask.eta}
-                      onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                      className="h-8 px-2 rounded-md border border-gray-200 text-sm focus:border-blue-300 focus:ring-1 focus:ring-blue-200"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <option value="">Time</option>
-                      {TIME_SLOTS.map(slot => (
-                        <option key={slot} value={slot}>{slot}</option>
-                      ))}
-                    </select>
+                  <div className="flex items-center gap-2">
+                    {PRIORITIES.map(({ label, value, color }) => (
+                      <Button
+                        key={label}
+                        variant="ghost"
+                        size="sm"
+                        className={`w-8 h-8 ${color} ${
+                          activeTask.priority === value ? 'ring-2 ring-offset-2' : ''
+                        }`}
+                        onClick={() => setActiveTask({ ...activeTask, priority: value })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
                     <Button
                       onClick={handleSave}
                       size="sm"
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      className="bg-green-50 text-green-600 hover:bg-green-100"
                     >
                       Save
                     </Button>
                   </div>
-                </motion.div>
+                </div>
               ) : (
-                <motion.div
-                  className={`flex items-center justify-between w-full gap-4 cursor-text ${
-                    entry.completed ? 'line-through text-gray-400' : 'text-gray-700'
-                  }`}
-                  layout
-                >
-                  <span className="font-medium flex-1">{entry.content || " "}</span>
+                <div className="flex-1 flex items-center justify-between">
+                  <span className={entry.completed ? 'line-through text-gray-400' : ''}>
+                    {entry.content || ' '}
+                  </span>
                   {entry.content && (
-                    <motion.div
-                      className="flex items-center gap-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      {entry.priority !== undefined && (
-                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-                          PRIORITIES.find(p => p.value === entry.priority)?.color
-                        }`}>
-                          {PRIORITIES.find(p => p.value === entry.priority)?.label}
-                        </span>
-                      )}
-                      {entry.eta && (
-                        <span className="flex items-center text-xs text-gray-500">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {entry.eta}
-                        </span>
-                      )}
-                    </motion.div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        PRIORITIES.find(p => p.value === entry.priority)?.color
+                      }`}>
+                        {PRIORITIES.find(p => p.value === entry.priority)?.label}
+                      </span>
+                    </div>
                   )}
-                </motion.div>
+                </div>
               )}
             </motion.div>
           ))}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </Card>
   );
 }
