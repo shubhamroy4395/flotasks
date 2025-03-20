@@ -4,8 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 
 // Helper function to convert time string to minutes
@@ -210,7 +210,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           <div className="flex items-center gap-3">
             <CardTitle className="text-2xl font-black text-gray-800 tracking-tight">{title}</CardTitle>
             {totalTime > 0 && (
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="flex items-center gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-1.5 rounded-full shadow-sm"
@@ -270,9 +270,9 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                     rotate: Math.random() * 360,
                     scale: Math.random() * 0.5 + 0.5
                   }}
-                  transition={{ 
-                    duration: Math.random() * 0.5 + 0.5, 
-                    ease: [0.4, 0, 0.2, 1] 
+                  transition={{
+                    duration: Math.random() * 0.5 + 0.5,
+                    ease: [0.4, 0, 0.2, 1]
                   }}
                   style={{
                     position: 'absolute',
@@ -356,31 +356,50 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        <TooltipProvider>
-                          {PRIORITIES.map(({ label, value, color, title, subtitle, description }) => (
-                            <Tooltip key={label}>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveTask({ ...activeTask, priority: value });
-                                  }}
-                                >
-                                  {label}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-white border shadow-lg">
-                                <p className="font-black">{title}</p>
-                                <p className="text-sm font-bold">{subtitle}</p>
-                                <p className="text-xs text-gray-600 mt-1">{description}</p>
-                              </TooltipContent>
-                            </Tooltip>
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          {PRIORITIES.map(({ label, value, color }) => (
+                            <Button
+                              key={label}
+                              size="sm"
+                              variant="ghost"
+                              className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveTask({ ...activeTask, priority: value });
+                              }}
+                            >
+                              {label}
+                            </Button>
                           ))}
-                        </TooltipProvider>
+                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                            >
+                              <Info className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80">
+                            <div className="space-y-4">
+                              {PRIORITIES.map(({ label, title, subtitle, description, color }) => (
+                                <div key={label} className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-black ${color}`}>
+                                      {label}
+                                    </span>
+                                    <h4 className="font-bold">{title}</h4>
+                                  </div>
+                                  <p className="text-sm font-medium">{subtitle}</p>
+                                  <p className="text-xs text-gray-600">{description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       <select
