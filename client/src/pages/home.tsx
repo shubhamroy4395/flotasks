@@ -41,7 +41,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900 transition-colors duration-200">
       {/* Date and Time Bar */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4 px-6 sticky top-0 z-10">
-        <div className="container mx-auto flex justify-between items-center">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-semibold dark:text-white">{format(currentTime, 'dd-MMM-yyyy')}</h2>
             <span className="text-gray-500 dark:text-gray-400">|</span>
@@ -51,10 +51,10 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="container mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Left Column - Today's Tasks */}
-          <div className="col-span-1">
+          <div>
             <TaskList
               title="Today's Tasks"
               tasks={todayTasks || []}
@@ -63,7 +63,7 @@ export default function Home() {
           </div>
 
           {/* Middle Column - Goals and Other Tasks */}
-          <div className="col-span-1 space-y-6">
+          <div className="space-y-6">
             <GoalsSection />
             <TaskList
               title="Other Tasks"
@@ -73,7 +73,7 @@ export default function Home() {
           </div>
 
           {/* Right Column - Mood, Gratitude, Reminders */}
-          <div className="col-span-1 space-y-6">
+          <div className="space-y-6">
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
