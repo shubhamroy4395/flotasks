@@ -52,9 +52,9 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Left Column - Today's Tasks */}
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-7 gap-6">
+          {/* Left Column - Today's Tasks (wider) */}
+          <div className="md:col-span-2 lg:col-span-3">
             <TaskList
               title="Today's Tasks"
               tasks={todayTasks || []}
@@ -63,7 +63,7 @@ export default function Home() {
           </div>
 
           {/* Middle Column - Goals and Other Tasks */}
-          <div className="space-y-6">
+          <div className="md:col-span-2 lg:col-span-2 space-y-6">
             <GoalsSection />
             <TaskList
               title="Other Tasks"
@@ -73,7 +73,7 @@ export default function Home() {
           </div>
 
           {/* Right Column - Mood, Gratitude, Reminders */}
-          <div className="space-y-6">
+          <div className="md:col-span-1 lg:col-span-2 space-y-6">
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
