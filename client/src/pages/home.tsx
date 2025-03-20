@@ -2,15 +2,18 @@ import { useState, useEffect } from "react";
 import { TaskList } from "@/components/task-list";
 import { MoodTracker } from "@/components/mood-tracker";
 import { GratitudeSection } from "@/components/gratitude-section";
+import { ReminderSection } from "@/components/reminder-section";
+import { CustomCard } from "@/components/custom-card";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
-import { Moon } from "lucide-react";
-import type { Task } from "@shared/schema";
-import { ReminderSection } from "@/components/reminder-section";
+import { Moon, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Task, CustomCard as CustomCardType } from "@shared/schema";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isCreatingCard, setIsCreatingCard] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -22,6 +25,10 @@ export default function Home() {
     queryKey: ["/api/tasks"],
   });
 
+  const { data: customCards } = useQuery<CustomCardType[]>({
+    queryKey: ["/api/custom-cards"],
+  });
+
   const createTask = useMutation({
     mutationFn: async (task: { content: string; priority: number; category: string }) => {
       await apiRequest("POST", "/api/tasks", task);
@@ -30,6 +37,10 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
   });
+
+  const handleCardPin = (id: number) => {
+    queryClient.invalidateQueries({ queryKey: ["/api/custom-cards"] });
+  };
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -55,6 +66,44 @@ export default function Home() {
               tasks={tasks || []}
               onSave={(task) => createTask.mutate(task)}
             />
+
+            {/* Custom Cards */}
+            {customCards?.filter(card => card.isPinned).map(card => (
+              <CustomCard
+                key={card.id}
+                id={card.id}
+                defaultTitle={card.title}
+                onPin={handleCardPin}
+              />
+            ))}
+
+            {isCreatingCard && (
+              <CustomCard
+                onPin={handleCardPin}
+              />
+            )}
+
+            {!isCreatingCard && (
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full bg-gradient-to-r from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 border-none font-medium"
+                onClick={() => setIsCreatingCard(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Custom Card
+              </Button>
+            )}
+
+            {/* Unpinned Custom Cards */}
+            {customCards?.filter(card => !card.isPinned).map(card => (
+              <CustomCard
+                key={card.id}
+                id={card.id}
+                defaultTitle={card.title}
+                onPin={handleCardPin}
+              />
+            ))}
           </div>
 
           {/* Side Panels */}
