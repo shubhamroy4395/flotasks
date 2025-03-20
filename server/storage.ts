@@ -4,7 +4,7 @@ import { desc, eq } from "drizzle-orm";
 
 export interface IStorage {
   // Tasks
-  getTasks(): Promise<Task[]>;
+  getTasks(category: string): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task>;
   deleteTask(id: number): Promise<void>;
@@ -20,8 +20,12 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTasks(): Promise<Task[]> {
-    return await db.select().from(tasks);
+  async getTasks(category: string): Promise<Task[]> {
+    return await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.category, category))
+      .orderBy(desc(tasks.timestamp));
   }
 
   async createTask(task: InsertTask): Promise<Task> {

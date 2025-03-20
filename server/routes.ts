@@ -5,8 +5,9 @@ import { insertTaskSchema, insertMoodSchema, insertGratitudeSchema } from "@shar
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Tasks
-  app.get("/api/tasks", async (_req, res) => {
-    const tasks = await storage.getTasks();
+  app.get("/api/tasks/:category", async (req, res) => {
+    const category = req.params.category;
+    const tasks = await storage.getTasks(category);
     res.json(tasks);
   });
 

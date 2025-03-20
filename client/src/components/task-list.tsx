@@ -8,6 +8,7 @@ import { ArrowUpDown, Clock, Plus } from "lucide-react";
 import type { Task } from "@shared/schema";
 
 interface TaskListProps {
+  title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
 }
@@ -22,7 +23,7 @@ const TIME_SLOTS = [
   "5min", "10min", "15min", "30min", "45min", "1h", "2h"
 ];
 
-export function TaskList({ tasks, onSave }: TaskListProps) {
+export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [entries, setEntries] = useState(
     Array(10).fill(null).map((_, i) => ({
       id: i,
@@ -121,7 +122,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 flex-wrap gap-4">
         <div>
-          <CardTitle className="font-semibold">Today's Tasks</CardTitle>
+          <CardTitle className="font-semibold">{title}</CardTitle>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">

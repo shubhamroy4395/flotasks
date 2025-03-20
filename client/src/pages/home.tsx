@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { TaskList } from "@/components/task-list";
 import { MoodTracker } from "@/components/mood-tracker";
 import { GratitudeSection } from "@/components/gratitude-section";
+import { ReminderSection } from "@/components/reminder-section";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { Moon } from "lucide-react";
 import type { Task } from "@shared/schema";
-import { ReminderSection } from "@/components/reminder-section";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -18,8 +18,12 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: tasks } = useQuery<Task[]>({
-    queryKey: ["/api/tasks"],
+  const { data: todayTasks } = useQuery<Task[]>({
+    queryKey: ["/api/tasks/today"],
+  });
+
+  const { data: otherTasks } = useQuery<Task[]>({
+    queryKey: ["/api/tasks/other"],
   });
 
   const createTask = useMutation({
@@ -27,7 +31,8 @@ export default function Home() {
       await apiRequest("POST", "/api/tasks", task);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
     },
   });
 
@@ -47,18 +52,27 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8 space-y-6">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          {/* Main Task Section */}
-          <div className="xl:col-span-3 space-y-6">
+      <div className="max-w-7xl mx-auto p-8">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          {/* Main Task Sections */}
+          <div className="xl:col-span-4 space-y-6">
             <TaskList
-              tasks={tasks || []}
-              onSave={(task) => createTask.mutate(task)}
+              title="Today's Tasks"
+              tasks={todayTasks || []}
+              onSave={(task) => createTask.mutate({ ...task, category: "today" })}
+            />
+          </div>
+
+          <div className="xl:col-span-4 space-y-6">
+            <TaskList
+              title="Other Tasks"
+              tasks={otherTasks || []}
+              onSave={(task) => createTask.mutate({ ...task, category: "other" })}
             />
           </div>
 
           {/* Side Panels */}
-          <div className="space-y-6">
+          <div className="xl:col-span-4 space-y-6">
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />

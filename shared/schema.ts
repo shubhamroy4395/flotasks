@@ -6,13 +6,15 @@ export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(),
   completed: boolean("completed").notNull().default(false),
-  priority: integer("priority").notNull().default(0), // 0: neutral, 1: low, 2: medium, 3: high
-  category: text("category").notNull(), // 'todo', 'goal', 'reminder', 'chore', 'custom'
+  priority: integer("priority").notNull().default(0), // 0: neutral, 1: overhead, 2: neutral, 3: leverage
+  category: text("category").notNull(), // 'today', 'other', 'future'
+  eta: text("eta"),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
 export const moodEntries = pgTable("mood_entries", {
   id: serial("id").primaryKey(),
-  mood: text("mood").notNull(), // emoji representation
+  mood: text("mood").notNull(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
