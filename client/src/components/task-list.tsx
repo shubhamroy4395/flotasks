@@ -41,7 +41,8 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
   } | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const handleLineClick = (index: number) => {
+  const handleLineClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     const entry = entries[index];
     setActiveTask({
       index,
@@ -53,7 +54,6 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
 
   const handleSave = () => {
     if (!activeTask) return;
-
     const { content, priority, eta } = activeTask;
 
     if (content.trim()) {
@@ -80,7 +80,8 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
     setActiveTask(null);
   };
 
-  const toggleComplete = (index: number) => {
+  const toggleComplete = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     setEntries(prev => 
       prev.map((entry, i) => 
         i === index 
@@ -159,15 +160,16 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
               whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
               transition={{ duration: 0.2 }}
               layout
-              onClick={() => !activeTask && handleLineClick(index)}
+              onClick={(e) => handleLineClick(index, e)}
             >
               <span className="text-sm text-gray-400 w-6 font-mono">
                 {String(index + 1).padStart(2, '0')}
               </span>
               <Checkbox
                 checked={entry.completed}
-                onCheckedChange={() => toggleComplete(index)}
+                onCheckedChange={() => toggleComplete(index, event as React.MouseEvent)}
                 className="h-5 w-5"
+                onClick={(e) => e.stopPropagation()}
               />
 
               {activeTask?.index === index ? (
@@ -176,13 +178,14 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   layout
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Input
                     autoFocus
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0"
+                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
                     placeholder="What needs to be done?"
                   />
                   <div className="flex gap-2 items-center flex-wrap">
