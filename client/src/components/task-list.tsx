@@ -156,7 +156,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
   const toggleComplete = (index: number, element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
-    setConfettiPosition({ x: rect.x, y: rect.y });
+    setConfettiPosition({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
 
     setEntries(prev =>
       prev.map((entry, i) => {
@@ -168,7 +168,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             setTimeout(() => {
               setShowCelebration(null);
               setShowConfetti(false);
-            }, 1000);
+            }, 2000); // Increased duration for better visibility
           }
           return { ...entry, completed: newCompleted };
         }
@@ -257,33 +257,38 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 left: confettiPosition.x,
                 top: confettiPosition.y,
                 pointerEvents: 'none',
-                zIndex: 50
+                zIndex: 50,
+                width: 0,
+                height: 0
               }}
             >
-              {[...Array(20)].map((_, i) => (
+              {[...Array(30)].map((_, i) => (
                 <motion.div
                   key={i}
-                  initial={{ x: 0, y: 0 }}
+                  initial={{ x: 0, y: 0, opacity: 1 }}
                   animate={{
-                    x: (Math.random() - 0.5) * 200,
-                    y: Math.random() * -200,
-                    rotate: Math.random() * 360,
-                    scale: Math.random() * 0.5 + 0.5
+                    x: (Math.random() - 0.5) * 300,
+                    y: Math.random() * -300,
+                    rotate: Math.random() * 360 * (Math.random() > 0.5 ? 1 : -1),
+                    opacity: 0,
                   }}
                   transition={{
-                    duration: Math.random() * 0.5 + 0.5,
-                    ease: [0.4, 0, 0.2, 1]
+                    duration: Math.random() * 1 + 1,
+                    ease: [0.4, 0, 0.2, 1],
+                    opacity: { duration: Math.random() * 1 + 0.5 }
                   }}
                   style={{
                     position: 'absolute',
-                    width: '10px',
-                    height: '10px',
+                    width: Math.random() * 8 + 6 + 'px',
+                    height: Math.random() * 8 + 6 + 'px',
                     backgroundColor: [
                       '#FFD700', '#FFA500', '#FF69B4', '#00CED1',
-                      '#9B59B6', '#2ECC71', '#E74C3C', '#3498DB'
-                    ][i % 8],
-                    borderRadius: Math.random() > 0.5 ? '50%' : '0%',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      '#9B59B6', '#2ECC71', '#E74C3C', '#3498DB',
+                      '#F1C40F', '#E67E22', '#16A085', '#8E44AD'
+                    ][i % 12],
+                    borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    transform: 'translate(-50%, -50%)'
                   }}
                 />
               ))}
