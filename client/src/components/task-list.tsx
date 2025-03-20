@@ -114,7 +114,7 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 p-4">
         <div>
           <CardTitle className="font-semibold">{title}</CardTitle>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
@@ -140,15 +140,16 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
           </Button>
         </div>
       </CardHeader>
+
       <div className="p-4 space-y-2">
         <AnimatePresence mode="sync">
           {entries.map((entry, index) => (
             <motion.div
               key={entry.id}
-              className="group flex items-center gap-4 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="group flex items-center gap-3 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
               onClick={(e) => handleLineClick(index, e)}
             >
-              <span className="text-sm text-gray-400 w-6">
+              <span className="text-sm text-gray-400 w-6 text-center">
                 {String(index + 1).padStart(2, '0')}
               </span>
 
@@ -159,16 +160,16 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
               />
 
               {activeTask?.index === index ? (
-                <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-3">
                   <Input
                     autoFocus
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                     placeholder="What needs to be done?"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {PRIORITIES.map(({ label, value, color }) => (
                       <Button
                         key={label}
@@ -192,12 +193,12 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-between">
-                  <span className={entry.completed ? 'line-through text-gray-400' : ''}>
+                <div className="flex-1 flex items-center justify-between min-w-0">
+                  <span className={`truncate ${entry.completed ? 'line-through text-gray-400' : ''}`}>
                     {entry.content || ' '}
                   </span>
                   {entry.content && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         PRIORITIES.find(p => p.value === entry.priority)?.color
                       }`}>

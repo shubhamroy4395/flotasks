@@ -48,32 +48,34 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Task Section */}
-          <div className="col-span-12 lg:col-span-8">
+          <div className="lg:col-span-8">
             <TaskList
               tasks={tasks || []}
               onSave={(task) => createTask.mutate(task)}
             />
           </div>
 
-          {/* Side Panels */}
-          <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-6">
-            <div className="col-span-2 sm:col-span-1">
-              <MoodTracker />
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <GratitudeSection />
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <ReminderSection />
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <TaskList
-                title="Other Tasks"
-                tasks={[]}
-                onSave={(task) => createTask.mutate({ ...task, category: 'other' })}
-              />
+          {/* Side Panel Grid */}
+          <div className="lg:col-span-4">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="col-span-1">
+                <MoodTracker />
+              </div>
+              <div className="col-span-1">
+                <GratitudeSection />
+              </div>
+              <div className="col-span-1">
+                <ReminderSection />
+              </div>
+              <div className="col-span-1">
+                <TaskList
+                  title="Other Tasks"
+                  tasks={[]}
+                  onSave={(task) => createTask.mutate({ ...task, category: 'other' })}
+                />
+              </div>
             </div>
           </div>
         </div>
