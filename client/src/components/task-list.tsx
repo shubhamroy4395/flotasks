@@ -18,7 +18,7 @@ const convertTimeToMinutes = (time: string): number => {
 
 // Helper function to format minutes to readable time
 const formatTotalTime = (totalMinutes: number): string => {
-  if (totalMinutes === 0) return "No time estimated";
+  if (totalMinutes === 0) return "";
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   const parts = [];
@@ -101,6 +101,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [totalTime, setTotalTime] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<number | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [confettiPosition, setConfettiPosition] = useState({ x: 0, y: 0 });
 
   // Calculate total time whenever entries change
   useEffect(() => {
@@ -154,13 +156,20 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
   const toggleComplete = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setConfettiPosition({ x: rect.x, y: rect.y });
+
     setEntries(prev =>
       prev.map((entry, i) => {
         if (i === index) {
           const newCompleted = !entry.completed;
           if (newCompleted) {
             setShowCelebration(index);
-            setTimeout(() => setShowCelebration(null), 1000);
+            setShowConfetti(true);
+            setTimeout(() => {
+              setShowCelebration(null);
+              setShowConfetti(false);
+            }, 1000);
           }
           return { ...entry, completed: newCompleted };
         }
@@ -187,12 +196,14 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         <div>
           <div className="flex items-center gap-3">
             <CardTitle className="text-xl font-extrabold text-gray-800">{title}</CardTitle>
-            <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
-              <Clock className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-bold text-blue-700">
-                {formatTotalTime(totalTime)}
-              </span>
-            </div>
+            {totalTime > 0 && (
+              <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-bold text-blue-700">
+                  {formatTotalTime(totalTime)}
+                </span>
+              </div>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
         </div>
@@ -219,6 +230,40 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
+          {showConfetti && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0 }}
+              style={{
+                position: 'fixed',
+                left: confettiPosition.x,
+                top: confettiPosition.y,
+                pointerEvents: 'none',
+                zIndex: 50
+              }}
+            >
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ x: 0, y: 0 }}
+                  animate={{
+                    x: (Math.random() - 0.5) * 100,
+                    y: Math.random() * -100,
+                    rotate: Math.random() * 360
+                  }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  style={{
+                    position: 'absolute',
+                    width: '8px',
+                    height: '8px',
+                    backgroundColor: ['#FFD700', '#FFA500', '#FF69B4', '#00CED1'][i % 4],
+                    borderRadius: '50%'
+                  }}
+                />
+              ))}
+            </motion.div>
+          )}
           <AnimatePresence mode="sync">
             {entries.map((entry, index) => (
               <motion.div
