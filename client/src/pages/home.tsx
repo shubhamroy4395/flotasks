@@ -13,6 +13,32 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const queryClient = useQueryClient();
 
+  // Handle page refresh/exit confirmation
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  // Clear data on initial load (but not on refresh)
+  useEffect(() => {
+    const isFirstLoad = !sessionStorage.getItem('hasLoaded');
+    if (isFirstLoad) {
+      // Clear all data
+      queryClient.clear();
+      // Mark that we've loaded once this session
+      sessionStorage.setItem('hasLoaded', 'true');
+    }
+  }, [queryClient]);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
