@@ -178,40 +178,46 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
               {activeTask?.index === index ? (
                 <motion.div
-                  className="flex items-center gap-3 w-full"
+                  className="flex flex-col w-full gap-3"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   layout
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Input
-                    autoFocus
-                    value={activeTask.content}
-                    onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
-                    onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
-                    placeholder="What needs to be done?"
-                  />
-                  <div className="flex gap-2 items-center flex-wrap">
-                    {PRIORITIES.map(({ label, value, color, title }) => (
-                      <Button
-                        key={label}
-                        size="sm"
-                        variant="ghost"
-                        className={`px-2 ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTask({ ...activeTask, priority: value });
-                        }}
-                        title={title}
-                      >
-                        {label}
-                      </Button>
-                    ))}
+                  <div className="flex items-center gap-2 w-full">
+                    <Input
+                      autoFocus
+                      value={activeTask.content}
+                      onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
+                      onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                      placeholder="What needs to be done?"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-2">
+                      {PRIORITIES.map(({ label, value, color, title }) => (
+                        <Button
+                          key={label}
+                          size="sm"
+                          variant="ghost"
+                          className={`px-2 ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTask({ ...activeTask, priority: value });
+                          }}
+                          title={title}
+                        >
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
+
                     <select
                       value={activeTask.eta}
                       onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                      className="border-none bg-transparent text-sm"
+                      className="rounded-md border px-3 py-2 text-sm bg-transparent"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <option value="">Time</option>
@@ -219,6 +225,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         <option key={slot} value={slot}>{slot}</option>
                       ))}
                     </select>
+
                     <Button
                       onClick={handleSave}
                       size="sm"
