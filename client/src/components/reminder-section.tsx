@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Bell, Trash2 } from "lucide-react";
-import { format, addMinutes, addHours } from "date-fns";
+import { format, addMinutes, addHours, isAfter } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 const TIME_OPTIONS = [
   { label: "5 minutes", value: 5, unit: "minutes" },
@@ -15,11 +16,73 @@ const TIME_OPTIONS = [
   { label: "4 hours", value: 4, unit: "hours" }
 ];
 
+// Create notification sound
+const createNotificationSound = () => {
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4 note
+  gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+  gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.1);
+  gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.5);
+};
+
 export function ReminderSection() {
   const [isOpen, setIsOpen] = useState(false);
   const [newReminder, setNewReminder] = useState("");
   const [selectedTime, setSelectedTime] = useState<typeof TIME_OPTIONS[0] | null>(null);
   const [reminders, setReminders] = useState<{ id: number; content: string; time: Date }[]>([]);
+  const { toast } = useToast();
+  const checkInterval = useRef<NodeJS.Timeout>();
+
+  // Check for due reminders
+  useEffect(() => {
+    const checkReminders = () => {
+      const now = new Date();
+      setReminders(prev => {
+        const updatedReminders = prev.filter(reminder => {
+          if (isAfter(now, reminder.time)) {
+            // Play notification sound
+            try {
+              createNotificationSound();
+            } catch (error) {
+              console.error('Failed to play notification sound:', error);
+            }
+
+            // Show toast notification
+            toast({
+              title: "Reminder!",
+              description: reminder.content,
+              duration: 5000,
+            });
+
+            // Remove this reminder
+            return false;
+          }
+          return true;
+        });
+
+        return updatedReminders;
+      });
+    };
+
+    // Check every 30 seconds
+    checkInterval.current = setInterval(checkReminders, 30000);
+
+    return () => {
+      if (checkInterval.current) {
+        clearInterval(checkInterval.current);
+      }
+    };
+  }, [toast]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +100,13 @@ export function ReminderSection() {
     setNewReminder("");
     setSelectedTime(null);
     setIsOpen(false);
+
+    // Show confirmation toast
+    toast({
+      title: "Reminder set!",
+      description: `Will remind you at ${format(dueTime, 'h:mm a')}`,
+      duration: 3000,
+    });
   };
 
   const deleteReminder = (id: number) => {
