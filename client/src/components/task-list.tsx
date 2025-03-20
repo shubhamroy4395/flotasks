@@ -46,18 +46,33 @@ const TIME_SLOTS = [
 ];
 
 export function TaskList({ title, tasks, onSave }: TaskListProps) {
-  const numLines = title === "Other Tasks" ? 8 : 15;
+  const initialLines = title === "Other Tasks" ? 8 : 10;
 
-  const [entries, setEntries] = useState(
-    Array(numLines).fill(null).map((_, i) => ({
-      id: i,
+  const [entries, setEntries] = useState(() => {
+    const lines = Array(initialLines).fill(null).map((_, i) => ({
+      id: i + 1,
       content: "",
       isEditing: false,
       completed: false,
       priority: 0,
       eta: ""
-    }))
-  );
+    }));
+
+    // Merge existing tasks with empty lines
+    tasks.forEach((task, index) => {
+      if (index < lines.length) {
+        lines[index] = {
+          ...lines[index],
+          content: task.content,
+          completed: task.completed,
+          priority: task.priority,
+          eta: task.eta || ""
+        };
+      }
+    });
+
+    return lines;
+  });
 
   const [activeTask, setActiveTask] = useState<{
     index: number;
@@ -124,9 +139,9 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       if (!a.content && !b.content) return 0;
       if (!a.content) return 1;
       if (!b.content) return -1;
-      return sortDirection === 'asc' ?
-        b.priority - a.priority :
-        a.priority - b.priority;
+      return sortDirection === 'asc'
+        ? b.priority - a.priority
+        : a.priority - b.priority;
     }));
   };
 
