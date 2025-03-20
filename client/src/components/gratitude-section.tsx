@@ -6,9 +6,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
+import { Plus, X } from "lucide-react";
 
 export function GratitudeSection() {
-  const [isAdding, setIsAdding] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [newEntry, setNewEntry] = useState("");
   const queryClient = useQueryClient();
 
@@ -23,7 +24,7 @@ export function GratitudeSection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
       setNewEntry("");
-      setIsAdding(false);
+      setIsOpen(false);
     },
   });
 
@@ -34,54 +35,58 @@ export function GratitudeSection() {
   };
 
   return (
-    <Card>
+    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader>
-        <CardTitle>Gratitude</CardTitle>
+        <CardTitle>Gratitude Journal</CardTitle>
       </CardHeader>
       <CardContent>
-        <AnimatePresence mode="wait">
-          {!isAdding ? (
+        <AnimatePresence>
+          {!isOpen ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="mb-4"
+              className="flex justify-center mb-4"
             >
               <Button
                 variant="outline"
+                size="lg"
                 className="w-full"
-                onClick={() => setIsAdding(true)}
+                onClick={() => setIsOpen(true)}
               >
-                Add Gratitude Entry
+                <Plus className="mr-2 h-4 w-4" />
+                What are you grateful for?
               </Button>
             </motion.div>
           ) : (
-            <motion.form
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              onSubmit={handleSubmit}
-              className="flex gap-2 mb-4"
             >
-              <Input
-                autoFocus
-                placeholder="What are you grateful for today?"
-                value={newEntry}
-                onChange={(e) => setNewEntry(e.target.value)}
-                className="flex-1 border-none shadow-none bg-transparent focus:ring-0"
-              />
-              <Button type="submit" variant="ghost" className="text-green-600 hover:bg-green-50">
-                Save
-              </Button>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                className="text-gray-500 hover:bg-gray-50"
-                onClick={() => setIsAdding(false)}
-              >
-                Cancel
-              </Button>
-            </motion.form>
+              <Card className="p-4 mb-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="I am grateful for..."
+                      value={newEntry}
+                      onChange={(e) => setNewEntry(e.target.value)}
+                      className="flex-1"
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button type="submit" className="w-full">Add Entry</Button>
+                </form>
+              </Card>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -93,10 +98,10 @@ export function GratitudeSection() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-colors"
                 transition={{ delay: index * 0.1 }}
               >
-                {entry.content}
+                <p className="text-gray-700">{entry.content}</p>
               </motion.div>
             ))}
           </AnimatePresence>

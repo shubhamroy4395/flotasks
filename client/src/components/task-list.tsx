@@ -12,17 +12,10 @@ interface TaskListProps {
   onSave: (task: { content: string; priority: number; category: string }) => void;
 }
 
-const DEFAULT_TASKS = Array(10).fill(null).map((_, i) => ({
-  id: i,
-  content: "",
-  isEditing: false,
-  completed: false
-}));
-
 const PRIORITIES = [
-  { label: "L", value: 1, color: "text-blue-600 bg-blue-50", title: "Leverage" },
-  { label: "N", value: 0, color: "text-gray-600 bg-gray-50", title: "Neutral" },
-  { label: "O", value: 2, color: "text-red-600 bg-red-50", title: "Overhead" }
+  { label: "L", value: 1, color: "bg-blue-100 text-blue-700", title: "Leverage" },
+  { label: "N", value: 0, color: "bg-gray-100 text-gray-700", title: "Neutral" },
+  { label: "O", value: 2, color: "bg-red-100 text-red-700", title: "Overhead" }
 ];
 
 const TIME_SLOTS = [
@@ -30,7 +23,16 @@ const TIME_SLOTS = [
 ];
 
 export function TaskList({ tasks, onSave }: TaskListProps) {
-  const [entries, setEntries] = useState(DEFAULT_TASKS);
+  const [entries, setEntries] = useState(
+    Array(10).fill(null).map((_, i) => ({
+      id: i,
+      content: "",
+      isEditing: false,
+      completed: false,
+      priority: 0,
+      eta: ""
+    }))
+  );
   const [activeTask, setActiveTask] = useState<{
     index: number;
     content: string;
@@ -41,26 +43,34 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
 
   const handleLineClick = (index: number) => {
     if (activeTask?.index === index) return;
+    const entry = entries[index];
     setActiveTask({
       index,
-      content: entries[index].content,
-      priority: 0,
-      eta: ""
+      content: entry.content,
+      priority: entry.priority,
+      eta: entry.eta
     });
   };
 
   const handleSave = () => {
-    if (!activeTask) return;
-    const { content, priority } = activeTask;
+    if (!activeTask || !activeTask.content.trim()) return;
+
     onSave({
-      content,
-      priority,
+      content: activeTask.content,
+      priority: activeTask.priority,
       category: "todo"
     });
+
     setEntries(prev => 
       prev.map((entry, i) => 
         i === activeTask.index 
-          ? { ...entry, content, isEditing: false }
+          ? { 
+              ...entry, 
+              content: activeTask.content,
+              priority: activeTask.priority,
+              eta: activeTask.eta,
+              isEditing: false 
+            }
           : entry
       )
     );
@@ -89,20 +99,13 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
     }));
   };
 
-  const getPriorityBadge = (priority: number) => {
-    const priorityInfo = PRIORITIES.find(p => p.value === priority);
-    if (!priorityInfo) return null;
-    return (
-      <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${priorityInfo.color}`}>
-        {priorityInfo.label}
-      </span>
-    );
-  };
-
   return (
-    <Card className="bg-white shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Today's Tasks</CardTitle>
+    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+        <div>
+          <CardTitle>Today's Tasks</CardTitle>
+          <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
+        </div>
         <Button 
           variant="ghost" 
           size="sm"
@@ -114,7 +117,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
         </Button>
       </CardHeader>
       <div className="p-6 space-y-2">
-        <AnimatePresence>
+        <AnimatePresence mode="sync">
           {entries.map((entry, index) => (
             <motion.div
               key={entry.id}
@@ -125,7 +128,9 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
               whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
               transition={{ duration: 0.2 }}
             >
-              <span className="text-sm text-gray-400 w-6">{String(index + 1).padStart(2, '0')}</span>
+              <span className="text-sm text-gray-400 w-6 font-mono">
+                {String(index + 1).padStart(2, '0')}
+              </span>
               <Checkbox
                 checked={entry.completed}
                 onCheckedChange={() => toggleComplete(index)}
@@ -137,13 +142,14 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                   className="flex items-center gap-3 w-full"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  layout
                 >
                   <Input
                     autoFocus
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 placeholder:text-gray-400"
+                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0"
                     placeholder="What needs to be done?"
                   />
                   <div className="flex gap-2 items-center">
@@ -152,7 +158,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                         key={label}
                         size="sm"
                         variant="ghost"
-                        className={`px-2 ${color}`}
+                        className={`px-2 ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveTask({ ...activeTask, priority: value });
@@ -185,23 +191,34 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                 </motion.div>
               ) : (
                 <motion.div 
-                  className={`flex items-center gap-3 w-full cursor-text ${entry.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
+                  className={`flex items-center justify-between w-full cursor-text ${
+                    entry.completed ? 'line-through text-gray-400' : 'text-gray-700'
+                  }`}
                   onClick={() => handleLineClick(index)}
                   layout
                 >
-                  <span className="flex-1">
-                    {entry.content || "Click to add a task..."}
-                  </span>
+                  <span>{entry.content || " "}</span>
                   {entry.content && (
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {getPriorityBadge(entry.priority)}
+                    <motion.div 
+                      className="flex items-center gap-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      {entry.priority !== undefined && (
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
+                          PRIORITIES.find(p => p.value === entry.priority)?.color
+                        }`}>
+                          {PRIORITIES.find(p => p.value === entry.priority)?.label}
+                        </span>
+                      )}
                       {entry.eta && (
                         <span className="flex items-center text-xs text-gray-500">
                           <Clock className="h-3 w-3 mr-1" />
                           {entry.eta}
                         </span>
                       )}
-                    </div>
+                    </motion.div>
                   )}
                 </motion.div>
               )}
