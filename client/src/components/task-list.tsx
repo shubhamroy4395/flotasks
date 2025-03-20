@@ -186,29 +186,28 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all"
+                    className="flex-1 px-3 py-2 rounded-md border border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200 focus:ring-opacity-50 transition-all"
                     placeholder="What needs to be done?"
                   />
-                  <div className="flex gap-2 items-center flex-wrap">
-                    {PRIORITIES.map(({ label, value, color, title }) => (
-                      <Button
-                        key={label}
-                        size="sm"
-                        variant="ghost"
-                        className={`px-2 ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTask({ ...activeTask, priority: value });
-                        }}
-                        title={title}
-                      >
-                        {label}
-                      </Button>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      {PRIORITIES.map(({ label, value, color, title }) => (
+                        <Button
+                          key={label}
+                          size="sm"
+                          variant="ghost"
+                          className={`w-8 h-8 p-0 flex items-center justify-center ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
+                          onClick={() => setActiveTask({ ...activeTask, priority: value })}
+                          title={title}
+                        >
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
                     <select
                       value={activeTask.eta}
                       onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                      className="border-none bg-transparent text-sm"
+                      className="h-8 px-2 rounded-md border border-gray-200 text-sm focus:border-blue-300 focus:ring-1 focus:ring-blue-200"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <option value="">Time</option>
@@ -219,8 +218,7 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
                     <Button
                       onClick={handleSave}
                       size="sm"
-                      variant="ghost"
-                      className="text-green-600 hover:bg-green-50"
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
                     >
                       Save
                     </Button>
