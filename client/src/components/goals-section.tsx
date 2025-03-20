@@ -29,7 +29,7 @@ export function GoalsSection() {
 
   return (
     <Card>
-      <CardHeader className="border-b">
+      <CardHeader className="border-b border-gray-200 dark:border-gray-700">
         <CardTitle className="flex items-center gap-2">
           <Star className="h-5 w-5 text-yellow-500" />
           Top 3 Goals for Today
@@ -39,13 +39,13 @@ export function GoalsSection() {
         <div className="space-y-3">
           {goals.map((goal, index) => (
             <div key={goal.id} className="flex items-center gap-3">
-              <span className="text-sm text-gray-400 w-4 font-mono">
+              <span className="text-sm text-gray-400 dark:text-gray-500 w-4 font-mono">
                 {index + 1}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-6 w-6 ${goal.completed ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}
+                className={`h-6 w-6 ${goal.completed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800'}`}
                 onClick={() => toggleGoal(index)}
               >
                 {goal.completed && "✓"}
@@ -53,7 +53,7 @@ export function GoalsSection() {
               <Input
                 value={goal.content}
                 onChange={(e) => updateGoal(index, e.target.value)}
-                className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
                 placeholder={`Goal ${index + 1}`}
               />
             </div>
