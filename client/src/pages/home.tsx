@@ -55,33 +55,30 @@ export default function Home() {
 
       <div className="container mx-auto p-6">
         <div className="grid grid-cols-12 gap-6">
-          {/* Main Task Sections - Takes up more space */}
-          <div className="col-span-12 lg:col-span-9 grid grid-cols-1 gap-6">
-            <div className="space-y-6">
-              <TaskList
-                title="Today's Tasks"
-                tasks={todayTasks || []}
-                onSave={(task) => createTask.mutate({ ...task, category: "today" })}
-              />
-            </div>
-
-            <div className="space-y-6">
-              <GoalsSection />
-              <TaskList
-                title="Other Tasks"
-                tasks={otherTasks || []}
-                onSave={(task) => createTask.mutate({ ...task, category: "other" })}
-              />
-            </div>
+          {/* Left Column - Today's Tasks */}
+          <div className="col-span-4">
+            <TaskList
+              title="Today's Tasks"
+              tasks={todayTasks || []}
+              onSave={(task) => createTask.mutate({ ...task, category: "today" })}
+            />
           </div>
 
-          {/* Side Panels - Takes up less space */}
-          <div className="col-span-12 lg:col-span-3 space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              <MoodTracker />
-              <GratitudeSection />
-              <ReminderSection />
-            </div>
+          {/* Middle Column - Goals and Other Tasks */}
+          <div className="col-span-4 space-y-6">
+            <GoalsSection />
+            <TaskList
+              title="Other Tasks"
+              tasks={otherTasks || []}
+              onSave={(task) => createTask.mutate({ ...task, category: "other" })}
+            />
+          </div>
+
+          {/* Right Column - Mood, Gratitude, Reminders */}
+          <div className="col-span-4 space-y-6">
+            <MoodTracker />
+            <GratitudeSection />
+            <ReminderSection />
           </div>
         </div>
       </div>
