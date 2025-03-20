@@ -157,7 +157,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200"
+              className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200 cursor-pointer"
               whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
               transition={{ duration: 0.2 }}
               layout
@@ -168,7 +168,10 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
               </span>
               <Checkbox
                 checked={entry.completed}
-                onCheckedChange={() => toggleComplete(index, event as React.MouseEvent)}
+                onCheckedChange={(checked) => {
+                  const e = {stopPropagation: () => {}} as React.MouseEvent;
+                  toggleComplete(index, e);
+                }}
                 className="h-5 w-5"
                 onClick={(e) => e.stopPropagation()}
               />

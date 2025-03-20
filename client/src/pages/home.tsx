@@ -39,8 +39,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
       {/* Date and Time Bar */}
-      <div className="bg-white border-b border-gray-200 py-4 px-8 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10">
+        <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-semibold">{format(currentTime, 'dd-MMM-yyyy')}</h2>
             <span className="text-gray-500">|</span>
@@ -52,27 +52,29 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          {/* Main Task Sections */}
-          <div className="xl:col-span-4 space-y-6">
-            <TaskList
-              title="Today's Tasks"
-              tasks={todayTasks || []}
-              onSave={(task) => createTask.mutate({ ...task, category: "today" })}
-            />
+      <div className="container mx-auto p-6">
+        <div className="grid grid-cols-12 gap-6">
+          {/* Main Task Sections - Takes up more space */}
+          <div className="col-span-12 lg:col-span-9 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <TaskList
+                title="Today's Tasks"
+                tasks={todayTasks || []}
+                onSave={(task) => createTask.mutate({ ...task, category: "today" })}
+              />
+            </div>
+
+            <div className="space-y-6">
+              <TaskList
+                title="Other Tasks"
+                tasks={otherTasks || []}
+                onSave={(task) => createTask.mutate({ ...task, category: "other" })}
+              />
+            </div>
           </div>
 
-          <div className="xl:col-span-4 space-y-6">
-            <TaskList
-              title="Other Tasks"
-              tasks={otherTasks || []}
-              onSave={(task) => createTask.mutate({ ...task, category: "other" })}
-            />
-          </div>
-
-          {/* Side Panels */}
-          <div className="xl:col-span-4 space-y-6">
+          {/* Side Panels - Takes up less space */}
+          <div className="col-span-12 lg:col-span-3 space-y-6">
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
