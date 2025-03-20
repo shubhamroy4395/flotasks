@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -33,29 +33,30 @@ const PRIORITIES = [
 ];
 
 export function GoalsSection() {
-  const [goals, setGoals] = useState<Array<{ 
-    id: number; 
-    content: string; 
-    completed: boolean;
-    priority: number;
-    isEditing: boolean;
-  }>>([
+  const initialGoals = [
     { id: 1, content: "", completed: false, priority: 0, isEditing: false },
     { id: 2, content: "", completed: false, priority: 0, isEditing: false },
     { id: 3, content: "", completed: false, priority: 0, isEditing: false }
-  ]);
+  ];
+
+  const [goals, setGoals] = useState(initialGoals);
+
+  // Reset goals state when component remounts (which happens on data clear)
+  useEffect(() => {
+    setGoals(initialGoals);
+  }, []);
 
   const toggleGoal = (index: number) => {
-    setGoals(prev => 
-      prev.map((goal, i) => 
+    setGoals(prev =>
+      prev.map((goal, i) =>
         i === index ? { ...goal, completed: !goal.completed } : goal
       )
     );
   };
 
   const updateGoal = (index: number, content: string) => {
-    setGoals(prev => 
-      prev.map((goal, i) => 
+    setGoals(prev =>
+      prev.map((goal, i) =>
         i === index ? { ...goal, content } : goal
       )
     );

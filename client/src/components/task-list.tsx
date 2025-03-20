@@ -104,6 +104,33 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [confettiPosition, setConfettiPosition] = useState({ x: 0, y: 0 });
 
+  // Reset entries and sort when tasks change (including when they're cleared)
+  useEffect(() => {
+    const lines = Array(initialLines).fill(null).map((_, i) => ({
+      id: i + 1,
+      content: "",
+      isEditing: false,
+      completed: false,
+      priority: 0,
+      eta: ""
+    }));
+
+    tasks.forEach((task, index) => {
+      if (index < lines.length) {
+        lines[index] = {
+          ...lines[index],
+          content: task.content,
+          completed: task.completed,
+          priority: task.priority,
+          eta: task.eta || ""
+        };
+      }
+    });
+
+    setEntries(lines);
+    setSortDirection('desc'); // Reset sort direction to default
+  }, [tasks, initialLines]);
+
   // Calculate total time whenever entries change
   useEffect(() => {
     const newTotal = entries.reduce((total, entry) => {
