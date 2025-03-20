@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock } from "lucide-react";
+import { ArrowUpDown, Clock, Plus } from "lucide-react";
 import type { Task } from "@shared/schema";
 
 interface TaskListProps {
@@ -99,24 +99,52 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
     }));
   };
 
+  const addMoreTasks = () => {
+    setEntries(prev => [
+      ...prev,
+      ...Array(5).fill(null).map((_, i) => ({
+        id: prev.length + i,
+        content: "",
+        isEditing: false,
+        completed: false,
+        priority: 0,
+        eta: ""
+      }))
+    ]);
+  };
+
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 flex-wrap gap-4">
         <div>
           <CardTitle>Today's Tasks</CardTitle>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={toggleSort}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <ArrowUpDown className="h-4 w-4 mr-1" />
-          Sort by Priority
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={toggleSort}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <ArrowUpDown className="h-4 w-4 mr-1" />
+            Sort
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addMoreTasks}
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add More
+          </Button>
+        </div>
       </CardHeader>
-      <div className="p-6 space-y-2">
+      <motion.div 
+        className="p-6 space-y-2"
+        layout
+      >
         <AnimatePresence mode="sync">
           {entries.map((entry, index) => (
             <motion.div
@@ -127,6 +155,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
               className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200"
               whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
               transition={{ duration: 0.2 }}
+              layout
             >
               <span className="text-sm text-gray-400 w-6 font-mono">
                 {String(index + 1).padStart(2, '0')}
@@ -152,7 +181,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                     className="flex-1 border-none shadow-none bg-transparent focus:ring-0"
                     placeholder="What needs to be done?"
                   />
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-2 items-center flex-wrap">
                     {PRIORITIES.map(({ label, value, color, title }) => (
                       <Button
                         key={label}
@@ -225,7 +254,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </Card>
   );
 }

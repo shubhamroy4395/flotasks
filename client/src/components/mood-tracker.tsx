@@ -36,12 +36,12 @@ export function MoodTracker() {
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader>
-        <CardTitle>How are you feeling?</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">How are you feeling?</CardTitle>
       </CardHeader>
       <CardContent>
         <motion.div 
-          className="flex flex-col items-center gap-6"
+          className="flex flex-col items-center gap-3"
           initial={false}
         >
           <AnimatePresence mode="wait">
@@ -51,11 +51,11 @@ export function MoodTracker() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className={`w-full p-6 rounded-xl bg-gradient-to-r ${moodInfo.color}`}
+                className={`w-full p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform`}
               >
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center justify-center gap-3">
                   <span className="text-4xl">{currentMood}</span>
-                  <h3 className="text-xl font-semibold text-gray-800">
+                  <h3 className="text-lg font-semibold text-gray-800">
                     {moodInfo.label}
                   </h3>
                 </div>
