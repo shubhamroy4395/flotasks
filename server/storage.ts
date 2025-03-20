@@ -1,4 +1,6 @@
-import { type Task, type InsertTask, type MoodEntry, type InsertMoodEntry, type GratitudeEntry, type InsertGratitudeEntry } from "@shared/schema";
+import { type Task, type InsertTask, type MoodEntry, type InsertMoodEntry, type GratitudeEntry, type InsertGratitudeEntry, tasks, moodEntries, gratitudeEntries } from "@shared/schema";
+import { db } from "./db";
+import { desc, eq } from "drizzle-orm";
 
 export interface IStorage {
   // Tasks
@@ -6,73 +8,69 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task>;
   deleteTask(id: number): Promise<void>;
-  
+
   // Mood
   getMoodEntries(): Promise<MoodEntry[]>;
   createMoodEntry(entry: InsertMoodEntry): Promise<MoodEntry>;
-  
+
   // Gratitude
   getGratitudeEntries(): Promise<GratitudeEntry[]>;
   createGratitudeEntry(entry: InsertGratitudeEntry): Promise<GratitudeEntry>;
 }
 
-export class MemStorage implements IStorage {
-  private tasks: Map<number, Task>;
-  private moodEntries: Map<number, MoodEntry>;
-  private gratitudeEntries: Map<number, GratitudeEntry>;
-  private currentIds: { tasks: number; mood: number; gratitude: number };
-
-  constructor() {
-    this.tasks = new Map();
-    this.moodEntries = new Map();
-    this.gratitudeEntries = new Map();
-    this.currentIds = { tasks: 1, mood: 1, gratitude: 1 };
-  }
-
+export class DatabaseStorage implements IStorage {
   async getTasks(): Promise<Task[]> {
-    return Array.from(this.tasks.values());
+    return await db.select().from(tasks);
   }
 
   async createTask(task: InsertTask): Promise<Task> {
-    const id = this.currentIds.tasks++;
-    const newTask: Task = { ...task, id };
-    this.tasks.set(id, newTask);
+    const [newTask] = await db.insert(tasks).values(task).returning();
     return newTask;
   }
 
   async updateTask(id: number, updates: Partial<Task>): Promise<Task> {
-    const task = this.tasks.get(id);
-    if (!task) throw new Error(`Task ${id} not found`);
-    const updatedTask = { ...task, ...updates };
-    this.tasks.set(id, updatedTask);
+    const [updatedTask] = await db
+      .update(tasks)
+      .set(updates)
+      .where(eq(tasks.id, id))
+      .returning();
+
+    if (!updatedTask) {
+      throw new Error(`Task ${id} not found`);
+    }
+
     return updatedTask;
   }
 
   async deleteTask(id: number): Promise<void> {
-    this.tasks.delete(id);
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 
   async getMoodEntries(): Promise<MoodEntry[]> {
-    return Array.from(this.moodEntries.values());
+    return await db
+      .select()
+      .from(moodEntries)
+      .orderBy(desc(moodEntries.timestamp))
+      .limit(10);
   }
 
   async createMoodEntry(entry: InsertMoodEntry): Promise<MoodEntry> {
-    const id = this.currentIds.mood++;
-    const newEntry: MoodEntry = { ...entry, id };
-    this.moodEntries.set(id, newEntry);
+    const [newEntry] = await db.insert(moodEntries).values(entry).returning();
     return newEntry;
   }
 
   async getGratitudeEntries(): Promise<GratitudeEntry[]> {
-    return Array.from(this.gratitudeEntries.values());
+    return await db
+      .select()
+      .from(gratitudeEntries)
+      .orderBy(desc(gratitudeEntries.timestamp))
+      .limit(10);
   }
 
   async createGratitudeEntry(entry: InsertGratitudeEntry): Promise<GratitudeEntry> {
-    const id = this.currentIds.gratitude++;
-    const newEntry: GratitudeEntry = { ...entry, id };
-    this.gratitudeEntries.set(id, newEntry);
+    const [newEntry] = await db.insert(gratitudeEntries).values(entry).returning();
     return newEntry;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
