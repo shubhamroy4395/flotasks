@@ -15,26 +15,26 @@ interface TaskListProps {
 }
 
 const PRIORITIES = [
-  {
-    label: "L",
-    value: 3,
-    color: "bg-blue-100 hover:bg-blue-200 text-blue-700",
+  { 
+    label: "L", 
+    value: 3, 
+    color: "bg-blue-100 hover:bg-blue-200 text-blue-700", 
     title: "Leverage (L)",
     subtitle: "High Impact, Low Effort 🚀",
     description: "These tasks deliver outsized results with minimal effort. Prioritize them first!"
   },
-  {
-    label: "N",
-    value: 2,
-    color: "bg-gray-100 hover:bg-gray-200 text-gray-700",
+  { 
+    label: "N", 
+    value: 2, 
+    color: "bg-gray-100 hover:bg-gray-200 text-gray-700", 
     title: "Neutral (N)",
     subtitle: "Necessary but Balanced ⚖️",
     description: "These tasks are important but don't drastically change outcomes. Handle them after leverage tasks."
   },
-  {
-    label: "O",
-    value: 1,
-    color: "bg-red-100 hover:bg-red-200 text-red-700",
+  { 
+    label: "O", 
+    value: 1, 
+    color: "bg-red-100 hover:bg-red-200 text-red-700", 
     title: "Overhead (O)",
     subtitle: "High Effort, Low Reward ⏳",
     description: "These tasks consume time without significant returns. Avoid or delegate if possible."
@@ -46,8 +46,10 @@ const TIME_SLOTS = [
 ];
 
 export function TaskList({ title, tasks, onSave }: TaskListProps) {
+  const numLines = title === "Other Tasks" ? 8 : 15;
+
   const [entries, setEntries] = useState(
-    Array(title === "Other Tasks" ? 8 : 15).fill(null).map((_, i) => ({
+    Array(numLines).fill(null).map((_, i) => ({
       id: i,
       content: "",
       isEditing: false,
