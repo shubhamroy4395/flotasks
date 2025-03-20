@@ -28,13 +28,24 @@ export default function Home() {
     };
   }, []);
 
-  // Clear all data on every refresh
+  // Clear all data on every refresh and clear database data
   useEffect(() => {
     // Clear all data from the cache
     queryClient.clear();
 
     // Invalidate all queries to force fresh data fetch
     queryClient.invalidateQueries();
+
+    // Clear database data
+    const clearData = async () => {
+      try {
+        await apiRequest("DELETE", "/api/data");
+      } catch (error) {
+        console.error("Failed to clear data:", error);
+      }
+    };
+
+    clearData();
   }, [queryClient]);
 
   useEffect(() => {

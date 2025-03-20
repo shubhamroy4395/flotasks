@@ -85,6 +85,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all data
+  app.delete("/api/data", async (_req, res) => {
+    await storage.clearAllData();
+    res.status(204).send();
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -17,6 +17,9 @@ export interface IStorage {
   getGratitudeEntries(): Promise<GratitudeEntry[]>;
   createGratitudeEntry(entry: InsertGratitudeEntry): Promise<GratitudeEntry>;
   deleteGratitudeEntry(id: number): Promise<void>;
+
+  // Clear All Data
+  clearAllData(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -79,6 +82,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGratitudeEntry(id: number): Promise<void> {
     await db.delete(gratitudeEntries).where(eq(gratitudeEntries.id, id));
+  }
+
+  async clearAllData(): Promise<void> {
+    await db.delete(tasks);
+    await db.delete(moodEntries);
+    await db.delete(gratitudeEntries);
   }
 }
 
