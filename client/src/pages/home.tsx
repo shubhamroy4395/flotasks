@@ -51,25 +51,20 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Today's Tasks - Full Width */}
-        <div>
-          <TaskList
-            title="Today's Tasks"
-            tasks={todayTasks || []}
-            onSave={(task) => createTask.mutate({ ...task, category: "today" })}
-          />
-        </div>
-
-        {/* Other Sections - Three Column Layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Left Column - Goals */}
+          {/* Left Column - Today's Tasks */}
           <div>
-            <GoalsSection />
+            <TaskList
+              title="Today's Tasks"
+              tasks={todayTasks || []}
+              onSave={(task) => createTask.mutate({ ...task, category: "today" })}
+            />
           </div>
 
-          {/* Middle Column - Other Tasks */}
-          <div>
+          {/* Middle Column - Goals and Other Tasks */}
+          <div className="space-y-6">
+            <GoalsSection />
             <TaskList
               title="Other Tasks"
               tasks={otherTasks || []}
