@@ -47,8 +47,8 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8 space-y-6">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="max-w-7xl mx-auto p-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Main Task Section */}
           <div className="xl:col-span-2">
             <TaskList
@@ -58,16 +58,17 @@ export default function Home() {
           </div>
 
           {/* Side Panels */}
-          <div className="xl:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MoodTracker />
-              <GratitudeSection />
+          <div className="space-y-6">
+            <MoodTracker />
+            <GratitudeSection />
+            <div className="w-full">
               <ReminderSection />
-              <TaskList
-                tasks={[]}
-                onSave={(task) => createTask.mutate({ ...task, category: 'other' })}
-              />
             </div>
+            <TaskList
+              title="Other Tasks"
+              tasks={[]}
+              onSave={(task) => createTask.mutate({ ...task, category: 'other' })}
+            />
           </div>
         </div>
       </div>

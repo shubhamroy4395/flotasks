@@ -10,6 +10,7 @@ import type { Task } from "@shared/schema";
 interface TaskListProps {
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
+  title?: string;
 }
 
 const PRIORITIES = [
@@ -22,7 +23,7 @@ const TIME_SLOTS = [
   "5min", "10min", "15min", "30min", "45min", "1h", "2h"
 ];
 
-export function TaskList({ tasks, onSave }: TaskListProps) {
+export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListProps) {
   const [entries, setEntries] = useState(
     Array(10).fill(null).map((_, i) => ({
       id: i,
@@ -121,7 +122,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 flex-wrap gap-4">
         <div>
-          <CardTitle className="font-semibold">Today's Tasks</CardTitle>
+          <CardTitle className="font-semibold">{title}</CardTitle>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">
@@ -146,7 +147,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
         </div>
       </CardHeader>
       <motion.div
-        className="p-6 space-y-2"
+        className="p-6 space-y-2 min-h-[400px]"
         layout
       >
         <AnimatePresence mode="sync">
@@ -162,7 +163,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
               layout
               onClick={(e) => handleLineClick(index, e)}
             >
-              <span className="text-sm text-gray-400 w-6 font-mono">
+              <span className="text-sm text-gray-400 w-8 font-mono">
                 {String(index + 1).padStart(2, '0')}
               </span>
               <Checkbox
@@ -185,7 +186,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none min-w-[200px]"
                     placeholder="What needs to be done?"
                   />
                   <div className="flex gap-2 items-center flex-wrap">
@@ -227,12 +228,12 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                 </motion.div>
               ) : (
                 <motion.div
-                  className={`flex items-center justify-between w-full cursor-text ${
+                  className={`flex items-center justify-between w-full gap-4 cursor-text ${
                     entry.completed ? 'line-through text-gray-400' : 'text-gray-700'
                   }`}
                   layout
                 >
-                  <span className="font-medium">{entry.content || " "}</span>
+                  <span className="font-medium flex-1">{entry.content || " "}</span>
                   {entry.content && (
                     <motion.div
                       className="flex items-center gap-2"
