@@ -39,18 +39,18 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
       {/* Date and Time Bar */}
-      <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10 shadow-md">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">
+            <h2 className="text-2xl font-extrabold text-gray-800">
               {format(currentTime, 'EEEE')}
             </h2>
             <span className="text-gray-500">•</span>
-            <span className="text-xl text-gray-600">
+            <span className="text-xl font-bold text-gray-700">
               {format(currentTime, 'dd-MMM-yyyy')}
             </span>
             <span className="text-gray-500">•</span>
-            <span className="text-xl text-gray-600 font-mono">
+            <span className="text-xl font-mono font-bold text-gray-700">
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
@@ -58,9 +58,9 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-7 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-7 lg:grid-cols-9 gap-6">
           {/* Left Column - Today's Tasks (wider) */}
-          <div className="md:col-span-2 lg:col-span-3">
+          <div className="md:col-span-3 lg:col-span-4">
             <TaskList
               title="Today's Tasks"
               tasks={todayTasks || []}
@@ -69,7 +69,7 @@ export default function Home() {
           </div>
 
           {/* Middle Column - Goals and Other Tasks */}
-          <div className="md:col-span-2 lg:col-span-2 space-y-6">
+          <div className="md:col-span-3 lg:col-span-3 space-y-6">
             <GoalsSection />
             <TaskList
               title="Other Tasks"
