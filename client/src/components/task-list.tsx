@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card"
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import type { Task } from "@shared/schema";
 
@@ -63,8 +63,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     eta: string;
   } | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [isOpen, setIsOpen] = useState(false);
-
 
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -85,7 +83,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       onSave({
         content,
         priority,
-        category: "todo"
+        category: title === "Today's Tasks" ? "today" : "other"
       });
     }
 
@@ -170,151 +168,142 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           </Button>
         </div>
       </CardHeader>
-      <motion.div className="p-6 space-y-2" layout>
-        <AnimatePresence mode="sync">
-          {entries.map((entry, index) => (
-            <motion.div
-              key={entry.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200 dark:border-gray-700 cursor-pointer"
-              whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-              transition={{ duration: 0.2 }}
-              layout
-              onClick={(e) => handleLineClick(index, e)}
-            >
-              <span className="text-sm text-gray-400 dark:text-gray-500 w-6 font-mono">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <Checkbox
-                checked={entry.completed}
-                onCheckedChange={(checked) => {
-                  const e = {stopPropagation: () => {}} as React.MouseEvent;
-                  toggleComplete(index, e);
-                }}
-                className="h-5 w-5"
-                onClick={(e) => e.stopPropagation()}
-              />
-
-              {activeTask?.index === index ? (
-                <motion.div
-                  className="flex flex-col w-full gap-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  layout
+      <CardContent>
+        <div className="space-y-2">
+          <AnimatePresence mode="sync">
+            {entries.map((entry, index) => (
+              <motion.div
+                key={entry.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200 dark:border-gray-700 cursor-pointer"
+                whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+                transition={{ duration: 0.2 }}
+                layout
+                onClick={(e) => handleLineClick(index, e)}
+              >
+                <span className="text-sm text-gray-400 dark:text-gray-500 w-6 font-mono">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <Checkbox
+                  checked={entry.completed}
+                  onCheckedChange={(checked) => {
+                    const e = {stopPropagation: () => {}} as React.MouseEvent;
+                    toggleComplete(index, e);
+                  }}
+                  className="h-5 w-5"
                   onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <Input
-                      autoFocus
-                      value={activeTask.content}
-                      onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
-                      onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
-                      placeholder="What needs to be done?"
-                    />
-                  </div>
+                />
 
-                  <div className="flex flex-wrap items-center gap-4 w-full">
-                    <div className="flex gap-2">
-                      <TooltipProvider>
-                        {PRIORITIES.map(({ label, value, color, title, subtitle, description }) => (
-                          <Tooltip key={label}>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className={`px-2 ${color} dark:opacity-90 ${activeTask.priority === value ? 'ring-2 ring-offset-2 dark:ring-offset-gray-800' : ''}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveTask({ ...activeTask, priority: value });
-                                }}
-                              >
-                                {label}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p className="font-semibold">{title}</p>
-                              <p className="text-sm">{subtitle}</p>
-                              <p className="text-xs text-gray-500 mt-1">{description}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ))}
-                      </TooltipProvider>
+                {activeTask?.index === index ? (
+                  <motion.div
+                    className="flex flex-col w-full gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    layout
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <Input
+                        autoFocus
+                        value={activeTask.content}
+                        onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
+                        onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
+                        placeholder="What needs to be done?"
+                      />
                     </div>
 
-                    <div className="flex items-center gap-2 ml-auto">
-                      <select
-                        value={activeTask.eta}
-                        onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border px-3 py-2 text-sm bg-transparent dark:text-gray-300 dark:border-gray-600"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value="">Time</option>
-                        {TIME_SLOTS.map(slot => (
-                          <option key={slot} value={slot}>{slot}</option>
-                        ))}
-                      </select>
+                    <div className="flex flex-wrap items-center gap-4 w-full">
+                      <div className="flex gap-2">
+                        <TooltipProvider>
+                          {PRIORITIES.map(({ label, value, color, title, subtitle, description }) => (
+                            <Tooltip key={label}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className={`px-2 ${color} dark:opacity-90 ${activeTask.priority === value ? 'ring-2 ring-offset-2 dark:ring-offset-gray-800' : ''}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTask({ ...activeTask, priority: value });
+                                  }}
+                                >
+                                  {label}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="font-semibold">{title}</p>
+                                <p className="text-sm">{subtitle}</p>
+                                <p className="text-xs text-gray-500 mt-1">{description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </TooltipProvider>
+                      </div>
 
-                      <Button
-                        onClick={handleSave}
-                        size="sm"
-                        className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                      >
-                        Save
-                      </Button>
+                      <div className="flex items-center gap-2 ml-auto">
+                        <select
+                          value={activeTask.eta}
+                          onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
+                          className="rounded-md border px-3 py-2 text-sm bg-transparent dark:text-gray-300 dark:border-gray-600"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="">Time</option>
+                          {TIME_SLOTS.map(slot => (
+                            <option key={slot} value={slot}>{slot}</option>
+                          ))}
+                        </select>
+
+                        <Button
+                          onClick={handleSave}
+                          size="sm"
+                          className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                        >
+                          Save
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  className={`flex items-center justify-between w-full cursor-text ${
-                    entry.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'
-                  }`}
-                  layout
-                >
-                  <span className="font-medium">{entry.content || " "}</span>
-                  {entry.content && (
-                    <motion.div
-                      className="flex items-center gap-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      {entry.priority !== undefined && (
-                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-                          PRIORITIES.find(p => p.value === entry.priority)?.color
-                        } dark:opacity-90`}>
-                          {PRIORITIES.find(p => p.value === entry.priority)?.label}
-                        </span>
-                      )}
-                      {entry.eta && (
-                        <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {entry.eta}
-                        </span>
-                      )}
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    className={`flex items-center justify-between w-full cursor-text ${
+                      entry.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'
+                    }`}
+                    layout
+                  >
+                    <span className="font-medium">{entry.content || " "}</span>
+                    {entry.content && (
+                      <motion.div
+                        className="flex items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        {entry.priority !== undefined && (
+                          <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
+                            PRIORITIES.find(p => p.value === entry.priority)?.color
+                          } dark:opacity-90`}>
+                            {PRIORITIES.find(p => p.value === entry.priority)?.label}
+                          </span>
+                        )}
+                        {entry.eta && (
+                          <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {entry.eta}
+                          </span>
+                        )}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </CardContent>
       <CardFooter className="pt-2 pb-4">
-        {!isOpen && (
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-none font-medium"
-            onClick={() => setIsOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Task
-          </Button>
-        )}
       </CardFooter>
     </Card>
   );
