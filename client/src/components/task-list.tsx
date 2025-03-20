@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { ArrowUpDown, Clock, Plus } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import type { Task } from "@shared/schema";
 
 interface TaskListProps {
@@ -14,9 +15,30 @@ interface TaskListProps {
 }
 
 const PRIORITIES = [
-  { label: "L", value: 3, color: "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100", title: "Leverage" },
-  { label: "N", value: 2, color: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100", title: "Neutral" },
-  { label: "O", value: 1, color: "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100", title: "Overhead" }
+  { 
+    label: "L", 
+    value: 3, 
+    color: "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100", 
+    title: "Leverage (L)",
+    subtitle: "High Impact, Low Effort 🚀",
+    description: "These tasks deliver outsized results with minimal effort. Prioritize them first!"
+  },
+  { 
+    label: "N", 
+    value: 2, 
+    color: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100", 
+    title: "Neutral (N)",
+    subtitle: "Necessary but Balanced ⚖️",
+    description: "These tasks are important but don't drastically change outcomes. Handle them after leverage tasks."
+  },
+  { 
+    label: "O", 
+    value: 1, 
+    color: "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100", 
+    title: "Overhead (O)",
+    subtitle: "High Effort, Low Reward ⏳",
+    description: "These tasks consume time without significant returns. Avoid or delegate if possible."
+  }
 ];
 
 const TIME_SLOTS = [
@@ -25,7 +47,7 @@ const TIME_SLOTS = [
 
 export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [entries, setEntries] = useState(
-    Array(15).fill(null).map((_, i) => ({
+    Array(title === "Other Tasks" ? 8 : 15).fill(null).map((_, i) => ({
       id: i,
       content: "",
       isEditing: false,
@@ -41,6 +63,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     eta: string;
   } | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [isOpen, setIsOpen] = useState(false);
+
 
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -146,10 +170,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           </Button>
         </div>
       </CardHeader>
-      <motion.div
-        className="p-6 space-y-2"
-        layout
-      >
+      <motion.div className="p-6 space-y-2" layout>
         <AnimatePresence mode="sync">
           {entries.map((entry, index) => (
             <motion.div
@@ -195,45 +216,55 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                     />
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-4 w-full">
                     <div className="flex gap-2">
-                      {PRIORITIES.map(({ label, value, color, title }) => (
-                        <Button
-                          key={label}
-                          size="sm"
-                          variant="ghost"
-                          className={`px-2 ${color} dark:opacity-90 ${activeTask.priority === value ? 'ring-2 ring-offset-2 dark:ring-offset-gray-800' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveTask({ ...activeTask, priority: value });
-                          }}
-                          title={title}
-                        >
-                          {label}
-                        </Button>
-                      ))}
+                      <TooltipProvider>
+                        {PRIORITIES.map(({ label, value, color, title, subtitle, description }) => (
+                          <Tooltip key={label}>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={`px-2 ${color} dark:opacity-90 ${activeTask.priority === value ? 'ring-2 ring-offset-2 dark:ring-offset-gray-800' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveTask({ ...activeTask, priority: value });
+                                }}
+                              >
+                                {label}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="font-semibold">{title}</p>
+                              <p className="text-sm">{subtitle}</p>
+                              <p className="text-xs text-gray-500 mt-1">{description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </TooltipProvider>
                     </div>
 
-                    <select
-                      value={activeTask.eta}
-                      onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                      className="rounded-md border px-3 py-2 text-sm bg-transparent dark:text-gray-300 dark:border-gray-600"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <option value="">Time</option>
-                      {TIME_SLOTS.map(slot => (
-                        <option key={slot} value={slot}>{slot}</option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2 ml-auto">
+                      <select
+                        value={activeTask.eta}
+                        onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
+                        className="rounded-md border px-3 py-2 text-sm bg-transparent dark:text-gray-300 dark:border-gray-600"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="">Time</option>
+                        {TIME_SLOTS.map(slot => (
+                          <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
 
-                    <Button
-                      onClick={handleSave}
-                      size="sm"
-                      variant="ghost"
-                      className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                    >
-                      Save
-                    </Button>
+                      <Button
+                        onClick={handleSave}
+                        size="sm"
+                        className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      >
+                        Save
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ) : (
@@ -272,6 +303,19 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           ))}
         </AnimatePresence>
       </motion.div>
+      <CardFooter className="pt-2 pb-4">
+        {!isOpen && (
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-none font-medium"
+            onClick={() => setIsOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Task
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }
