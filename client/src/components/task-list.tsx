@@ -18,7 +18,7 @@ const PRIORITIES = [
   { 
     label: "L", 
     value: 3, 
-    color: "bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/50 dark:hover:bg-blue-900/70 dark:text-blue-300", 
+    color: "bg-blue-100 hover:bg-blue-200 text-blue-700", 
     title: "Leverage (L)",
     subtitle: "High Impact, Low Effort 🚀",
     description: "These tasks deliver outsized results with minimal effort. Prioritize them first!"
@@ -26,7 +26,7 @@ const PRIORITIES = [
   { 
     label: "N", 
     value: 2, 
-    color: "bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300", 
+    color: "bg-gray-100 hover:bg-gray-200 text-gray-700", 
     title: "Neutral (N)",
     subtitle: "Necessary but Balanced ⚖️",
     description: "These tasks are important but don't drastically change outcomes. Handle them after leverage tasks."
@@ -34,7 +34,7 @@ const PRIORITIES = [
   { 
     label: "O", 
     value: 1, 
-    color: "bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/50 dark:hover:bg-red-900/70 dark:text-red-300", 
+    color: "bg-red-100 hover:bg-red-200 text-red-700", 
     title: "Overhead (O)",
     subtitle: "High Effort, Low Reward ⏳",
     description: "These tasks consume time without significant returns. Avoid or delegate if possible."
@@ -56,12 +56,14 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       eta: ""
     }))
   );
+
   const [activeTask, setActiveTask] = useState<{
     index: number;
     content: string;
     priority: number;
     eta: string;
   } | null>(null);
+
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const handleLineClick = (index: number, e: React.MouseEvent) => {
@@ -126,33 +128,19 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     }));
   };
 
-  const addMoreTasks = () => {
-    setEntries(prev => [
-      ...prev,
-      ...Array(5).fill(null).map((_, i) => ({
-        id: prev.length + i,
-        content: "",
-        isEditing: false,
-        completed: false,
-        priority: 0,
-        eta: ""
-      }))
-    ]);
-  };
-
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 dark:border-gray-700 flex-wrap gap-4">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4">
         <div>
           <CardTitle>{title}</CardTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 italic">Click any line to add a task</p>
+          <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleSort}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            className="text-gray-500 hover:text-gray-700"
           >
             <ArrowUpDown className="h-4 w-4 mr-1" />
             Sort
@@ -160,8 +148,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={addMoreTasks}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            onClick={() => {}}
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add More
@@ -177,13 +165,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200 dark:border-gray-700 cursor-pointer"
+                className="group flex items-center gap-4 py-2 border-b border-dashed border-gray-200 cursor-pointer"
                 whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
                 transition={{ duration: 0.2 }}
                 layout
                 onClick={(e) => handleLineClick(index, e)}
               >
-                <span className="text-sm text-gray-400 dark:text-gray-500 w-6 font-mono">
+                <span className="text-sm text-gray-400 w-6 font-mono">
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <Checkbox
@@ -210,7 +198,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         value={activeTask.content}
                         onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                         onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
+                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
                         placeholder="What needs to be done?"
                       />
                       <Button
@@ -218,7 +206,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => setActiveTask(null)}
-                        className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="h-8 w-8 hover:bg-gray-100"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -233,7 +221,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className={`px-2 ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2 dark:ring-offset-gray-900' : ''}`}
+                                  className={`px-2 ${color} ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setActiveTask({ ...activeTask, priority: value });
@@ -242,10 +230,10 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                                   {label}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-white dark:bg-gray-800 border dark:border-gray-700">
-                                <p className="font-semibold dark:text-white">{title}</p>
-                                <p className="text-sm dark:text-gray-300">{subtitle}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>
+                              <TooltipContent className="max-w-xs bg-white border">
+                                <p className="font-semibold">{title}</p>
+                                <p className="text-sm">{subtitle}</p>
+                                <p className="text-xs text-gray-500 mt-1">{description}</p>
                               </TooltipContent>
                             </Tooltip>
                           ))}
@@ -255,7 +243,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-gray-200 dark:border-gray-700 px-2 py-1 text-sm bg-transparent dark:text-gray-300 dark:bg-gray-800"
+                        className="rounded-md border-gray-200 px-2 py-1 text-sm bg-transparent"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Time</option>
@@ -268,7 +256,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="ml-auto bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                        className="ml-auto bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300"
                       >
                         Save
                       </Button>
@@ -277,7 +265,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 ) : (
                   <motion.div
                     className={`flex items-center justify-between w-full cursor-text ${
-                      entry.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'
+                      entry.completed ? 'line-through text-gray-400' : 'text-gray-700'
                     }`}
                     layout
                   >
@@ -297,7 +285,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                           </span>
                         )}
                         {entry.eta && (
-                          <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center text-xs text-gray-500">
                             <Clock className="h-3 w-3 mr-1" />
                             {entry.eta}
                           </span>

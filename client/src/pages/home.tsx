@@ -8,7 +8,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -38,24 +37,23 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-[#f8f9fa]">
       {/* Date and Time Bar */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4 px-6 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold dark:text-white">
+            <h2 className="text-2xl font-semibold">
               {format(currentTime, 'EEEE')}
             </h2>
-            <span className="text-gray-500 dark:text-gray-400">•</span>
-            <span className="text-xl text-gray-600 dark:text-gray-300">
+            <span className="text-gray-500">•</span>
+            <span className="text-xl text-gray-600">
               {format(currentTime, 'dd-MMM-yyyy')}
             </span>
-            <span className="text-gray-500 dark:text-gray-400">•</span>
-            <span className="text-xl text-gray-600 dark:text-gray-300 font-mono">
+            <span className="text-gray-500">•</span>
+            <span className="text-xl text-gray-600 font-mono">
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
-          <ThemeToggle />
         </div>
       </div>
 
