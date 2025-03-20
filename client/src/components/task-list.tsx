@@ -13,9 +13,9 @@ interface TaskListProps {
 }
 
 const PRIORITIES = [
-  { label: "L", value: 1, color: "bg-blue-100 text-blue-700", title: "Leverage" },
-  { label: "N", value: 0, color: "bg-gray-100 text-gray-700", title: "Neutral" },
-  { label: "O", value: 2, color: "bg-red-100 text-red-700", title: "Overhead" }
+  { label: "L", value: 3, color: "bg-blue-100 text-blue-700", title: "Leverage" },
+  { label: "N", value: 2, color: "bg-gray-100 text-gray-700", title: "Neutral" },
+  { label: "O", value: 1, color: "bg-red-100 text-red-700", title: "Overhead" }
 ];
 
 const TIME_SLOTS = [
@@ -64,15 +64,15 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
       });
     }
 
-    setEntries(prev => 
-      prev.map((entry, i) => 
-        i === activeTask.index 
-          ? { 
-              ...entry, 
+    setEntries(prev =>
+      prev.map((entry, i) =>
+        i === activeTask.index
+          ? {
+              ...entry,
               content: content.trim(),
               priority,
               eta,
-              isEditing: false 
+              isEditing: false
             }
           : entry
       )
@@ -82,9 +82,9 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
 
   const toggleComplete = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setEntries(prev => 
-      prev.map((entry, i) => 
-        i === index 
+    setEntries(prev =>
+      prev.map((entry, i) =>
+        i === index
           ? { ...entry, completed: !entry.completed }
           : entry
       )
@@ -97,9 +97,9 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
       if (!a.content && !b.content) return 0;
       if (!a.content) return 1;
       if (!b.content) return -1;
-      return sortDirection === 'asc' ? 
-        a.priority - b.priority : 
-        b.priority - a.priority;
+      return sortDirection === 'asc' ?
+        b.priority - a.priority :
+        a.priority - b.priority;
     }));
   };
 
@@ -121,12 +121,12 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 flex-wrap gap-4">
         <div>
-          <CardTitle>Today's Tasks</CardTitle>
+          <CardTitle className="font-semibold">Today's Tasks</CardTitle>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={toggleSort}
             className="text-gray-500 hover:text-gray-700"
@@ -145,7 +145,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
           </Button>
         </div>
       </CardHeader>
-      <motion.div 
+      <motion.div
         className="p-6 space-y-2"
         layout
       >
@@ -173,7 +173,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
               />
 
               {activeTask?.index === index ? (
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-3 w-full"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -215,7 +215,7 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                         <option key={slot} value={slot}>{slot}</option>
                       ))}
                     </select>
-                    <Button 
+                    <Button
                       onClick={handleSave}
                       size="sm"
                       variant="ghost"
@@ -226,15 +226,15 @@ export function TaskList({ tasks, onSave }: TaskListProps) {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   className={`flex items-center justify-between w-full cursor-text ${
                     entry.completed ? 'line-through text-gray-400' : 'text-gray-700'
                   }`}
                   layout
                 >
-                  <span>{entry.content || " "}</span>
+                  <span className="font-medium">{entry.content || " "}</span>
                   {entry.content && (
-                    <motion.div 
+                    <motion.div
                       className="flex items-center gap-2"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}

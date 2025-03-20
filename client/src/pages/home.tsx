@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { Moon } from "lucide-react";
 import type { Task } from "@shared/schema";
+import { ReminderSection } from "@/components/reminder-section";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -60,6 +61,7 @@ export default function Home() {
           <div className="space-y-6">
             <MoodTracker />
             <GratitudeSection />
+            <ReminderSection />
           </div>
         </div>
       </div>

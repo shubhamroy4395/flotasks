@@ -2,42 +2,31 @@ import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Bell } from "lucide-react";
 
-export function GratitudeSection() {
+export function ReminderSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [newEntry, setNewEntry] = useState("");
-  const queryClient = useQueryClient();
-
-  const { data: entries } = useQuery<GratitudeEntry[]>({
-    queryKey: ["/api/gratitude"],
-  });
-
-  const createEntry = useMutation({
-    mutationFn: async (content: string) => {
-      await apiRequest("POST", "/api/gratitude", { content });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
-      setNewEntry("");
-      setIsOpen(false);
-    },
-  });
+  const [newReminder, setNewReminder] = useState("");
+  const [reminders, setReminders] = useState<{ id: number; content: string; time: string }[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEntry.trim()) return;
-    createEntry.mutate(newEntry);
+    if (!newReminder.trim()) return;
+    
+    setReminders(prev => [...prev, {
+      id: Date.now(),
+      content: newReminder,
+      time: new Date().toLocaleTimeString()
+    }]);
+    setNewReminder("");
+    setIsOpen(false);
   };
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
-        <CardTitle className="font-semibold">Gratitude Journal</CardTitle>
+        <CardTitle className="font-semibold">Reminders</CardTitle>
       </CardHeader>
       <CardContent>
         <AnimatePresence>
@@ -55,7 +44,7 @@ export function GratitudeSection() {
                 onClick={() => setIsOpen(true)}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                What are you grateful for?
+                Add Reminder
               </Button>
             </motion.div>
           ) : (
@@ -68,9 +57,9 @@ export function GratitudeSection() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="I am grateful for..."
-                      value={newEntry}
-                      onChange={(e) => setNewEntry(e.target.value)}
+                      placeholder="I need to..."
+                      value={newReminder}
+                      onChange={(e) => setNewReminder(e.target.value)}
                       className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
                       autoFocus
                     />
@@ -83,7 +72,7 @@ export function GratitudeSection() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <Button type="submit" className="w-full font-medium">Add Entry</Button>
+                  <Button type="submit" className="w-full font-medium">Set Reminder</Button>
                 </form>
               </Card>
             </motion.div>
@@ -92,16 +81,22 @@ export function GratitudeSection() {
 
         <div className="space-y-2">
           <AnimatePresence>
-            {entries?.map((entry, index) => (
+            {reminders.map((reminder, index) => (
               <motion.div
-                key={entry.id}
+                key={reminder.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-colors"
+                className="p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 transition-colors"
                 transition={{ delay: index * 0.1 }}
               >
-                <p className="text-gray-700 font-medium">{entry.content}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-gray-700 font-medium">{reminder.content}</p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Bell className="h-4 w-4" />
+                    <span>{reminder.time}</span>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
