@@ -126,6 +126,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   const handleSave = () => {
     if (!activeTask) return;
     const { content, priority, eta } = activeTask;
@@ -340,7 +347,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         autoFocus
                         value={activeTask.content}
                         onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
-                        onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                        onKeyDown={handleKeyDown}
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-gray-700 placeholder:text-gray-400"
                         placeholder="What needs to be done?"
                       />
@@ -413,15 +420,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                           <option key={slot} value={slot}>{slot}</option>
                         ))}
                       </select>
-
-                      <Button
-                        onClick={handleSave}
-                        size="sm"
-                        variant="outline"
-                        className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border-blue-200 hover:border-blue-300 font-bold transform transition-all duration-200 hover:scale-105"
-                      >
-                        Save
-                      </Button>
                     </div>
                   </motion.div>
                 ) : (
