@@ -32,6 +32,9 @@ export default function Home() {
   useEffect(() => {
     // Clear all data from the cache
     queryClient.clear();
+
+    // Invalidate all queries to force fresh data fetch
+    queryClient.invalidateQueries();
   }, [queryClient]);
 
   useEffect(() => {
