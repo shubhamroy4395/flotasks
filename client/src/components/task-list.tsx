@@ -7,12 +7,11 @@ import { Checkbox } from "./ui/checkbox";
 import { ArrowUpDown, Clock, Plus, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import type { Task } from "@shared/schema";
-import { TagInput } from "./ui/tag-input";
 
 interface TaskListProps {
   title: string;
   tasks: Task[];
-  onSave: (task: { content: string; priority: number; category: string; tags: string[] }) => void;
+  onSave: (task: { content: string; priority: number; category: string }) => void;
 }
 
 const PRIORITIES = [
@@ -54,8 +53,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       isEditing: false,
       completed: false,
       priority: 0,
-      eta: "",
-      tags: []
+      eta: ""
     }))
   );
   const [activeTask, setActiveTask] = useState<{
@@ -63,7 +61,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     content: string;
     priority: number;
     eta: string;
-    tags: string[];
   } | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -74,20 +71,18 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       index,
       content: entry.content || "",
       priority: entry.priority || 0,
-      eta: entry.eta || "",
-      tags: entry.tags || []
+      eta: entry.eta || ""
     });
   };
 
   const handleSave = () => {
     if (!activeTask) return;
-    const { content, priority, eta, tags } = activeTask;
+    const { content, priority, eta } = activeTask;
 
     if (content.trim()) {
       onSave({
         content,
         priority,
-        tags,
         category: title === "Today's Tasks" ? "today" : "other"
       });
     }
@@ -100,7 +95,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
               content: content.trim(),
               priority,
               eta,
-              tags,
               isEditing: false
             }
           : entry
@@ -141,8 +135,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         isEditing: false,
         completed: false,
         priority: 0,
-        eta: "",
-        tags: []
+        eta: ""
       }))
     ]);
   };
@@ -231,12 +224,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                       </Button>
                     </div>
 
-                    <TagInput
-                      value={activeTask.tags}
-                      onChange={(tags) => setActiveTask({ ...activeTask, tags })}
-                      placeholder="Add tags (press Enter or comma to add)"
-                    />
-
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1">
                         <TooltipProvider>
@@ -302,18 +289,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.1 }}
                       >
-                        {entry.tags && entry.tags.length > 0 && (
-                          <div className="flex gap-1">
-                            {entry.tags.map(tag => (
-                              <span
-                                key={tag}
-                                className="px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                         {entry.priority !== undefined && (
                           <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
                             PRIORITIES.find(p => p.value === entry.priority)?.color
