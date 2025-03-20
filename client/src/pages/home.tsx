@@ -75,9 +75,11 @@ export default function Home() {
 
           {/* Side Panels - Takes up less space */}
           <div className="col-span-12 lg:col-span-3 space-y-6">
-            <MoodTracker />
-            <GratitudeSection />
-            <ReminderSection />
+            <div className="grid grid-cols-1 gap-6">
+              <MoodTracker />
+              <GratitudeSection />
+              <ReminderSection />
+            </div>
           </div>
         </div>
       </div>

@@ -35,9 +35,9 @@ export function MoodTracker() {
   const moodInfo = currentMood ? MOOD_LABELS[currentMood] : undefined;
 
   return (
-    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">How are you feeling?</CardTitle>
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle>How are you feeling?</CardTitle>
       </CardHeader>
       <CardContent>
         <motion.div 
