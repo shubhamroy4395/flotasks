@@ -15,26 +15,26 @@ interface TaskListProps {
 }
 
 const PRIORITIES = [
-  { 
-    label: "L", 
-    value: 3, 
-    color: "bg-blue-100 hover:bg-blue-200 text-blue-700", 
+  {
+    label: "L",
+    value: 3,
+    color: "bg-blue-100 hover:bg-blue-200 text-blue-700",
     title: "Leverage (L)",
     subtitle: "High Impact, Low Effort 🚀",
     description: "These tasks deliver outsized results with minimal effort. Prioritize them first!"
   },
-  { 
-    label: "N", 
-    value: 2, 
-    color: "bg-gray-100 hover:bg-gray-200 text-gray-700", 
+  {
+    label: "N",
+    value: 2,
+    color: "bg-gray-100 hover:bg-gray-200 text-gray-700",
     title: "Neutral (N)",
     subtitle: "Necessary but Balanced ⚖️",
     description: "These tasks are important but don't drastically change outcomes. Handle them after leverage tasks."
   },
-  { 
-    label: "O", 
-    value: 1, 
-    color: "bg-red-100 hover:bg-red-200 text-red-700", 
+  {
+    label: "O",
+    value: 1,
+    color: "bg-red-100 hover:bg-red-200 text-red-700",
     title: "Overhead (O)",
     subtitle: "High Effort, Low Reward ⏳",
     description: "These tasks consume time without significant returns. Avoid or delegate if possible."
@@ -243,7 +243,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-gray-200 px-2 py-1 text-sm bg-transparent"
+                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Time</option>
@@ -256,7 +256,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="ml-auto bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300"
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300"
                       >
                         Save
                       </Button>
