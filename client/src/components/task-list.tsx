@@ -319,10 +319,15 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 <div className="relative">
                   <Checkbox
                     checked={entry.completed}
+                    disabled={!entry.content}
                     onCheckedChange={(checked) => {
-                      toggleComplete(index, checked ? document.activeElement as HTMLElement : document.body);
+                      if (entry.content) {
+                        toggleComplete(index, checked ? document.activeElement as HTMLElement : document.body);
+                      }
                     }}
-                    className="h-5 w-5 transition-transform duration-200 hover:scale-110"
+                    className={`h-5 w-5 transition-transform duration-200 ${
+                      entry.content ? 'hover:scale-110' : 'opacity-50 cursor-not-allowed'
+                    }`}
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
