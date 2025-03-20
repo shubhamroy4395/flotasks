@@ -186,7 +186,7 @@ export function TaskList({ tasks, onSave, title = "Today's Tasks" }: TaskListPro
                     value={activeTask.content}
                     onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none min-w-[200px]"
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all"
                     placeholder="What needs to be done?"
                   />
                   <div className="flex gap-2 items-center flex-wrap">

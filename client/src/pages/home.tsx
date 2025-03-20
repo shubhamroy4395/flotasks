@@ -58,17 +58,19 @@ export default function Home() {
           </div>
 
           {/* Side Panels */}
-          <div className="space-y-6">
-            <MoodTracker />
-            <GratitudeSection />
-            <div className="w-full">
-              <ReminderSection />
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <MoodTracker />
+              <GratitudeSection />
             </div>
-            <TaskList
-              title="Other Tasks"
-              tasks={[]}
-              onSave={(task) => createTask.mutate({ ...task, category: 'other' })}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <ReminderSection />
+              <TaskList
+                title="Other Tasks"
+                tasks={[]}
+                onSave={(task) => createTask.mutate({ ...task, category: 'other' })}
+              />
+            </div>
           </div>
         </div>
       </div>
