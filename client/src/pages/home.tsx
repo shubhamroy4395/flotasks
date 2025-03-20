@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { Moon } from "lucide-react";
 import type { Task } from "@shared/schema";
+import { GoalsSection } from "@/components/goals-section";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -55,7 +56,7 @@ export default function Home() {
       <div className="container mx-auto p-6">
         <div className="grid grid-cols-12 gap-6">
           {/* Main Task Sections - Takes up more space */}
-          <div className="col-span-12 lg:col-span-9 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="col-span-12 lg:col-span-9 grid grid-cols-1 gap-6">
             <div className="space-y-6">
               <TaskList
                 title="Today's Tasks"
@@ -65,6 +66,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-6">
+              <GoalsSection />
               <TaskList
                 title="Other Tasks"
                 tasks={otherTasks || []}

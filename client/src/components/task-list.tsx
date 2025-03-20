@@ -25,7 +25,7 @@ const TIME_SLOTS = [
 
 export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [entries, setEntries] = useState(
-    Array(10).fill(null).map((_, i) => ({
+    Array(15).fill(null).map((_, i) => ({
       id: i,
       content: "",
       isEditing: false,
