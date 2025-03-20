@@ -1,12 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { ArrowUpDown, Clock, Plus, X, Sparkles } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import type { Task } from "@shared/schema";
+
+// Helper function to convert time string to minutes
+const convertTimeToMinutes = (time: string): number => {
+  if (!time) return 0;
+  const hours = time.match(/(\d+)h/);
+  const minutes = time.match(/(\d+)min/);
+  return (hours ? parseInt(hours[1]) * 60 : 0) + (minutes ? parseInt(minutes[1]) : 0);
+};
+
+// Helper function to format minutes to readable time
+const formatTotalTime = (totalMinutes: number): string => {
+  if (totalMinutes === 0) return "No time estimated";
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const parts = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}min`);
+  return parts.join(" ");
+};
 
 const PRIORITIES = [
   {
@@ -71,14 +90,28 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
     return lines;
   });
+
   const [activeTask, setActiveTask] = useState<{
     index: number;
     content: string;
     priority: number;
     eta: string;
   } | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const [totalTime, setTotalTime] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<number | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Calculate total time whenever entries change
+  useEffect(() => {
+    const newTotal = entries.reduce((total, entry) => {
+      if (!entry.completed && entry.content && entry.eta) {
+        return total + convertTimeToMinutes(entry.eta);
+      }
+      return total;
+    }, 0);
+    setTotalTime(newTotal);
+  }, [entries]);
 
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -152,7 +185,15 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4">
         <div>
-          <CardTitle className="text-xl font-extrabold text-gray-800">{title}</CardTitle>
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-xl font-extrabold text-gray-800">{title}</CardTitle>
+            <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-bold text-blue-700">
+                {formatTotalTime(totalTime)}
+              </span>
+            </div>
+          </div>
           <p className="text-sm text-gray-500 mt-1 italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">
@@ -287,7 +328,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 font-semibold"
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300"
                       >
                         Save
                       </Button>
