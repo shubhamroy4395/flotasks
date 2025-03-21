@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MoodEntry } from "@shared/schema";
+import { trackEvent, Events } from "@/lib/amplitude";
 
 const MOOD_LABELS: Record<string, { label: string, color: string }> = {
   "😊": { label: "Happy", color: "from-green-50 to-emerald-50" },
@@ -29,8 +30,15 @@ export function MoodTracker() {
     mutationFn: async (mood: string) => {
       await apiRequest("POST", "/api/mood", { mood });
     },
-    onSuccess: () => {
+    onSuccess: (_, mood) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
+
+      // Track mood selection
+      trackEvent(Events.MOOD_SELECTED, {
+        mood,
+        label: MOOD_LABELS[mood].label,
+        timestamp: new Date().toISOString()
+      });
     },
   });
 

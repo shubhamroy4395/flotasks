@@ -7,6 +7,7 @@ import { Checkbox } from "./ui/checkbox";
 import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
+import { trackEvent, Events } from "@/lib/amplitude";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -140,6 +141,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         priority,
         category: title === "Today's Tasks" ? "today" : "other"
       });
+
+      // Track task creation
+      trackEvent(Events.TASK_CREATED, {
+        category: title === "Today's Tasks" ? "today" : "other",
+        priority,
+        hasEta: Boolean(eta)
+      });
     }
 
     setEntries(prev =>
@@ -168,6 +176,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             setTimeout(() => {
               setShowCelebration(null);
             }, 2000);
+
+            // Track task completion
+            trackEvent(Events.TASK_COMPLETED, {
+              category: title === "Today's Tasks" ? "today" : "other",
+              priority: entry.priority,
+              timeToComplete: entry.eta
+            });
           }
           return { ...entry, completed: newCompleted };
         }
@@ -182,9 +197,15 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       const currentIndex = states.indexOf(prev);
       const nextState = states[(currentIndex + 1) % states.length];
 
+      // Track sorting action
+      trackEvent(Events.TASKS_SORTED, {
+        sortType: nextState,
+        category: title
+      });
+
       setEntries(prev => {
         if (nextState === 'default') {
-          return [...initialEntries]; // Return to original sequence
+          return [...initialEntries];
         }
 
         return [...prev].sort((a, b) => {
@@ -192,10 +213,9 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           if (!a.content) return 1;
           if (!b.content) return -1;
 
-          // Sort by priority
           return nextState === 'lno'
-            ? b.priority - a.priority // Leverage (3) -> Neutral (2) -> Overhead (1)
-            : a.priority - b.priority; // Overhead (1) -> Neutral (2) -> Leverage (3)
+            ? b.priority - a.priority
+            : a.priority - b.priority;
         });
       });
 
