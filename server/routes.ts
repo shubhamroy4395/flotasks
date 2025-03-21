@@ -2,43 +2,21 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTaskSchema, insertMoodSchema, insertGratitudeSchema, insertNoteSchema } from "@shared/schema";
-import debug from 'debug';
-
-const log = debug('app:routes');
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Tasks
-  app.get("/api/tasks/:category/:date", async (req, res) => {
-    const { category, date } = req.params;
-    log('Fetching tasks for category: %s, date: %s', category, date);
-    const tasks = await storage.getTasks(category, date);
-    log(`Found ${tasks.length} tasks for ${category} on ${date}:`, tasks);
-
-    // Verify date matching
-    const mismatchedTasks = tasks.filter(task => task.date !== date);
-    if (mismatchedTasks.length > 0) {
-      log('WARNING: Found tasks with mismatched dates:', mismatchedTasks);
-    }
-
+  app.get("/api/tasks/:category", async (req, res) => {
+    const category = req.params.category;
+    const tasks = await storage.getTasks(category);
     res.json(tasks);
   });
 
   app.post("/api/tasks", async (req, res) => {
     const result = insertTaskSchema.safeParse(req.body);
     if (!result.success) {
-      log('Task validation failed:', result.error);
       return res.status(400).json({ error: result.error });
     }
-
-    // Additional date validation
-    if (!result.data.date) {
-      log('Task creation failed: Missing date');
-      return res.status(400).json({ error: 'Date is required' });
-    }
-
-    log('Creating task:', result.data);
     const task = await storage.createTask(result.data);
-    log('Created task:', task);
     res.json(task);
   });
 
@@ -55,38 +33,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tasks/:id/move", async (req, res) => {
-    const id = parseInt(req.params.id);
-    const { newDate } = req.body;
-    if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid task ID" });
-    }
-    if (!newDate) {
-      return res.status(400).json({ error: "New date is required" });
-    }
-    try {
-      log('Moving task %d to date: %s', id, newDate);
-      const task = await storage.moveTaskToDate(id, newDate);
-      log('Task moved successfully:', task);
-      res.json(task);
-    } catch (error) {
-      res.status(404).json({ error: (error as Error).message });
-    }
-  });
-
   app.delete("/api/tasks/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ error: "Invalid task ID" });
     }
-    try {
-      log('Deleting task: %d', id);
-      await storage.deleteTask(id);
-      log('Task deleted successfully');
-      res.status(204).send();
-    } catch (error) {
-      res.status(404).json({ error: (error as Error).message });
-    }
+    await storage.deleteTask(id);
+    res.status(204).send();
   });
 
   // Mood
@@ -159,6 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(404).json({ error: (error as Error).message });
     }
   });
+
 
   // Clear all data
   app.delete("/api/data", async (_req, res) => {

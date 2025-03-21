@@ -1,17 +1,13 @@
 import { type Task, type InsertTask, type MoodEntry, type InsertMoodEntry, type GratitudeEntry, type InsertGratitudeEntry, tasks, moodEntries, gratitudeEntries, type Note, type InsertNote, notes } from "@shared/schema";
 import { db } from "./db";
-import { desc, eq, and } from "drizzle-orm";
-import debug from 'debug';
-
-const log = debug('app:storage');
+import { desc, eq } from "drizzle-orm";
 
 export interface IStorage {
   // Tasks
-  getTasks(category: string, date: string): Promise<Task[]>;
+  getTasks(category: string): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task>;
   deleteTask(id: number): Promise<void>;
-  moveTaskToDate(id: number, newDate: string): Promise<Task>;
 
   // Mood
   getMoodEntries(): Promise<MoodEntry[]>;
@@ -32,32 +28,16 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTasks(category: string, date: string): Promise<Task[]> {
-    log(`[Storage] Getting tasks for category: ${category}, date: ${date}`);
-    const result = await db
+  async getTasks(category: string): Promise<Task[]> {
+    return await db
       .select()
       .from(tasks)
-      .where(and(
-        eq(tasks.category, category),
-        eq(tasks.date, date)
-      ))
+      .where(eq(tasks.category, category))
       .orderBy(desc(tasks.timestamp));
-
-    log(`[Storage] Found ${result.length} tasks for ${category} on ${date}`, result);
-
-    // Verify date filtering
-    const mismatchedTasks = result.filter(task => task.date !== date);
-    if (mismatchedTasks.length > 0) {
-      log('[Storage] WARNING: Found tasks with mismatched dates:', mismatchedTasks);
-    }
-
-    return result;
   }
 
   async createTask(task: InsertTask): Promise<Task> {
-    log('[Storage] Creating task:', task);
     const [newTask] = await db.insert(tasks).values(task).returning();
-    log('[Storage] Created task:', newTask);
     return newTask;
   }
 
@@ -75,26 +55,8 @@ export class DatabaseStorage implements IStorage {
     return updatedTask;
   }
 
-  async moveTaskToDate(id: number, newDate: string): Promise<Task> {
-    log(`[Storage] Moving task ${id} to date: ${newDate}`);
-    const [movedTask] = await db
-      .update(tasks)
-      .set({ date: newDate })
-      .where(eq(tasks.id, id))
-      .returning();
-
-    if (!movedTask) {
-      throw new Error(`Task ${id} not found`);
-    }
-
-    log('[Storage] Task moved successfully:', movedTask);
-    return movedTask;
-  }
-
   async deleteTask(id: number): Promise<void> {
-    log(`[Storage] Deleting task: ${id}`);
     await db.delete(tasks).where(eq(tasks.id, id));
-    log(`[Storage] Task ${id} deleted successfully`);
   }
 
   async getMoodEntries(): Promise<MoodEntry[]> {

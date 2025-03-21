@@ -4,11 +4,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar, ArrowRight, Trash2 } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
-import { format, addDays, subDays, isSameDay, isAfter } from "date-fns";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -64,51 +62,28 @@ interface TaskListProps {
   title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
-  onMoveTask?: (taskId: number, targetDate: Date) => void;
-  onDeleteTask?: (taskId: number) => void;
-  selectedDate?: Date;
 }
 
-export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selectedDate }: TaskListProps) {
+export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
-    const currentDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    console.debug('[TaskList] Filtering tasks for date:', currentDate, 'Available tasks:', tasks);
-    console.debug(`[TaskList] Filtering tasks for ${title}. Current date: ${currentDate}`);
-    console.debug(`[TaskList] Filtering tasks for ${title}. Current date: ${currentDate}`);
-    const dateSpecificTasks = tasks.filter(task => {
-      if (!task.date || !currentDate) {
-        console.debug(`[TaskList] Task ${task.id} or currentDate is invalid`, { taskDate: task.date, currentDate });
-        return false;
-      }
-      const matches = task.date === currentDate;
-      if (!matches) {
-        console.debug(`[TaskList] Task ${task.id} date mismatch:`, { expected: currentDate, got: task.date });
-      }
-      return matches;
-    });
-    console.debug(`[TaskList] Found ${dateSpecificTasks.length} tasks for ${currentDate}`, dateSpecificTasks);
-
     const lines = Array(initialLines).fill(null).map((_, i) => ({
       id: i + 1,
       content: "",
       isEditing: false,
       completed: false,
       priority: 0,
-      eta: "",
-      movedToTomorrow: false
+      eta: ""
     }));
 
-    dateSpecificTasks.forEach((task, index) => {
+    tasks.forEach((task, index) => {
       if (index < lines.length) {
         lines[index] = {
           ...lines[index],
-          id: task.id,
           content: task.content,
           completed: task.completed,
           priority: task.priority,
-          eta: task.eta || "",
-          movedToTomorrow: false
+          eta: task.eta || ""
         };
       }
     });
@@ -223,121 +198,10 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
         isEditing: false,
         completed: false,
         priority: 0,
-        eta: "",
-        movedToTomorrow: false
+        eta: ""
       }))
     ]);
   };
-
-  const renderMoveToDateButton = (taskId: number) => {
-    if (!onMoveTask) return null;
-
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <Calendar className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <div className="flex flex-col gap-2 p-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onMoveTask(taskId, addDays(selectedDate || new Date(), 1))}
-              className="justify-start font-normal"
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              Move to Tomorrow
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onMoveTask(taskId, subDays(selectedDate || new Date(), 1))}
-              className="justify-start font-normal"
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              Move to Yesterday
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-    );
-  };
-
-  const renderTaskActions = (entry: typeof entries[0], index: number) => {
-    if (!entry.content || activeTask?.index === index) return null;
-
-    return (
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onDeleteTask && entry.id) {
-                onDeleteTask(entry.id);
-                // Remove the entry from local state
-                setEntries(prev => prev.map(e =>
-                  e.id === entry.id ? { ...e, content: "", completed: false, priority: 0, eta: "" } : e
-                ));
-              }
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-
-          {!entry.movedToTomorrow && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onMoveTask && entry.id) {
-                  onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
-                  // Mark as moved in local state
-                  setEntries(prev => prev.map(e =>
-                    e.id === entry.id ? { ...e, movedToTomorrow: true } : e
-                  ));
-                }
-              }}
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {entry.movedToTomorrow && (
-            <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700">
-              Moved to tomorrow
-            </span>
-          )}
-          {entry.priority !== undefined && (
-            <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
-              PRIORITIES.find(p => p.value === entry.priority)?.color
-            }`}>
-              {PRIORITIES.find(p => p.value === entry.priority)?.label}
-            </span>
-          )}
-          {entry.eta && (
-            <span className="flex items-center text-xs text-gray-500 font-bold">
-              <Clock className="h-3 w-3 mr-1" />
-              {entry.eta}
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  };
-
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
@@ -473,7 +337,6 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
                   />
                 </div>
 
-                {/* Task content or edit form */}
                 {activeTask?.index === index ? (
                   <motion.div
                     className="flex flex-col w-full gap-2"
@@ -550,7 +413,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
                       </div>
 
                       <select
-                        value={activeTask?.eta || ""}
+                        value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
                         className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
                         onClick={(e) => e.stopPropagation()}
@@ -579,7 +442,28 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
                     layout
                   >
                     <span>{entry.content || " "}</span>
-                    {entry.content && renderTaskActions(entry, index)}
+                    {entry.content && (
+                      <motion.div
+                        className="flex items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        {entry.priority !== undefined && (
+                          <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
+                            PRIORITIES.find(p => p.value === entry.priority)?.color
+                          }`}>
+                            {PRIORITIES.find(p => p.value === entry.priority)?.label}
+                          </span>
+                        )}
+                        {entry.eta && (
+                          <span className="flex items-center text-xs text-gray-500 font-bold">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {entry.eta}
+                          </span>
+                        )}
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
               </motion.div>

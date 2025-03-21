@@ -9,7 +9,6 @@ export const tasks = pgTable("tasks", {
   priority: integer("priority").notNull().default(0), // 0: neutral, 1: overhead, 2: neutral, 3: leverage
   category: text("category").notNull(), // 'today', 'other', 'future'
   eta: text("eta"),
-  date: text("date").notNull(), // Added date field for multi-day support
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
