@@ -255,7 +255,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 total_tasks: entries.filter(e => e.content).length,
                 completed_tasks: entries.filter(e => e.completed).length + 1,
                 completion_rate: ((entries.filter(e => e.completed).length + 1) /
-                                entries.filter(e => e.content).length) * 100
+                                 entries.filter(e => e.content).length) * 100
               }
             });
           }
@@ -497,12 +497,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
+                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
                         onClick={(e) => e.stopPropagation()}
+                        size={5}
                       >
                         <option value="">Time</option>
                         {TIME_SLOTS.map(slot => (
-                          <option key={slot} value={slot}>{slot}</option>
+                          <option key={slot} value={slot} className="py-1">{slot}</option>
                         ))}
                       </select>
 

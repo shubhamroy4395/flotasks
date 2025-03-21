@@ -19,15 +19,15 @@ const MOOD_LABELS: Record<string, { label: string, color: string }> = {
   "😰": { label: "Anxious", color: "from-orange-50 to-red-50" },
   "🤗": { label: "Grateful", color: "from-teal-50 to-emerald-50" },
   "🤩": { label: "Inspired", color: "from-pink-50 to-rose-50" },
-  "😌": { label: "Relaxed", color: "from-green-50 to-teal-50" },
+  "😇": { label: "Blessed", color: "from-violet-50 to-purple-50" },
   "🤪": { label: "Playful", color: "from-fuchsia-50 to-purple-50" },
   "🥱": { label: "Sleepy", color: "from-slate-50 to-zinc-50" },
   "😎": { label: "Confident", color: "from-amber-50 to-yellow-50" },
   "🤓": { label: "Focused", color: "from-cyan-50 to-sky-50" },
-  "😇": { label: "Blessed", color: "from-violet-50 to-purple-50" },
-  "😤": { label: "Determined", color: "from-rose-50 to-red-50" },
+  "💪": { label: "Determined", color: "from-rose-50 to-red-50" },
   "😮": { label: "Surprised", color: "from-lime-50 to-green-50" },
-  "🥺": { label: "Overwhelmed", color: "from-red-50 to-pink-50" }
+  "🥺": { label: "Overwhelmed", color: "from-red-50 to-pink-50" },
+  "🧘": { label: "Mindful", color: "from-green-50 to-teal-50" }
 };
 
 export function MoodTracker() {
