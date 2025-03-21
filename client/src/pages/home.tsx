@@ -55,53 +55,19 @@ export default function Home() {
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
   // Modified query to use cache and ensure date-specific tasks
-  const { data: todayTasks } = useQuery<Task[]>({
+  const { data: todayTasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today", formattedDate],
     queryFn: async () => {
       const response = await fetch(`/api/tasks/today/${formattedDate}`);
-      const tasks = await response.json();
-
-      // Update cache for specific date
-      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
-      const cache = storedData ? JSON.parse(storedData) : {};
-      cache[formattedDate] = cache[formattedDate] || {};
-      cache[formattedDate].today = tasks;
-      localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(cache));
-
-      return tasks;
-    },
-    initialData: () => {
-      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
-      if (storedData) {
-        const cache = JSON.parse(storedData);
-        return cache[formattedDate]?.today || [];
-      }
-      return [];
+      return response.json();
     },
   });
 
-  const { data: otherTasks } = useQuery<Task[]>({
+  const { data: otherTasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks/other", formattedDate],
     queryFn: async () => {
       const response = await fetch(`/api/tasks/other/${formattedDate}`);
-      const tasks = await response.json();
-
-      // Update cache for specific date
-      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
-      const cache = storedData ? JSON.parse(storedData) : {};
-      cache[formattedDate] = cache[formattedDate] || {};
-      cache[formattedDate].other = tasks;
-      localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(cache));
-
-      return tasks;
-    },
-    initialData: () => {
-      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
-      if (storedData) {
-        const cache = JSON.parse(storedData);
-        return cache[formattedDate]?.other || [];
-      }
-      return [];
+      return response.json();
     },
   });
 
@@ -124,6 +90,7 @@ export default function Home() {
       await apiRequest("POST", `/api/tasks/${taskId}/move`, { newDate });
     },
     onSuccess: () => {
+      // Invalidate queries for both current date and target date
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
         title: "Task moved",
