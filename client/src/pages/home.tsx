@@ -54,26 +54,32 @@ export default function Home() {
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
-  // Modified query to use cache and ensure date-specific tasks
+  // Modified query to ensure date-specific tasks
   const { data: todayTasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today", formattedDate],
     queryFn: async () => {
+      console.debug('[TaskList] Fetching tasks for date:', formattedDate);
       const response = await fetch(`/api/tasks/today/${formattedDate}`);
       if (!response.ok) {
         throw new Error('Failed to fetch today tasks');
       }
-      return response.json();
+      const tasks = await response.json();
+      console.debug(`[TaskList] Found ${tasks.length} tasks for ${formattedDate}:`, tasks);
+      return tasks;
     },
   });
 
   const { data: otherTasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks/other", formattedDate],
     queryFn: async () => {
+      console.debug('[TaskList] Fetching other tasks for date:', formattedDate);
       const response = await fetch(`/api/tasks/other/${formattedDate}`);
       if (!response.ok) {
         throw new Error('Failed to fetch other tasks');
       }
-      return response.json();
+      const tasks = await response.json();
+      console.debug(`[TaskList] Found ${tasks.length} other tasks for ${formattedDate}:`, tasks);
+      return tasks;
     },
   });
 
@@ -83,9 +89,14 @@ export default function Home() {
       priority: number;
       category: string;
     }) => {
-      await apiRequest("POST", "/api/tasks", { ...task, date: formattedDate });
+      // Ensure we're passing the current selected date
+      await apiRequest("POST", "/api/tasks", {
+        ...task,
+        date: formattedDate // Use the selected date
+      });
     },
     onSuccess: () => {
+      // Only invalidate queries for the current date
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", formattedDate] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", formattedDate] });
     },

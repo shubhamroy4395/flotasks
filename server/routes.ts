@@ -29,13 +29,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log('Task validation failed:', result.error);
       return res.status(400).json({ error: result.error });
     }
-    
+
     // Additional date validation
     if (!result.data.date) {
       log('Task creation failed: Missing date');
       return res.status(400).json({ error: 'Date is required' });
     }
-    
+
     log('Creating task:', result.data);
     const task = await storage.createTask(result.data);
     log('Created task:', task);
