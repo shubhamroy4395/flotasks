@@ -256,11 +256,11 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             }
           });
         }
-        return { ...entry, completed: newCompleted };
-      }
-      return entry;
-    })
-  );
+          return { ...entry, completed: newCompleted };
+        }
+        return entry;
+      })
+    );
   };
 
   const toggleSort = () => {
