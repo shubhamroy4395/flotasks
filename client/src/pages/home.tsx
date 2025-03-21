@@ -13,44 +13,96 @@ import { ArrowLeft, ArrowRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+const TASK_STORAGE_KEY = 'tasks_cache_v1';
+const MAX_DAYS = 8;
+
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Keep the beforeunload handler to prevent accidental page refresh
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-      return "";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Clean up old task data
+  useEffect(() => {
+    const cleanupOldData = () => {
+      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
+      if (storedData) {
+        const data = JSON.parse(storedData);
+        const cutoffDate = subDays(new Date(), MAX_DAYS);
+
+        // Filter out data older than MAX_DAYS
+        const filteredData = Object.entries(data).reduce((acc: any, [date, tasks]) => {
+          if (!isBefore(new Date(date), cutoffDate)) {
+            acc[date] = tasks;
+          }
+          return acc;
+        }, {});
+
+        localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(filteredData));
+      }
+    };
+
+    cleanupOldData();
+    const cleanup = setInterval(cleanupOldData, 24 * 60 * 60 * 1000); // Run daily
+    return () => clearInterval(cleanup);
+  }, []);
+
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
+  // Modified query to use cache
   const { data: todayTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today", formattedDate],
-    queryFn: () =>
-      fetch(`/api/tasks/today/${formattedDate}`).then((res) => res.json()),
+    queryFn: async () => {
+      const response = await fetch(`/api/tasks/today/${formattedDate}`);
+      const tasks = await response.json();
+
+      // Update cache
+      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
+      const cache = storedData ? JSON.parse(storedData) : {};
+      cache[formattedDate] = cache[formattedDate] || {};
+      cache[formattedDate].today = tasks;
+      localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(cache));
+
+      return tasks;
+    },
+    initialData: () => {
+      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
+      if (storedData) {
+        const cache = JSON.parse(storedData);
+        return cache[formattedDate]?.today;
+      }
+      return undefined;
+    },
   });
 
   const { data: otherTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/other", formattedDate],
-    queryFn: () =>
-      fetch(`/api/tasks/other/${formattedDate}`).then((res) => res.json()),
+    queryFn: async () => {
+      const response = await fetch(`/api/tasks/other/${formattedDate}`);
+      const tasks = await response.json();
+
+      // Update cache
+      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
+      const cache = storedData ? JSON.parse(storedData) : {};
+      cache[formattedDate] = cache[formattedDate] || {};
+      cache[formattedDate].other = tasks;
+      localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(cache));
+
+      return tasks;
+    },
+    initialData: () => {
+      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
+      if (storedData) {
+        const cache = JSON.parse(storedData);
+        return cache[formattedDate]?.other;
+      }
+      return undefined;
+    },
   });
 
   const createTask = useMutation({
