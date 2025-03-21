@@ -1,6 +1,9 @@
 import { type Task, type InsertTask, type MoodEntry, type InsertMoodEntry, type GratitudeEntry, type InsertGratitudeEntry, tasks, moodEntries, gratitudeEntries, type Note, type InsertNote, notes } from "@shared/schema";
 import { db } from "./db";
 import { desc, eq, and } from "drizzle-orm";
+import debug from 'debug';
+
+const log = debug('app:storage');
 
 export interface IStorage {
   // Tasks
@@ -30,7 +33,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTasks(category: string, date: string): Promise<Task[]> {
-    console.log(`[Storage] Getting tasks for category: ${category}, date: ${date}`);
+    log(`[Storage] Getting tasks for category: ${category}, date: ${date}`);
     const result = await db
       .select()
       .from(tasks)
@@ -39,13 +42,22 @@ export class DatabaseStorage implements IStorage {
         eq(tasks.date, date)
       ))
       .orderBy(desc(tasks.timestamp));
-    
-    console.log(`[Storage] Found ${result.length} tasks for ${category} on ${date}`);
+
+    log(`[Storage] Found ${result.length} tasks for ${category} on ${date}`, result);
+
+    // Verify date filtering
+    const mismatchedTasks = result.filter(task => task.date !== date);
+    if (mismatchedTasks.length > 0) {
+      log('[Storage] WARNING: Found tasks with mismatched dates:', mismatchedTasks);
+    }
+
     return result;
   }
 
   async createTask(task: InsertTask): Promise<Task> {
+    log('[Storage] Creating task:', task);
     const [newTask] = await db.insert(tasks).values(task).returning();
+    log('[Storage] Created task:', newTask);
     return newTask;
   }
 
@@ -64,6 +76,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async moveTaskToDate(id: number, newDate: string): Promise<Task> {
+    log(`[Storage] Moving task ${id} to date: ${newDate}`);
     const [movedTask] = await db
       .update(tasks)
       .set({ date: newDate })
@@ -74,11 +87,14 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Task ${id} not found`);
     }
 
+    log('[Storage] Task moved successfully:', movedTask);
     return movedTask;
   }
 
   async deleteTask(id: number): Promise<void> {
+    log(`[Storage] Deleting task: ${id}`);
     await db.delete(tasks).where(eq(tasks.id, id));
+    log(`[Storage] Task ${id} deleted successfully`);
   }
 
   async getMoodEntries(): Promise<MoodEntry[]> {

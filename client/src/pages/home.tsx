@@ -13,9 +13,6 @@ import { ArrowLeft, ArrowRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const TASK_STORAGE_KEY = 'tasks_cache_v1';
-const MAX_DAYS = 8;
-
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -27,44 +24,19 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // Clean up old task data
-  useEffect(() => {
-    const cleanupOldData = () => {
-      const storedData = localStorage.getItem(TASK_STORAGE_KEY);
-      if (storedData) {
-        const data = JSON.parse(storedData);
-        const cutoffDate = subDays(new Date(), MAX_DAYS);
-
-        // Filter out data older than MAX_DAYS
-        const filteredData = Object.entries(data).reduce((acc: any, [date, tasks]) => {
-          if (!isBefore(new Date(date), cutoffDate)) {
-            acc[date] = tasks;
-          }
-          return acc;
-        }, {});
-
-        localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(filteredData));
-      }
-    };
-
-    cleanupOldData();
-    const cleanup = setInterval(cleanupOldData, 24 * 60 * 60 * 1000); // Run daily
-    return () => clearInterval(cleanup);
-  }, []);
-
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+  console.debug('[Home] Current selected date:', formattedDate);
 
-  // Modified query to ensure date-specific tasks
   const { data: todayTasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today", formattedDate],
     queryFn: async () => {
-      console.debug('[TaskList] Fetching tasks for date:', formattedDate);
+      console.debug('[Tasks] Fetching today tasks for date:', formattedDate);
       const response = await fetch(`/api/tasks/today/${formattedDate}`);
       if (!response.ok) {
         throw new Error('Failed to fetch today tasks');
       }
       const tasks = await response.json();
-      console.debug(`[TaskList] Found ${tasks.length} tasks for ${formattedDate}:`, tasks);
+      console.debug(`[Tasks] Found ${tasks.length} today tasks:`, tasks);
       return tasks;
     },
   });
@@ -72,13 +44,13 @@ export default function Home() {
   const { data: otherTasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks/other", formattedDate],
     queryFn: async () => {
-      console.debug('[TaskList] Fetching other tasks for date:', formattedDate);
+      console.debug('[Tasks] Fetching other tasks for date:', formattedDate);
       const response = await fetch(`/api/tasks/other/${formattedDate}`);
       if (!response.ok) {
         throw new Error('Failed to fetch other tasks');
       }
       const tasks = await response.json();
-      console.debug(`[TaskList] Found ${tasks.length} other tasks for ${formattedDate}:`, tasks);
+      console.debug(`[Tasks] Found ${tasks.length} other tasks:`, tasks);
       return tasks;
     },
   });
@@ -89,14 +61,16 @@ export default function Home() {
       priority: number;
       category: string;
     }) => {
-      // Ensure we're passing the current selected date
-      await apiRequest("POST", "/api/tasks", {
+      console.debug('[Tasks] Creating task for date:', formattedDate, task);
+      const response = await apiRequest("POST", "/api/tasks", {
         ...task,
-        date: formattedDate // Use the selected date
+        date: formattedDate
       });
+      console.debug('[Tasks] Task created:', response);
+      return response;
     },
     onSuccess: () => {
-      // Only invalidate queries for the current date
+      // Invalidate only the affected date's queries
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", formattedDate] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", formattedDate] });
     },
@@ -104,15 +78,15 @@ export default function Home() {
 
   const moveTask = useMutation({
     mutationFn: async ({ taskId, newDate }: { taskId: number; newDate: string }) => {
+      console.debug('[Tasks] Moving task:', taskId, 'to date:', newDate);
       await apiRequest("POST", `/api/tasks/${taskId}/move`, { newDate });
     },
-    onSuccess: () => {
-      // Invalidate queries for both current date and tomorrow
-      const tomorrow = format(addDays(selectedDate, 1), 'yyyy-MM-dd');
+    onSuccess: (_data, variables) => {
+      // Invalidate queries for both current date and target date
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", formattedDate] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", formattedDate] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", tomorrow] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", tomorrow] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", variables.newDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", variables.newDate] });
 
       toast({
         title: "Task moved",
@@ -124,10 +98,10 @@ export default function Home() {
 
   const deleteTask = useMutation({
     mutationFn: async (taskId: number) => {
+      console.debug('[Tasks] Deleting task:', taskId);
       await apiRequest("DELETE", `/api/tasks/${taskId}`);
     },
     onSuccess: () => {
-      // Invalidate queries for the current date only
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", formattedDate] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", formattedDate] });
       toast({
@@ -168,9 +142,11 @@ export default function Home() {
   };
 
   const handleTaskMove = async (taskId: number, targetDate: Date) => {
+    const formattedTargetDate = format(targetDate, "yyyy-MM-dd");
+    console.debug('[Tasks] Moving task to date:', formattedTargetDate);
     await moveTask.mutate({
       taskId,
-      newDate: format(targetDate, "yyyy-MM-dd"),
+      newDate: formattedTargetDate,
     });
   };
 
@@ -241,7 +217,7 @@ export default function Home() {
           <div className="lg:col-span-5">
             <TaskList
               title="Today's Tasks"
-              tasks={todayTasks || []}
+              tasks={todayTasks}
               onSave={(task) => createTask.mutate({ ...task, category: "today" })}
               onMoveTask={handleTaskMove}
               onDeleteTask={(taskId) => deleteTask.mutate(taskId)}
@@ -254,7 +230,7 @@ export default function Home() {
             <GoalsSection />
             <TaskList
               title="Other Tasks"
-              tasks={otherTasks || []}
+              tasks={otherTasks}
               onSave={(task) => createTask.mutate({ ...task, category: "other" })}
               onMoveTask={handleTaskMove}
               onDeleteTask={(taskId) => deleteTask.mutate(taskId)}

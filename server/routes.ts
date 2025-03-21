@@ -13,13 +13,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     log('Fetching tasks for category: %s, date: %s', category, date);
     const tasks = await storage.getTasks(category, date);
     log(`Found ${tasks.length} tasks for ${category} on ${date}:`, tasks);
-    
+
     // Verify date matching
     const mismatchedTasks = tasks.filter(task => task.date !== date);
     if (mismatchedTasks.length > 0) {
       log('WARNING: Found tasks with mismatched dates:', mismatchedTasks);
     }
-    
+
     res.json(tasks);
   });
 
@@ -65,7 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "New date is required" });
     }
     try {
+      log('Moving task %d to date: %s', id, newDate);
       const task = await storage.moveTaskToDate(id, newDate);
+      log('Task moved successfully:', task);
       res.json(task);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -78,7 +80,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid task ID" });
     }
     try {
+      log('Deleting task: %d', id);
       await storage.deleteTask(id);
+      log('Task deleted successfully');
       res.status(204).send();
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
