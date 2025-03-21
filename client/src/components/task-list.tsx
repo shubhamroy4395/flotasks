@@ -101,7 +101,14 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [totalTime, setTotalTime] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<number | null>(null);
   const [sortState, setSortState] = useState<'lno' | 'onl' | 'default'>('default');
+  const [originalOrder, setOriginalOrder] = useState<number[]>([]);
 
+  // Store original order when tasks are loaded
+  useEffect(() => {
+    if (tasks.length > 0) {
+      setOriginalOrder(tasks.map(task => task.id));
+    }
+  }, [tasks]);
 
   // Calculate total time whenever entries change
   useEffect(() => {
@@ -186,11 +193,15 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
         switch (sortState) {
           case 'lno':
-            return b.priority - a.priority; // Leverage -> Neutral -> Overhead
+            return b.priority - a.priority; // Leverage (3) -> Neutral (2) -> Overhead (1)
           case 'onl':
-            return a.priority - b.priority; // Overhead -> Neutral -> Leverage
-          default:
-            return 0; // Keep original order
+            return a.priority - b.priority; // Overhead (1) -> Neutral (2) -> Leverage (3)
+          case 'default':
+            // Return to original order if we have IDs stored
+            if (a.id && b.id) {
+              return originalOrder.indexOf(a.id) - originalOrder.indexOf(b.id);
+            }
+            return 0;
         }
       });
       return sorted;
