@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -9,12 +9,26 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Note } from "@shared/schema";
+import { trackEvent, Events } from "@/lib/amplitude";
 
 export function NotesSection() {
   const [isAdding, setIsAdding] = useState(false);
   const [newNote, setNewNote] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const formOpenTime = useRef(Date.now());
+
+  // Track section open
+  useEffect(() => {
+    trackEvent(Events.NOTES_SECTION_OPEN, {
+      componentName: 'NotesSection',
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      timeOfDay: new Date().getHours(),
+      dayOfWeek: new Date().getDay(),
+      isWeekend: [0, 6].includes(new Date().getDay())
+    });
+  }, []);
 
   const { data: notes = [] } = useQuery<Note[]>({
     queryKey: ["/api/notes"],
@@ -30,6 +44,17 @@ export function NotesSection() {
         title: "Note added!",
         duration: 2000,
       });
+
+      // Track note creation
+      trackEvent(Events.NOTE_CREATED, {
+        contentLength: newNote.length,
+        wordCount: newNote.trim().split(/\s+/).length,
+        formDuration: Date.now() - formOpenTime.current,
+        existingNotes: notes.length,
+        timeOfDay: new Date().getHours(),
+        dayOfWeek: new Date().getDay(),
+        isWeekend: [0, 6].includes(new Date().getDay())
+      });
     },
   });
 
@@ -37,10 +62,41 @@ export function NotesSection() {
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/notes/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
+
+      // Track note deletion
+      const deletedNote = notes.find(note => note.id === id);
+      if (deletedNote) {
+        trackEvent(Events.NOTE_DELETED, {
+          noteAge: Date.now() - new Date(deletedNote.timestamp).getTime(),
+          contentLength: deletedNote.content.length,
+          remainingNotes: notes.length - 1,
+          timeOfDay: new Date().getHours(),
+          dayOfWeek: new Date().getDay()
+        });
+      }
     },
   });
+
+  const handleFormOpen = () => {
+    setIsAdding(true);
+    formOpenTime.current = Date.now();
+    trackEvent(Events.UI_MODAL_OPENED, {
+      modalType: 'note-form',
+      timeOfDay: new Date().getHours(),
+      existingNotes: notes.length
+    });
+  };
+
+  const handleFormClose = () => {
+    setIsAdding(false);
+    trackEvent(Events.UI_MODAL_CLOSED, {
+      modalType: 'note-form',
+      formDuration: Date.now() - formOpenTime.current,
+      hadContent: newNote.length > 0
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +137,7 @@ export function NotesSection() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => setIsAdding(false)}
+                      onClick={handleFormClose}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -136,7 +192,7 @@ export function NotesSection() {
             variant="outline"
             size="lg"
             className="w-full mt-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-none font-medium"
-            onClick={() => setIsAdding(true)}
+            onClick={handleFormOpen}
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Note

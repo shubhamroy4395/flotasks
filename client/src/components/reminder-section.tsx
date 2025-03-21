@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Bell, Trash2 } from "lucide-react";
 import { format, addMinutes, addHours, isAfter } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { trackEvent, Events } from "@/lib/amplitude";
 
 const TIME_OPTIONS = [
   { label: "5 minutes", value: 5, unit: "minutes" },
@@ -42,6 +43,19 @@ export function ReminderSection() {
   const [reminders, setReminders] = useState<{ id: number; content: string; time: Date }[]>([]);
   const { toast } = useToast();
   const checkInterval = useRef<NodeJS.Timeout>();
+  const formOpenTime = useRef(Date.now());
+
+  // Track section open
+  useEffect(() => {
+    trackEvent(Events.REMINDER_SECTION_OPEN, {
+      componentName: 'ReminderSection',
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      timeOfDay: new Date().getHours(),
+      dayOfWeek: new Date().getDay(),
+      activeReminders: reminders.length
+    });
+  }, []);
 
   // Check for due reminders
   useEffect(() => {
@@ -64,6 +78,15 @@ export function ReminderSection() {
               duration: 5000,
             });
 
+            // Track reminder completion
+            trackEvent(Events.REMINDER_COMPLETED, {
+              content: reminder.content,
+              scheduledTime: reminder.time.toISOString(),
+              actualCompletionTime: now.toISOString(),
+              timeOfDay: now.getHours(),
+              dayOfWeek: now.getDay()
+            });
+
             // Remove this reminder
             return false;
           }
@@ -84,6 +107,16 @@ export function ReminderSection() {
     };
   }, [toast]);
 
+  const handleFormOpen = () => {
+    setIsOpen(true);
+    formOpenTime.current = Date.now();
+    trackEvent(Events.UI_MODAL_OPENED, {
+      modalType: 'reminder-form',
+      timeOfDay: new Date().getHours(),
+      existingReminders: reminders.length
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReminder.trim() || !selectedTime) return;
@@ -92,11 +125,25 @@ export function ReminderSection() {
       ? addMinutes(new Date(), selectedTime.value)
       : addHours(new Date(), selectedTime.value);
 
+    const newId = Date.now();
     setReminders(prev => [...prev, {
-      id: Date.now(),
+      id: newId,
       content: newReminder,
       time: dueTime
     }]);
+
+    // Track reminder creation
+    trackEvent(Events.REMINDER_SET, {
+      content: newReminder,
+      timeValue: selectedTime.value,
+      timeUnit: selectedTime.unit,
+      dueTime: dueTime.toISOString(),
+      formOpenDuration: Date.now() - formOpenTime.current,
+      reminderCount: reminders.length + 1,
+      timeOfDay: new Date().getHours(),
+      dayOfWeek: new Date().getDay()
+    });
+
     setNewReminder("");
     setSelectedTime(null);
     setIsOpen(false);
@@ -110,7 +157,19 @@ export function ReminderSection() {
   };
 
   const deleteReminder = (id: number) => {
+    const reminderToDelete = reminders.find(r => r.id === id);
     setReminders(prev => prev.filter(r => r.id !== id));
+
+    // Track reminder deletion
+    if (reminderToDelete) {
+      trackEvent(Events.REMINDER_DELETED, {
+        content: reminderToDelete.content,
+        timeUntilDue: reminderToDelete.time.getTime() - Date.now(),
+        remainingReminders: reminders.length - 1,
+        timeOfDay: new Date().getHours(),
+        dayOfWeek: new Date().getDay()
+      });
+    }
   };
 
   return (
@@ -212,7 +271,7 @@ export function ReminderSection() {
             variant="outline"
             size="lg"
             className="w-full bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 border-none font-medium"
-            onClick={() => setIsOpen(true)}
+            onClick={handleFormOpen}
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Reminder
