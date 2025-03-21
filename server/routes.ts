@@ -12,16 +12,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { category, date } = req.params;
     log('Fetching tasks for category: %s, date: %s', category, date);
     const tasks = await storage.getTasks(category, date);
-    log('Found tasks:', tasks);
+    log(`Found ${tasks.length} tasks for ${category} on ${date}:`, tasks);
+    
+    // Verify date matching
+    const mismatchedTasks = tasks.filter(task => task.date !== date);
+    if (mismatchedTasks.length > 0) {
+      log('WARNING: Found tasks with mismatched dates:', mismatchedTasks);
+    }
+    
     res.json(tasks);
   });
 
   app.post("/api/tasks", async (req, res) => {
     const result = insertTaskSchema.safeParse(req.body);
     if (!result.success) {
+      log('Task validation failed:', result.error);
       return res.status(400).json({ error: result.error });
     }
+    
+    // Additional date validation
+    if (!result.data.date) {
+      log('Task creation failed: Missing date');
+      return res.status(400).json({ error: 'Date is required' });
+    }
+    
+    log('Creating task:', result.data);
     const task = await storage.createTask(result.data);
+    log('Created task:', task);
     res.json(task);
   });
 

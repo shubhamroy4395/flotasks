@@ -74,7 +74,15 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
   const [entries, setEntries] = useState(() => {
     const currentDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     console.debug('[TaskList] Filtering tasks for date:', currentDate, 'Available tasks:', tasks);
-    const dateSpecificTasks = tasks.filter(task => task.date === currentDate);
+    console.debug(`[TaskList] Filtering tasks for ${title}. Current date: ${currentDate}`);
+const dateSpecificTasks = tasks.filter(task => {
+  const matches = task.date === currentDate;
+  if (!matches) {
+    console.debug(`[TaskList] Task ${task.id} date mismatch: expected ${currentDate}, got ${task.date}`);
+  }
+  return matches;
+});
+console.debug(`[TaskList] Found ${dateSpecificTasks.length} tasks for ${currentDate}`);
     
     const lines = Array(initialLines).fill(null).map((_, i) => ({
       id: i + 1,
