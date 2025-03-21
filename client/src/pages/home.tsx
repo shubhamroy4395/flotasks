@@ -54,14 +54,14 @@ export default function Home() {
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
-  // Modified query to use cache
+  // Modified query to use cache and ensure date-specific tasks
   const { data: todayTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today", formattedDate],
     queryFn: async () => {
       const response = await fetch(`/api/tasks/today/${formattedDate}`);
       const tasks = await response.json();
 
-      // Update cache
+      // Update cache for specific date
       const storedData = localStorage.getItem(TASK_STORAGE_KEY);
       const cache = storedData ? JSON.parse(storedData) : {};
       cache[formattedDate] = cache[formattedDate] || {};
@@ -74,9 +74,9 @@ export default function Home() {
       const storedData = localStorage.getItem(TASK_STORAGE_KEY);
       if (storedData) {
         const cache = JSON.parse(storedData);
-        return cache[formattedDate]?.today;
+        return cache[formattedDate]?.today || [];
       }
-      return undefined;
+      return [];
     },
   });
 
@@ -86,7 +86,7 @@ export default function Home() {
       const response = await fetch(`/api/tasks/other/${formattedDate}`);
       const tasks = await response.json();
 
-      // Update cache
+      // Update cache for specific date
       const storedData = localStorage.getItem(TASK_STORAGE_KEY);
       const cache = storedData ? JSON.parse(storedData) : {};
       cache[formattedDate] = cache[formattedDate] || {};
@@ -99,9 +99,9 @@ export default function Home() {
       const storedData = localStorage.getItem(TASK_STORAGE_KEY);
       if (storedData) {
         const cache = JSON.parse(storedData);
-        return cache[formattedDate]?.other;
+        return cache[formattedDate]?.other || [];
       }
-      return undefined;
+      return [];
     },
   });
 

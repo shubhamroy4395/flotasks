@@ -252,38 +252,8 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
     if (!entry.content || activeTask?.index === index) return null;
 
     return (
-      <div className="flex items-center gap-2">
-        {/* Priority and time always visible */}
-        {entry.priority !== undefined && (
-          <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
-            PRIORITIES.find(p => p.value === entry.priority)?.color
-          }`}>
-            {PRIORITIES.find(p => p.value === entry.priority)?.label}
-          </span>
-        )}
-        {entry.eta && (
-          <span className="flex items-center text-xs text-gray-500 font-bold">
-            <Clock className="h-3 w-3 mr-1" />
-            {entry.eta}
-          </span>
-        )}
-
-        {/* Action buttons on hover */}
-        <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onMoveTask) {
-                onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
-              }
-            }}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
           <Button
             variant="ghost"
             size="icon"
@@ -298,27 +268,35 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
             <Trash2 className="h-4 w-4" />
           </Button>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              >
-                <Info className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-2">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Task Actions:</p>
-                <div className="text-xs space-y-1 text-muted-foreground">
-                  <p>• Click arrow to move to tomorrow</p>
-                  <p>• Click trash to delete task</p>
-                  <p>• Click anywhere else to edit</p>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onMoveTask) {
+                onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
+              }
+            }}
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {entry.priority !== undefined && (
+            <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
+              PRIORITIES.find(p => p.value === entry.priority)?.color
+            }`}>
+              {PRIORITIES.find(p => p.value === entry.priority)?.label}
+            </span>
+          )}
+          {entry.eta && (
+            <span className="flex items-center text-xs text-gray-500 font-bold">
+              <Clock className="h-3 w-3 mr-1" />
+              {entry.eta}
+            </span>
+          )}
         </div>
       </div>
     );
