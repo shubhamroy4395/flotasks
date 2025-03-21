@@ -55,8 +55,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (isNaN(id)) {
       return res.status(400).json({ error: "Invalid task ID" });
     }
-    await storage.deleteTask(id);
-    res.status(204).send();
+    try {
+      await storage.deleteTask(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(404).json({ error: (error as Error).message });
+    }
   });
 
   // Mood

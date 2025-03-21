@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar, ArrowRight } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar, ArrowRight, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { addDays, subDays, isSameDay } from "date-fns";
@@ -65,10 +65,11 @@ interface TaskListProps {
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
   onMoveTask?: (taskId: number, targetDate: Date) => void;
+  onDeleteTask?: (taskId: number) => void;
   selectedDate?: Date;
 }
 
-export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: TaskListProps) {
+export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selectedDate }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
     const lines = Array(initialLines).fill(null).map((_, i) => ({
@@ -251,20 +252,15 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
     if (!entry.content || activeTask?.index === index) return null;
 
     return (
-      <motion.div
-        className="flex items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         {/* Quick move to tomorrow button */}
-        <TooltipProvider>
+        <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-700"
+                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (onMoveTask) {
@@ -277,6 +273,30 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
             </TooltipTrigger>
             <TooltipContent>
               <p>Move task to tomorrow</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Delete button */}
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onDeleteTask) {
+                    onDeleteTask(entry.id);
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete task</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -294,7 +314,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
             {entry.eta}
           </span>
         )}
-      </motion.div>
+      </div>
     );
   };
 

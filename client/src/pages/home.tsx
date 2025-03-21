@@ -19,7 +19,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Handle page refresh/exit confirmation
+  // Keep the beforeunload handler to prevent accidental page refresh
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -33,7 +33,6 @@ export default function Home() {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
-
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -77,6 +76,20 @@ export default function Home() {
       toast({
         title: "Task moved",
         description: "Your task has been moved to tomorrow's list",
+        duration: 3000,
+      });
+    },
+  });
+
+  const deleteTask = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest("DELETE", `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Task deleted",
+        description: "Your task has been removed",
         duration: 3000,
       });
     },
@@ -188,6 +201,7 @@ export default function Home() {
               tasks={todayTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "today" })}
               onMoveTask={handleTaskMove}
+              onDeleteTask={(taskId) => deleteTask.mutate(taskId)}
               selectedDate={selectedDate}
             />
           </div>
@@ -200,6 +214,7 @@ export default function Home() {
               tasks={otherTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "other" })}
               onMoveTask={handleTaskMove}
+              onDeleteTask={(taskId) => deleteTask.mutate(taskId)}
               selectedDate={selectedDate}
             />
           </div>
