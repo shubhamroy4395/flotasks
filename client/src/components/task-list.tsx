@@ -101,14 +101,12 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [totalTime, setTotalTime] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<number | null>(null);
   const [sortState, setSortState] = useState<'lno' | 'onl' | 'default'>('default');
-  const [originalOrder, setOriginalOrder] = useState<number[]>([]);
+  const [initialEntries, setInitialEntries] = useState(entries);
 
-  // Store original order when tasks are loaded
+  // Store initial entries when they're first created
   useEffect(() => {
-    if (tasks.length > 0) {
-      setOriginalOrder(tasks.map(task => task.id));
-    }
-  }, [tasks]);
+    setInitialEntries([...entries]);
+  }, [tasks]); // Only update when tasks change
 
   // Calculate total time whenever entries change
   useEffect(() => {
@@ -182,29 +180,26 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     setSortState(prev => {
       const states: ('lno' | 'onl' | 'default')[] = ['lno', 'onl', 'default'];
       const currentIndex = states.indexOf(prev);
-      return states[(currentIndex + 1) % states.length];
-    });
+      const nextState = states[(currentIndex + 1) % states.length];
 
-    setEntries(prev => {
-      const sorted = [...prev].sort((a, b) => {
-        if (!a.content && !b.content) return 0;
-        if (!a.content) return 1;
-        if (!b.content) return -1;
-
-        switch (sortState) {
-          case 'lno':
-            return b.priority - a.priority; // Leverage (3) -> Neutral (2) -> Overhead (1)
-          case 'onl':
-            return a.priority - b.priority; // Overhead (1) -> Neutral (2) -> Leverage (3)
-          case 'default':
-            // Return to original order if we have IDs stored
-            if (a.id && b.id) {
-              return originalOrder.indexOf(a.id) - originalOrder.indexOf(b.id);
-            }
-            return 0;
+      setEntries(prev => {
+        if (nextState === 'default') {
+          return [...initialEntries]; // Return to original sequence
         }
+
+        return [...prev].sort((a, b) => {
+          if (!a.content && !b.content) return 0;
+          if (!a.content) return 1;
+          if (!b.content) return -1;
+
+          // Sort by priority
+          return nextState === 'lno'
+            ? b.priority - a.priority // Leverage (3) -> Neutral (2) -> Overhead (1)
+            : a.priority - b.priority; // Overhead (1) -> Neutral (2) -> Leverage (3)
+        });
       });
-      return sorted;
+
+      return nextState;
     });
   };
 
