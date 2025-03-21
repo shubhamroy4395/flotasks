@@ -40,10 +40,8 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(tasks.timestamp));
     
-    console.log(`[Storage] Found ${result.length} tasks before date validation`);
-    const filteredResult = result.filter(task => task.date === date);
-    console.log(`[Storage] Returning ${filteredResult.length} tasks after date validation`);
-    return filteredResult;
+    console.log(`[Storage] Found ${result.length} tasks for ${category} on ${date}`);
+    return result;
   }
 
   async createTask(task: InsertTask): Promise<Task> {
