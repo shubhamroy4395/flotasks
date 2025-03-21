@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTaskSchema, insertMoodSchema, insertGratitudeSchema } from "@shared/schema";
+import { insertTaskSchema, insertMoodSchema, insertGratitudeSchema, insertNoteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Tasks
@@ -84,6 +84,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(404).json({ error: (error as Error).message });
     }
   });
+
+  // Notes
+  app.get("/api/notes", async (_req, res) => {
+    const notes = await storage.getNotes();
+    res.json(notes);
+  });
+
+  app.post("/api/notes", async (req, res) => {
+    const result = insertNoteSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    const note = await storage.createNote(result.data);
+    res.json(note);
+  });
+
+  app.delete("/api/notes/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid note ID" });
+    }
+    try {
+      await storage.deleteNote(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(404).json({ error: (error as Error).message });
+    }
+  });
+
 
   // Clear all data
   app.delete("/api/data", async (_req, res) => {

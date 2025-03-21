@@ -8,6 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
+import { NotesSection } from "@/components/notes-section"; // Import the new component
+
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -118,6 +120,7 @@ export default function Home() {
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
+            <NotesSection /> {/* Added NotesSection */}
           </div>
         </div>
       </div>
