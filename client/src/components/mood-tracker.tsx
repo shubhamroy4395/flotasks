@@ -28,7 +28,11 @@ export function MoodTracker() {
     trackEvent(Events.MOOD_SECTION_OPEN, {
       componentName: 'MoodTracker',
       viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight
+      viewportHeight: window.innerHeight,
+      timeOfDay: new Date().getHours(),
+      dayOfWeek: new Date().getDay(),
+      isWeekend: [0, 6].includes(new Date().getDay()),
+      availableMoods: Object.keys(MOOD_LABELS).length
     });
   }, []);
 
@@ -48,9 +52,15 @@ export function MoodTracker() {
         mood,
         moodLabel: MOOD_LABELS[mood].label,
         previousMood: moodEntries?.[0]?.mood || null,
+        moodChangeTime: moodEntries?.[0] ? new Date().getTime() - new Date(moodEntries[0].timestamp).getTime() : null,
         timeOfDay: new Date().getHours(),
         dayOfWeek: new Date().getDay(),
-        timestamp: new Date().toISOString()
+        isWeekend: [0, 6].includes(new Date().getDay()),
+        moodHistory: moodEntries?.slice(0, 5).map(entry => entry.mood) || [],
+        moodFrequency: moodEntries?.reduce((acc, entry) => {
+          acc[entry.mood] = (acc[entry.mood] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
       });
     },
   });

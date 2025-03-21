@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
@@ -74,7 +74,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       isEditing: false,
       completed: false,
       priority: 0,
-      eta: ""
+      eta: "",
+      timestamp: new Date() // Added timestamp
     }));
 
     tasks.forEach((task, index) => {
@@ -120,6 +121,19 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     setTotalTime(newTotal);
   }, [entries]);
 
+  // Track component mount
+  useEffect(() => {
+    trackEvent(
+      title === "Today's Tasks" ? Events.TASK_LIST_TODAY_OPEN : Events.TASK_LIST_OTHER_OPEN,
+      {
+        taskCount: tasks.length,
+        completedCount: tasks.filter(t => t.completed).length,
+        averagePriority: tasks.reduce((acc, t) => acc + t.priority, 0) / tasks.length || 0,
+        timeOfDay: new Date().getHours(),
+      }
+    );
+  }, []);
+
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const entry = entries[index];
@@ -129,6 +143,17 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       priority: entry.priority || 0,
       eta: entry.eta || ""
     });
+
+    // Track task editing interaction
+    if (entry.content) {
+      trackEvent(Events.TASK_EDIT_STARTED, {
+        taskId: entry.id,
+        currentPriority: entry.priority,
+        currentEta: entry.eta,
+        position: index,
+        category: title === "Today's Tasks" ? "today" : "other"
+      });
+    }
   };
 
   const handleSave = () => {
@@ -142,11 +167,16 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         category: title === "Today's Tasks" ? "today" : "other"
       });
 
-      // Track task creation
+      // Track task creation with detailed properties
       trackEvent(Events.TASK_CREATED, {
         category: title === "Today's Tasks" ? "today" : "other",
         priority,
-        hasEta: Boolean(eta)
+        hasEta: Boolean(eta),
+        etaValue: eta,
+        contentLength: content.length,
+        timeOfDay: new Date().getHours(),
+        dayOfWeek: new Date().getDay(),
+        taskPosition: activeTask.index
       });
     }
 
@@ -177,11 +207,16 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
               setShowCelebration(null);
             }, 2000);
 
-            // Track task completion
+            // Track task completion with comprehensive metrics
             trackEvent(Events.TASK_COMPLETED, {
               category: title === "Today's Tasks" ? "today" : "other",
               priority: entry.priority,
-              timeToComplete: entry.eta
+              timeToComplete: entry.eta,
+              position: index,
+              timeOfDay: new Date().getHours(),
+              dayOfWeek: new Date().getDay(),
+              contentLength: entry.content.length,
+              taskAge: new Date().getTime() - new Date(entry.timestamp).getTime() //using timestamp
             });
           }
           return { ...entry, completed: newCompleted };
@@ -197,10 +232,18 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       const currentIndex = states.indexOf(prev);
       const nextState = states[(currentIndex + 1) % states.length];
 
-      // Track sorting action
+      // Track sorting interaction with detailed metrics
       trackEvent(Events.TASKS_SORTED, {
+        category: title,
         sortType: nextState,
-        category: title
+        taskCount: entries.filter(e => e.content).length,
+        completedCount: entries.filter(e => e.completed).length,
+        priorityDistribution: entries.reduce((acc, entry) => {
+          if (entry.priority) {
+            acc[entry.priority] = (acc[entry.priority] || 0) + 1;
+          }
+          return acc;
+        }, {} as Record<number, number>)
       });
 
       setEntries(prev => {
@@ -232,7 +275,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         isEditing: false,
         completed: false,
         priority: 0,
-        eta: ""
+        eta: "",
+        timestamp: new Date() // Added timestamp
       }))
     ]);
   };
