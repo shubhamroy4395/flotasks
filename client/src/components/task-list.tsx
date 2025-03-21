@@ -4,9 +4,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
+import { addDays, subDays, isSameDay } from "date-fns";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -62,9 +63,11 @@ interface TaskListProps {
   title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
+  onMoveTask?: (taskId: number, targetDate: Date) => void;
+  selectedDate?: Date;
 }
 
-export function TaskList({ title, tasks, onSave }: TaskListProps) {
+export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
     const lines = Array(initialLines).fill(null).map((_, i) => ({
@@ -201,6 +204,46 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         eta: ""
       }))
     ]);
+  };
+
+  const renderMoveToDateButton = (taskId: number) => {
+    if (!onMoveTask) return null;
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Calendar className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="end">
+          <div className="flex flex-col gap-2 p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onMoveTask(taskId, addDays(selectedDate || new Date(), 1))}
+              className="justify-start font-normal"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Move to Tomorrow
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onMoveTask(taskId, subDays(selectedDate || new Date(), 1))}
+              className="justify-start font-normal"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Move to Yesterday
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   return (
@@ -442,13 +485,14 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                     layout
                   >
                     <span>{entry.content || " "}</span>
-                    {entry.content && (
+                    {!activeTask?.index === index && entry.content && (
                       <motion.div
                         className="flex items-center gap-2"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.1 }}
                       >
+                        {renderMoveToDateButton(entry.id)}
                         {entry.priority !== undefined && (
                           <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
                             PRIORITIES.find(p => p.value === entry.priority)?.color

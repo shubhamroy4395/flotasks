@@ -1,13 +1,14 @@
 import { type Task, type InsertTask, type MoodEntry, type InsertMoodEntry, type GratitudeEntry, type InsertGratitudeEntry, tasks, moodEntries, gratitudeEntries, type Note, type InsertNote, notes } from "@shared/schema";
 import { db } from "./db";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Tasks
-  getTasks(category: string): Promise<Task[]>;
+  getTasks(category: string, date: string): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task>;
   deleteTask(id: number): Promise<void>;
+  moveTaskToDate(id: number, newDate: string): Promise<Task>;
 
   // Mood
   getMoodEntries(): Promise<MoodEntry[]>;
@@ -28,11 +29,11 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTasks(category: string): Promise<Task[]> {
+  async getTasks(category: string, date: string): Promise<Task[]> {
     return await db
       .select()
       .from(tasks)
-      .where(eq(tasks.category, category))
+      .where(and(eq(tasks.category, category), eq(tasks.date, date)))
       .orderBy(desc(tasks.timestamp));
   }
 
@@ -53,6 +54,20 @@ export class DatabaseStorage implements IStorage {
     }
 
     return updatedTask;
+  }
+
+  async moveTaskToDate(id: number, newDate: string): Promise<Task> {
+    const [movedTask] = await db
+      .update(tasks)
+      .set({ date: newDate })
+      .where(eq(tasks.id, id))
+      .returning();
+
+    if (!movedTask) {
+      throw new Error(`Task ${id} not found`);
+    }
+
+    return movedTask;
   }
 
   async deleteTask(id: number): Promise<void> {

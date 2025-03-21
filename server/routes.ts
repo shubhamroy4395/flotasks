@@ -5,9 +5,9 @@ import { insertTaskSchema, insertMoodSchema, insertGratitudeSchema, insertNoteSc
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Tasks
-  app.get("/api/tasks/:category", async (req, res) => {
-    const category = req.params.category;
-    const tasks = await storage.getTasks(category);
+  app.get("/api/tasks/:category/:date", async (req, res) => {
+    const { category, date } = req.params;
+    const tasks = await storage.getTasks(category, date);
     res.json(tasks);
   });
 
@@ -27,6 +27,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     try {
       const task = await storage.updateTask(id, req.body);
+      res.json(task);
+    } catch (error) {
+      res.status(404).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post("/api/tasks/:id/move", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { newDate } = req.body;
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid task ID" });
+    }
+    if (!newDate) {
+      return res.status(400).json({ error: "New date is required" });
+    }
+    try {
+      const task = await storage.moveTaskToDate(id, newDate);
       res.json(task);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -112,7 +129,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(404).json({ error: (error as Error).message });
     }
   });
-
 
   // Clear all data
   app.delete("/api/data", async (_req, res) => {
