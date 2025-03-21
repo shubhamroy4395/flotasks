@@ -62,8 +62,7 @@ export default function Home() {
       if (!response.ok) {
         throw new Error('Failed to fetch today tasks');
       }
-      const tasks = await response.json();
-      return tasks.filter(task => task.date === formattedDate);
+      return response.json();
     },
   });
 
@@ -74,8 +73,7 @@ export default function Home() {
       if (!response.ok) {
         throw new Error('Failed to fetch other tasks');
       }
-      const tasks = await response.json();
-      return tasks.filter(task => task.date === formattedDate);
+      return response.json();
     },
   });
 
