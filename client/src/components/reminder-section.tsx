@@ -118,7 +118,7 @@ export function ReminderSection() {
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
         <div>
           <CardTitle className="font-semibold">Reminders</CardTitle>
-          <p className="text-sm text-gray-500">Set quick alerts with sound notifications</p>
+          <p className="text-sm text-gray-500">Set a quick reminder</p>
         </div>
       </CardHeader>
       <CardContent>

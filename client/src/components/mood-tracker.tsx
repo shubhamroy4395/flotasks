@@ -38,10 +38,10 @@ export function MoodTracker() {
     <Card>
       <CardHeader className="border-b">
         <CardTitle>Mood Tracker</CardTitle>
-        <p className="text-sm text-gray-500">Track your emotional journey throughout the day</p>
+        <p className="text-sm text-gray-500">Track your mood today</p>
       </CardHeader>
       <CardContent>
-        <motion.div 
+        <motion.div
           className="flex flex-col gap-3"
           initial={false}
         >
