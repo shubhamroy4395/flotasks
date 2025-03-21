@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar, ArrowRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { addDays, subDays, isSameDay } from "date-fns";
@@ -246,6 +246,49 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
     );
   };
 
+  const renderTaskActions = (entry: typeof entries[0], index: number) => {
+    if (!entry.content || activeTask?.index === index) return null;
+
+    return (
+      <motion.div
+        className="flex items-center gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        {/* Quick move to tomorrow button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onMoveTask) {
+              onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
+            }
+          }}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+
+        {entry.priority !== undefined && (
+          <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
+            PRIORITIES.find(p => p.value === entry.priority)?.color
+          }`}>
+            {PRIORITIES.find(p => p.value === entry.priority)?.label}
+          </span>
+        )}
+        {entry.eta && (
+          <span className="flex items-center text-xs text-gray-500 font-bold">
+            <Clock className="h-3 w-3 mr-1" />
+            {entry.eta}
+          </span>
+        )}
+      </motion.div>
+    );
+  };
+
+
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4 bg-white bg-opacity-80">
@@ -380,6 +423,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
                   />
                 </div>
 
+                {/* Task content or edit form */}
                 {activeTask?.index === index ? (
                   <motion.div
                     className="flex flex-col w-full gap-2"
@@ -456,7 +500,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
                       </div>
 
                       <select
-                        value={activeTask.eta}
+                        value={activeTask?.eta || ""}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
                         className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
                         onClick={(e) => e.stopPropagation()}
@@ -485,29 +529,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
                     layout
                   >
                     <span>{entry.content || " "}</span>
-                    {!activeTask?.index === index && entry.content && (
-                      <motion.div
-                        className="flex items-center gap-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                      >
-                        {renderMoveToDateButton(entry.id)}
-                        {entry.priority !== undefined && (
-                          <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
-                            PRIORITIES.find(p => p.value === entry.priority)?.color
-                          }`}>
-                            {PRIORITIES.find(p => p.value === entry.priority)?.label}
-                          </span>
-                        )}
-                        {entry.eta && (
-                          <span className="flex items-center text-xs text-gray-500 font-bold">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {entry.eta}
-                          </span>
-                        )}
-                      </motion.div>
-                    )}
+                    {entry.content && renderTaskActions(entry, index)}
                   </motion.div>
                 )}
               </motion.div>

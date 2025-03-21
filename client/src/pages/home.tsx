@@ -5,7 +5,7 @@ import { GratitudeSection } from "@/components/gratitude-section";
 import { ReminderSection } from "@/components/reminder-section";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays, subDays, isBefore, isAfter } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
 import { NotesSection } from "@/components/notes-section";
@@ -34,25 +34,6 @@ export default function Home() {
     };
   }, []);
 
-  // Clear all data on every refresh and clear database data
-  useEffect(() => {
-    // Clear all data from the cache
-    queryClient.clear();
-
-    // Invalidate all queries to force fresh data fetch
-    queryClient.invalidateQueries();
-
-    // Clear database data
-    const clearData = async () => {
-      try {
-        await apiRequest("DELETE", "/api/data");
-      } catch (error) {
-        console.error("Failed to clear data:", error);
-      }
-    };
-
-    clearData();
-  }, [queryClient]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -63,18 +44,22 @@ export default function Home() {
 
   const { data: todayTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today", formattedDate],
-    queryFn: () => 
-      fetch(`/api/tasks/today/${formattedDate}`).then(res => res.json())
+    queryFn: () =>
+      fetch(`/api/tasks/today/${formattedDate}`).then((res) => res.json()),
   });
 
   const { data: otherTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/other", formattedDate],
-    queryFn: () => 
-      fetch(`/api/tasks/other/${formattedDate}`).then(res => res.json())
+    queryFn: () =>
+      fetch(`/api/tasks/other/${formattedDate}`).then((res) => res.json()),
   });
 
   const createTask = useMutation({
-    mutationFn: async (task: { content: string; priority: number; category: string }) => {
+    mutationFn: async (task: {
+      content: string;
+      priority: number;
+      category: string;
+    }) => {
       await apiRequest("POST", "/api/tasks", { ...task, date: formattedDate });
     },
     onSuccess: () => {
@@ -97,20 +82,29 @@ export default function Home() {
     },
   });
 
-  const navigateDate = (direction: 'prev' | 'next') => {
-    setSelectedDate(prev => 
-      direction === 'prev' ? subDays(prev, 1) : addDays(prev, 1)
-    );
+  const navigateDate = (direction: "prev" | "next") => {
+    setSelectedDate((prev) => {
+      const newDate = direction === "prev" ? subDays(prev, 1) : addDays(prev, 1);
+
+      // Limit navigation: 1 week back, 1 day forward
+      const oneWeekAgo = subDays(new Date(), 7);
+      const tomorrow = addDays(new Date(), 1);
+
+      if (isBefore(newDate, oneWeekAgo)) return prev;
+      if (isAfter(newDate, tomorrow)) return prev;
+
+      return newDate;
+    });
   };
 
   const handleTaskMove = async (taskId: number, targetDate: Date) => {
     await moveTask.mutate({
       taskId,
-      newDate: format(targetDate, 'yyyy-MM-dd')
+      newDate: format(targetDate, "yyyy-MM-dd"),
     });
   };
 
-  const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+  const isToday = format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -121,25 +115,26 @@ export default function Home() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigateDate('prev')}
-              className="hover:bg-gray-100"
+              onClick={() => navigateDate("prev")}
+              disabled={isBefore(subDays(selectedDate, 1), subDays(new Date(), 7))}
+              className="hover:bg-gray-100 disabled:opacity-50"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
 
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-extrabold text-gray-800">
-                {format(selectedDate, 'EEEE')}
+                {format(selectedDate, "EEEE")}
               </h2>
               <span className="text-gray-500">•</span>
               <span className="text-xl font-bold text-gray-700">
-                {format(selectedDate, 'dd-MMM-yyyy')}
+                {format(selectedDate, "dd-MMM-yyyy")}
               </span>
               {isToday && (
                 <>
                   <span className="text-gray-500">•</span>
                   <span className="text-xl font-mono font-bold text-gray-700">
-                    {format(currentTime, 'HH:mm:ss')}
+                    {format(currentTime, "HH:mm:ss")}
                   </span>
                 </>
               )}
@@ -148,8 +143,9 @@ export default function Home() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigateDate('next')}
-              className="hover:bg-gray-100"
+              onClick={() => navigateDate("next")}
+              disabled={isAfter(addDays(selectedDate, 1), addDays(new Date(), 1))}
+              className="hover:bg-gray-100 disabled:opacity-50"
             >
               <ArrowRight className="h-4 w-4" />
             </Button>
