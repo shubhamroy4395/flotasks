@@ -30,7 +30,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTasks(category: string, date: string): Promise<Task[]> {
-    return await db
+    const result = await db
       .select()
       .from(tasks)
       .where(and(
@@ -38,6 +38,9 @@ export class DatabaseStorage implements IStorage {
         eq(tasks.date, date)
       ))
       .orderBy(desc(tasks.timestamp));
+    
+    // Additional validation to ensure date matching
+    return result.filter(task => task.date === date);
   }
 
   async createTask(task: InsertTask): Promise<Task> {
