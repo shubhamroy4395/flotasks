@@ -75,7 +75,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       completed: false,
       priority: 0,
       eta: "",
-      timestamp: new Date() 
+      timestamp: new Date()
     }));
 
     tasks.forEach((task, index) => {
@@ -108,7 +108,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   // Store initial entries when they're first created
   useEffect(() => {
     setInitialEntries([...entries]);
-  }, [tasks]); 
+  }, [tasks]);
 
   // Calculate total time whenever entries change
   useEffect(() => {
@@ -167,31 +167,34 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         category: title === "Today's Tasks" ? "today" : "other"
       });
 
-      // Track task creation with structured properties
-      const taskCategory = title === "Today's Tasks" ? 'today' : 'other';
-      const eventName = taskCategory === 'today' ? Events.TaskToday.Created : Events.TaskOther.Created;
+      // Determine event name based on task category
+      const eventName = title === "Today's Tasks" ? Events.TaskToday.Created : Events.TaskOther.Created;
 
+      // Track task creation with filterable properties
       trackEvent(eventName, {
+        // Top-level properties for easy filtering in Amplitude
+        category: title === "Today's Tasks" ? "today" : "other",
+        priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N', // L, N, O
+        priority_value: priority, // 3, 2, 1
+        has_time: Boolean(eta),
+        estimated_minutes: convertTimeToMinutes(eta),
+
+        // Detailed task properties
         task: {
           id: activeTask.index + 1,
           content: content.trim(),
-          priority,
-          priorityLabel: PRIORITIES.find(p => p.value === priority)?.label || '',
           time: eta,
-          timeMinutes: convertTimeToMinutes(eta),
           position: activeTask.index,
-          wordCount: content.trim().split(/\s+/).length,
+          word_count: content.trim().split(/\s+/).length,
           length: content.length
         },
-        taskCategory,
-        taskContext: {
-          totalTasks: entries.filter(e => e.content).length,
-          completedTasks: entries.filter(e => e.completed).length,
-          priorityDistribution: entries.reduce((acc, entry) => {
-            if (entry.priority) {
-              acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] = 
-                (acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] || 0) + 1;
-            }
+
+        // Context for analysis
+        task_context: {
+          total_tasks: entries.filter(e => e.content).length,
+          completed_tasks: entries.filter(e => e.completed).length,
+          priority_distribution: PRIORITIES.reduce((acc, p) => {
+            acc[p.label] = entries.filter(e => e.priority === p.value).length;
             return acc;
           }, {} as Record<string, number>)
         }
@@ -221,31 +224,35 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           const newCompleted = !entry.completed;
           if (newCompleted) {
             setShowCelebration(index);
-            setTimeout(() => {
-              setShowCelebration(null);
-            }, 2000);
+            setTimeout(() => setShowCelebration(null), 2000);
 
-          // Track task completion with structured properties
-          const taskCategory = title === "Today's Tasks" ? 'today' : 'other';
-          const eventName = taskCategory === 'today' ? Events.TaskToday.Completed : Events.TaskOther.Completed;
+          // Determine event name based on task category
+          const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
 
+          // Track completion with filterable properties
           trackEvent(eventName, {
+            // Top-level properties for easy filtering
+            category: title === "Today's Tasks" ? "today" : "other",
+            priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
+            priority_value: entry.priority,
+            has_time: Boolean(entry.eta),
+            estimated_minutes: convertTimeToMinutes(entry.eta),
+            completion_time: Date.now(),
+
+            // Task details
             task: {
               id: entry.id,
               content: entry.content,
-              priority: entry.priority,
-              priorityLabel: PRIORITIES.find(p => p.value === entry.priority)?.label || '',
-              time: entry.eta,
-              timeMinutes: convertTimeToMinutes(entry.eta),
               position: index,
-              age: new Date().getTime() - new Date(entry.timestamp).getTime()
+              age_ms: Date.now() - new Date(entry.timestamp).getTime()
             },
-            taskCategory,
-            taskContext: {
-              totalTasks: entries.filter(e => e.content).length,
-              completedTasks: entries.filter(e => e.completed).length + 1,
-              completionRate: ((entries.filter(e => e.completed).length + 1) / 
-                             entries.filter(e => e.content).length) * 100
+
+            // Context
+            task_context: {
+              total_tasks: entries.filter(e => e.content).length,
+              completed_tasks: entries.filter(e => e.completed).length + 1,
+              completion_rate: ((entries.filter(e => e.completed).length + 1) / 
+                              entries.filter(e => e.content).length) * 100
             }
           });
         }
@@ -272,10 +279,10 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           previousState: prev
         },
         taskCategory,
-        taskContext: {
-          totalTasks: entries.filter(e => e.content).length,
-          completedTasks: entries.filter(e => e.completed).length,
-          priorityDistribution: entries.reduce((acc, entry) => {
+        task_context: {
+          total_tasks: entries.filter(e => e.content).length,
+          completed_tasks: entries.filter(e => e.completed).length,
+          priority_distribution: entries.reduce((acc, entry) => {
             if (entry.priority) {
               acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] = 
                 (acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] || 0) + 1;
@@ -283,7 +290,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             return acc;
           }, {} as Record<string, number>),
           averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) / 
-                          entries.filter(e => e.content).length || 0
+                           entries.filter(e => e.content).length || 0
         }
       });
 
@@ -317,7 +324,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         completed: false,
         priority: 0,
         eta: "",
-        timestamp: new Date() 
+        timestamp: new Date()
       }))
     ]);
   };
