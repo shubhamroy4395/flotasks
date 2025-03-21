@@ -1,6 +1,8 @@
 import { type Task, type InsertTask, type MoodEntry, type InsertMoodEntry, type GratitudeEntry, type InsertGratitudeEntry, tasks, moodEntries, gratitudeEntries } from "@shared/schema";
 import { db } from "./db";
 import { desc, eq } from "drizzle-orm";
+import { type Note, type InsertNote, notes } from "@shared/schema"; // Added import for notes
+
 
 export interface IStorage {
   // Tasks
@@ -17,6 +19,11 @@ export interface IStorage {
   getGratitudeEntries(): Promise<GratitudeEntry[]>;
   createGratitudeEntry(entry: InsertGratitudeEntry): Promise<GratitudeEntry>;
   deleteGratitudeEntry(id: number): Promise<void>;
+
+  // Notes (added)
+  getNotes(): Promise<Note[]>;
+  createNote(note: InsertNote): Promise<Note>;
+  deleteNote(id: number): Promise<void>;
 
   // Clear All Data
   clearAllData(): Promise<void>;
@@ -84,10 +91,27 @@ export class DatabaseStorage implements IStorage {
     await db.delete(gratitudeEntries).where(eq(gratitudeEntries.id, id));
   }
 
+  async getNotes(): Promise<Note[]> {
+    return await db
+      .select()
+      .from(notes)
+      .orderBy(desc(notes.timestamp));
+  }
+
+  async createNote(note: InsertNote): Promise<Note> {
+    const [newNote] = await db.insert(notes).values(note).returning();
+    return newNote;
+  }
+
+  async deleteNote(id: number): Promise<void> {
+    await db.delete(notes).where(eq(notes.id, id));
+  }
+
   async clearAllData(): Promise<void> {
     await db.delete(tasks);
     await db.delete(moodEntries);
     await db.delete(gratitudeEntries);
+    await db.delete(notes);
   }
 }
 

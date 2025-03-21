@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
+import { NotesSection } from "@/components/notes-section";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -93,7 +94,7 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-16 gap-6">
           {/* Left Column - Today's Tasks (wider) */}
           <div className="lg:col-span-5">
             <TaskList
@@ -118,6 +119,11 @@ export default function Home() {
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
+          </div>
+
+          {/* Far Right Column - Notes */}
+          <div className="lg:col-span-4 space-y-6">
+            <NotesSection />
           </div>
         </div>
       </div>

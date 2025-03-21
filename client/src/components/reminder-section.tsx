@@ -8,12 +8,31 @@ import { format, addMinutes, addHours, isAfter } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 const TIME_OPTIONS = [
+  // Short durations (up to 4 hours) in smaller increments
   { label: "5 minutes", value: 5, unit: "minutes" },
   { label: "15 minutes", value: 15, unit: "minutes" },
   { label: "30 minutes", value: 30, unit: "minutes" },
   { label: "1 hour", value: 1, unit: "hours" },
+  { label: "1.5 hours", value: 1.5, unit: "hours" },
   { label: "2 hours", value: 2, unit: "hours" },
-  { label: "4 hours", value: 4, unit: "hours" }
+  { label: "2.5 hours", value: 2.5, unit: "hours" },
+  { label: "3 hours", value: 3, unit: "hours" },
+  { label: "3.5 hours", value: 3.5, unit: "hours" },
+  { label: "4 hours", value: 4, unit: "hours" },
+  // Longer durations in 1-hour increments
+  { label: "5 hours", value: 5, unit: "hours" },
+  { label: "6 hours", value: 6, unit: "hours" },
+  { label: "7 hours", value: 7, unit: "hours" },
+  { label: "8 hours", value: 8, unit: "hours" },
+  { label: "9 hours", value: 9, unit: "hours" },
+  { label: "10 hours", value: 10, unit: "hours" },
+  { label: "12 hours", value: 12, unit: "hours" },
+  { label: "14 hours", value: 14, unit: "hours" },
+  { label: "16 hours", value: 16, unit: "hours" },
+  { label: "18 hours", value: 18, unit: "hours" },
+  { label: "20 hours", value: 20, unit: "hours" },
+  { label: "22 hours", value: 22, unit: "hours" },
+  { label: "24 hours", value: 24, unit: "hours" }
 ];
 
 // Create notification sound
@@ -88,7 +107,7 @@ export function ReminderSection() {
     e.preventDefault();
     if (!newReminder.trim() || !selectedTime) return;
 
-    const dueTime = selectedTime.unit === "minutes" 
+    const dueTime = selectedTime.unit === "minutes"
       ? addMinutes(new Date(), selectedTime.value)
       : addHours(new Date(), selectedTime.value);
 
@@ -160,8 +179,8 @@ export function ReminderSection() {
                       </option>
                     ))}
                   </select>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full font-medium"
                     disabled={!selectedTime}
                   >

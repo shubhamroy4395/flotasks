@@ -55,7 +55,7 @@ const PRIORITIES = [
 ];
 
 const TIME_SLOTS = [
-  "5min", "10min", "15min", "30min", "45min", "1h", "2h"
+  "30min", "1h", "1h 30min", "2h", "2h 30min", "3h", "3h 30min", "4h", "5h", "6h", "7h", "8h", "9h", "10h", "11h", "12h", "13h", "14h", "15h", "16h", "17h", "18h", "19h", "20h", "21h", "22h", "23h", "24h"
 ];
 
 interface TaskListProps {
@@ -304,7 +304,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                 className="group flex items-center gap-4 py-3 border-b border-dashed border-gray-200 cursor-pointer relative hover:bg-white hover:bg-opacity-60 transition-all duration-300"
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
-                layout
+                layout="position"
+                layoutId={`task-${entry.id}`}
                 onClick={(e) => handleLineClick(index, e)}
               >
                 {showCelebration === index && (
