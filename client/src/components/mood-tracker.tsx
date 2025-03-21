@@ -37,7 +37,8 @@ export function MoodTracker() {
   return (
     <Card>
       <CardHeader className="border-b">
-        <CardTitle>How are you feeling?</CardTitle>
+        <CardTitle>Mood Tracker</CardTitle>
+        <p className="text-sm text-gray-500">Track your emotional journey throughout the day</p>
       </CardHeader>
       <CardContent>
         <motion.div 

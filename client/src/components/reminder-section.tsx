@@ -88,7 +88,7 @@ export function ReminderSection() {
     e.preventDefault();
     if (!newReminder.trim() || !selectedTime) return;
 
-    const dueTime = selectedTime.unit === "minutes" 
+    const dueTime = selectedTime.unit === "minutes"
       ? addMinutes(new Date(), selectedTime.value)
       : addHours(new Date(), selectedTime.value);
 
@@ -116,7 +116,10 @@ export function ReminderSection() {
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
-        <CardTitle className="font-semibold">Reminders</CardTitle>
+        <div>
+          <CardTitle className="font-semibold">Reminders</CardTitle>
+          <p className="text-sm text-gray-500">Set quick alerts with sound notifications</p>
+        </div>
       </CardHeader>
       <CardContent>
         <AnimatePresence>
@@ -160,8 +163,8 @@ export function ReminderSection() {
                       </option>
                     ))}
                   </select>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full font-medium"
                     disabled={!selectedTime}
                   >
