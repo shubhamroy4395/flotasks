@@ -59,6 +59,9 @@ export default function Home() {
     queryKey: ["/api/tasks/today", formattedDate],
     queryFn: async () => {
       const response = await fetch(`/api/tasks/today/${formattedDate}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch today tasks');
+      }
       return response.json();
     },
   });
@@ -67,6 +70,9 @@ export default function Home() {
     queryKey: ["/api/tasks/other", formattedDate],
     queryFn: async () => {
       const response = await fetch(`/api/tasks/other/${formattedDate}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch other tasks');
+      }
       return response.json();
     },
   });
@@ -110,7 +116,7 @@ export default function Home() {
       await apiRequest("DELETE", `/api/tasks/${taskId}`);
     },
     onSuccess: () => {
-      // Invalidate queries for the current date
+      // Invalidate queries for the current date only
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", formattedDate] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", formattedDate] });
       toast({
