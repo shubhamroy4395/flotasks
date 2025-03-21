@@ -252,7 +252,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
     if (!entry.content || activeTask?.index === index) return null;
 
     return (
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
         {/* Quick move to tomorrow button */}
         <TooltipProvider delayDuration={300}>
           <Tooltip>
@@ -271,7 +271,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent sideOffset={5}>
               <p>Move task to tomorrow</p>
             </TooltipContent>
           </Tooltip>
@@ -295,7 +295,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
                 <Trash2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent sideOffset={5}>
               <p>Delete task</p>
             </TooltipContent>
           </Tooltip>
