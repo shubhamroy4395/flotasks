@@ -7,7 +7,7 @@ import { Checkbox } from "./ui/checkbox";
 import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar, ArrowRight, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
-import { addDays, subDays, isSameDay } from "date-fns";
+import { format, addDays, subDays, isSameDay, isAfter } from "date-fns";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 // Helper function to convert time string to minutes
@@ -78,17 +78,20 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
       isEditing: false,
       completed: false,
       priority: 0,
-      eta: ""
+      eta: "",
+      movedToTomorrow: false
     }));
 
     tasks.forEach((task, index) => {
       if (index < lines.length) {
         lines[index] = {
           ...lines[index],
+          id: task.id,
           content: task.content,
           completed: task.completed,
           priority: task.priority,
-          eta: task.eta || ""
+          eta: task.eta || "",
+          movedToTomorrow: isAfter(new Date(task.date), selectedDate || new Date())
         };
       }
     });
@@ -203,7 +206,8 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
         isEditing: false,
         completed: false,
         priority: 0,
-        eta: ""
+        eta: "",
+        movedToTomorrow: false
       }))
     ]);
   };
@@ -260,30 +264,45 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
             className="text-red-500 hover:text-red-700 hover:bg-red-50"
             onClick={(e) => {
               e.stopPropagation();
-              if (onDeleteTask) {
+              if (onDeleteTask && entry.id) {
                 onDeleteTask(entry.id);
+                // Remove the entry from local state
+                setEntries(prev => prev.map(e =>
+                  e.id === entry.id ? { ...e, content: "", completed: false, priority: 0, eta: "" } : e
+                ));
               }
             }}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onMoveTask) {
-                onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
-              }
-            }}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          {!entry.movedToTomorrow && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onMoveTask && entry.id) {
+                  onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
+                  // Mark as moved in local state
+                  setEntries(prev => prev.map(e =>
+                    e.id === entry.id ? { ...e, movedToTomorrow: true } : e
+                  ));
+                }
+              }}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {entry.movedToTomorrow && (
+            <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700">
+              Moved to tomorrow
+            </span>
+          )}
           {entry.priority !== undefined && (
             <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
               PRIORITIES.find(p => p.value === entry.priority)?.color

@@ -90,8 +90,13 @@ export default function Home() {
       await apiRequest("POST", `/api/tasks/${taskId}/move`, { newDate });
     },
     onSuccess: () => {
-      // Invalidate queries for both current date and target date
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      // Invalidate queries for both current date and tomorrow
+      const tomorrow = format(addDays(selectedDate, 1), 'yyyy-MM-dd');
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", formattedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", formattedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", tomorrow] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", tomorrow] });
+
       toast({
         title: "Task moved",
         description: "Your task has been moved to tomorrow's list",
@@ -105,7 +110,9 @@ export default function Home() {
       await apiRequest("DELETE", `/api/tasks/${taskId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      // Invalidate queries for the current date
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today", formattedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other", formattedDate] });
       toast({
         title: "Task deleted",
         description: "Your task has been removed",
