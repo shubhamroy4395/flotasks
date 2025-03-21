@@ -30,6 +30,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTasks(category: string, date: string): Promise<Task[]> {
+    console.log(`[Storage] Getting tasks for category: ${category}, date: ${date}`);
     const result = await db
       .select()
       .from(tasks)
@@ -39,8 +40,10 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(tasks.timestamp));
     
-    // Additional validation to ensure date matching
-    return result.filter(task => task.date === date);
+    console.log(`[Storage] Found ${result.length} tasks before date validation`);
+    const filteredResult = result.filter(task => task.date === date);
+    console.log(`[Storage] Returning ${filteredResult.length} tasks after date validation`);
+    return filteredResult;
   }
 
   async createTask(task: InsertTask): Promise<Task> {
