@@ -8,6 +8,7 @@ import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Calendar, ArrowRight } fro
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { addDays, subDays, isSameDay } from "date-fns";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -257,19 +258,28 @@ export function TaskList({ title, tasks, onSave, onMoveTask, selectedDate }: Tas
         transition={{ delay: 0.1 }}
       >
         {/* Quick move to tomorrow button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-700"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onMoveTask) {
-              onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
-            }
-          }}
-        >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onMoveTask) {
+                    onMoveTask(entry.id, addDays(selectedDate || new Date(), 1));
+                  }
+                }}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Move task to tomorrow</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {entry.priority !== undefined && (
           <span className={`px-2 py-0.5 rounded-md text-xs font-black ${

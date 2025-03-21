@@ -75,8 +75,8 @@ export default function Home() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
-        title: "Task moved successfully",
-        description: "The task has been moved to the selected date.",
+        title: "Task moved",
+        description: "Your task has been moved to tomorrow's list",
         duration: 3000,
       });
     },
@@ -90,8 +90,22 @@ export default function Home() {
       const oneWeekAgo = subDays(new Date(), 7);
       const tomorrow = addDays(new Date(), 1);
 
-      if (isBefore(newDate, oneWeekAgo)) return prev;
-      if (isAfter(newDate, tomorrow)) return prev;
+      if (isBefore(newDate, oneWeekAgo)) {
+        toast({
+          title: "Navigation limit reached",
+          description: "You can only view tasks up to one week in the past",
+          duration: 3000,
+        });
+        return prev;
+      }
+      if (isAfter(newDate, tomorrow)) {
+        toast({
+          title: "Navigation limit reached",
+          description: "You can only plan tasks up to tomorrow",
+          duration: 3000,
+        });
+        return prev;
+      }
 
       return newDate;
     });
