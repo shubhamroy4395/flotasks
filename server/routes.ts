@@ -2,12 +2,17 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTaskSchema, insertMoodSchema, insertGratitudeSchema, insertNoteSchema } from "@shared/schema";
+import debug from 'debug';
+
+const log = debug('app:routes');
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Tasks
   app.get("/api/tasks/:category/:date", async (req, res) => {
     const { category, date } = req.params;
+    log('Fetching tasks for category: %s, date: %s', category, date);
     const tasks = await storage.getTasks(category, date);
+    log('Found tasks:', tasks);
     res.json(tasks);
   });
 

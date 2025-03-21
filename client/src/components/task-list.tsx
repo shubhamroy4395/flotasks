@@ -72,9 +72,9 @@ interface TaskListProps {
 export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selectedDate }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
-    const dateSpecificTasks = tasks.filter(task => 
-      task.date === (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
-    );
+    const currentDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+    console.debug('[TaskList] Filtering tasks for date:', currentDate, 'Available tasks:', tasks);
+    const dateSpecificTasks = tasks.filter(task => task.date === currentDate);
     
     const lines = Array(initialLines).fill(null).map((_, i) => ({
       id: i + 1,
