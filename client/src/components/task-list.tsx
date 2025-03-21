@@ -72,6 +72,10 @@ interface TaskListProps {
 export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selectedDate }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
+    const dateSpecificTasks = tasks.filter(task => 
+      task.date === (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
+    );
+    
     const lines = Array(initialLines).fill(null).map((_, i) => ({
       id: i + 1,
       content: "",
@@ -82,7 +86,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
       movedToTomorrow: false
     }));
 
-    tasks.forEach((task, index) => {
+    dateSpecificTasks.forEach((task, index) => {
       if (index < lines.length) {
         lines[index] = {
           ...lines[index],
@@ -91,7 +95,7 @@ export function TaskList({ title, tasks, onSave, onMoveTask, onDeleteTask, selec
           completed: task.completed,
           priority: task.priority,
           eta: task.eta || "",
-          movedToTomorrow: isAfter(new Date(task.date), selectedDate || new Date())
+          movedToTomorrow: false
         };
       }
     });

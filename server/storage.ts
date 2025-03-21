@@ -33,7 +33,10 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.category, category), eq(tasks.date, date)))
+      .where(and(
+        eq(tasks.category, category),
+        eq(tasks.date, date)
+      ))
       .orderBy(desc(tasks.timestamp));
   }
 
