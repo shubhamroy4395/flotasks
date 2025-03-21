@@ -100,9 +100,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
   const [totalTime, setTotalTime] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<number | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [showConfetti, setShowConfetti] = useState<boolean>(false);
-  const [confettiPosition, setConfettiPosition] = useState({ x: 0, y: 0 });
+  const [sortState, setSortState] = useState<'lno' | 'onl' | 'default'>('default');
+
 
   // Calculate total time whenever entries change
   useEffect(() => {
@@ -154,21 +153,16 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     setActiveTask(null);
   };
 
-  const toggleComplete = (index: number, element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
-    setConfettiPosition({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
-
+  const toggleComplete = (index: number) => {
     setEntries(prev =>
       prev.map((entry, i) => {
         if (i === index) {
           const newCompleted = !entry.completed;
           if (newCompleted) {
             setShowCelebration(index);
-            setShowConfetti(true);
             setTimeout(() => {
               setShowCelebration(null);
-              setShowConfetti(false);
-            }, 2000); // Increased duration for better visibility
+            }, 2000);
           }
           return { ...entry, completed: newCompleted };
         }
@@ -178,15 +172,29 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   };
 
   const toggleSort = () => {
-    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    setEntries(prev => [...prev].sort((a, b) => {
-      if (!a.content && !b.content) return 0;
-      if (!a.content) return 1;
-      if (!b.content) return -1;
-      return sortDirection === 'asc'
-        ? b.priority - a.priority
-        : a.priority - b.priority;
-    }));
+    setSortState(prev => {
+      const states: ('lno' | 'onl' | 'default')[] = ['lno', 'onl', 'default'];
+      const currentIndex = states.indexOf(prev);
+      return states[(currentIndex + 1) % states.length];
+    });
+
+    setEntries(prev => {
+      const sorted = [...prev].sort((a, b) => {
+        if (!a.content && !b.content) return 0;
+        if (!a.content) return 1;
+        if (!b.content) return -1;
+
+        switch (sortState) {
+          case 'lno':
+            return b.priority - a.priority; // Leverage -> Neutral -> Overhead
+          case 'onl':
+            return a.priority - b.priority; // Overhead -> Neutral -> Leverage
+          default:
+            return 0; // Keep original order
+        }
+      });
+      return sorted;
+    });
   };
 
   const addMoreTasks = () => {
@@ -232,7 +240,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             className="text-gray-600 hover:text-gray-800 font-bold"
           >
             <ArrowUpDown className="h-4 w-4 mr-1" />
-            Sort
+            {sortState === 'lno' ? 'L→N→O' : sortState === 'onl' ? 'O→N→L' : 'Default'}
           </Button>
           <Button
             variant="outline"
@@ -247,53 +255,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       </CardHeader>
       <CardContent className="bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+CiAgPHBhdGggZD0iTTAgMGg2MHY2MEgweiIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0zMCAzMG0tMSAwYTEgMSAwIDEgMCAyIDBhMSAxIDAgMSAwIC0yIDB6IiBmaWxsPSJyZ2JhKDIyOSwgMjMxLCAyMzUsIDAuNSkiLz4KPC9zdmc+')] bg-repeat">
         <div className="space-y-2">
-          {showConfetti && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              style={{
-                position: 'fixed',
-                left: confettiPosition.x,
-                top: confettiPosition.y,
-                pointerEvents: 'none',
-                zIndex: 50,
-                width: 0,
-                height: 0
-              }}
-            >
-              {[...Array(30)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ x: 0, y: 0, opacity: 1 }}
-                  animate={{
-                    x: (Math.random() - 0.5) * 300,
-                    y: Math.random() * -300,
-                    rotate: Math.random() * 360 * (Math.random() > 0.5 ? 1 : -1),
-                    opacity: 0,
-                  }}
-                  transition={{
-                    duration: Math.random() * 1 + 1,
-                    ease: [0.4, 0, 0.2, 1],
-                    opacity: { duration: Math.random() * 1 + 0.5 }
-                  }}
-                  style={{
-                    position: 'absolute',
-                    width: Math.random() * 8 + 6 + 'px',
-                    height: Math.random() * 8 + 6 + 'px',
-                    backgroundColor: [
-                      '#FFD700', '#FFA500', '#FF69B4', '#00CED1',
-                      '#9B59B6', '#2ECC71', '#E74C3C', '#3498DB',
-                      '#F1C40F', '#E67E22', '#16A085', '#8E44AD'
-                    ][i % 12],
-                    borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    transform: 'translate(-50%, -50%)'
-                  }}
-                />
-              ))}
-            </motion.div>
-          )}
           <AnimatePresence mode="sync">
             {entries.map((entry, index) => (
               <motion.div
@@ -327,7 +288,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                     disabled={!entry.content}
                     onCheckedChange={(checked) => {
                       if (entry.content) {
-                        toggleComplete(index, checked ? document.activeElement as HTMLElement : document.body);
+                        toggleComplete(index);
                       }
                     }}
                     className={`h-5 w-5 transition-transform duration-200 ${

@@ -8,11 +8,14 @@ import type { MoodEntry } from "@shared/schema";
 const MOOD_LABELS: Record<string, { label: string, color: string }> = {
   "😊": { label: "Happy", color: "from-green-50 to-emerald-50" },
   "🥳": { label: "Excited", color: "from-purple-50 to-pink-50" },
+  "😌": { label: "Peaceful", color: "from-yellow-50 to-amber-50" },
+  "🤔": { label: "Thoughtful", color: "from-blue-50 to-cyan-50" },
   "😐": { label: "Neutral", color: "from-gray-50 to-slate-50" },
   "😴": { label: "Tired", color: "from-blue-50 to-indigo-50" },
   "😤": { label: "Frustrated", color: "from-red-50 to-orange-50" },
   "😢": { label: "Sad", color: "from-indigo-50 to-blue-50" },
-  "😌": { label: "Peaceful", color: "from-yellow-50 to-amber-50" }
+  "😰": { label: "Anxious", color: "from-orange-50 to-red-50" },
+  "🤗": { label: "Grateful", color: "from-teal-50 to-emerald-50" }
 };
 
 export function MoodTracker() {
