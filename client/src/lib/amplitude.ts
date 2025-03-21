@@ -12,14 +12,17 @@ amplitude.init('ad21a3a1e9ba786379ac4ae8a6fdb010', {
 
 // Custom event types
 export const Events = {
-  // Task related events
-  TASK_LIST_TODAY_OPEN: 'Task List Today View',
-  TASK_LIST_OTHER_OPEN: 'Task List Other View',
-  TASK_CREATED: 'Task Created',
-  TASK_COMPLETED: 'Task Completed',
+  // Task related events - with specific category tracking
+  TASK_LIST_TODAY_OPEN: 'Today Tasks View',
+  TASK_LIST_OTHER_OPEN: 'Other Tasks View',
+  TASK_CREATED_TODAY: 'Today Task Created',
+  TASK_CREATED_OTHER: 'Other Task Created',
+  TASK_COMPLETED_TODAY: 'Today Task Completed',
+  TASK_COMPLETED_OTHER: 'Other Task Completed',
   TASK_DELETED: 'Task Deleted',
   TASK_PRIORITY_CHANGED: 'Task Priority Changed',
   TASK_TIME_SET: 'Task Time Set',
+  TASK_EDIT_STARTED: 'Task Edit Started',
   TASKS_SORTED: 'Tasks Sorted',
 
   // Mood related events
@@ -73,6 +76,11 @@ export const trackEvent = (
     userAgent: navigator.userAgent,
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
+    timeOfDay: new Date().getHours(),
+    dayOfWeek: new Date().getDay(),
+    isWeekend: [0, 6].includes(new Date().getDay()),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    sessionId: Date.now().toString(),
   };
 
   amplitude.track(eventName, {

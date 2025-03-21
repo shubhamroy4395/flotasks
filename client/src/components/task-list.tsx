@@ -168,16 +168,25 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       });
 
       // Track task creation with detailed properties
-      trackEvent(Events.TASK_CREATED, {
-        category: title === "Today's Tasks" ? "today" : "other",
-        priority,
-        hasEta: Boolean(eta),
-        etaValue: eta,
-        contentLength: content.length,
-        timeOfDay: new Date().getHours(),
-        dayOfWeek: new Date().getDay(),
-        taskPosition: activeTask.index
-      });
+      trackEvent(
+        title === "Today's Tasks" ? Events.TASK_CREATED_TODAY : Events.TASK_CREATED_OTHER,
+        {
+          taskId: activeTask.index +1, // Assuming index starts from 0, adjust as needed.
+          category: title === "Today's Tasks" ? "today" : "other",
+          priority,
+          priorityLabel: PRIORITIES.find(p => p.value === priority)?.label || '',
+          hasEta: Boolean(eta),
+          etaValue: eta,
+          etaMinutes: convertTimeToMinutes(eta),
+          contentLength: content.length,
+          wordCount: content.trim().split(/\s+/).length,
+          timeOfDay: new Date().getHours(),
+          dayOfWeek: new Date().getDay(),
+          taskPosition: activeTask.index,
+          totalTasksInCategory: entries.filter(e => e.content).length,
+          completedTasksInCategory: entries.filter(e => e.completed).length
+        }
+      );
     }
 
     setEntries(prev =>
@@ -208,16 +217,25 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             }, 2000);
 
             // Track task completion with comprehensive metrics
-            trackEvent(Events.TASK_COMPLETED, {
-              category: title === "Today's Tasks" ? "today" : "other",
-              priority: entry.priority,
-              timeToComplete: entry.eta,
-              position: index,
-              timeOfDay: new Date().getHours(),
-              dayOfWeek: new Date().getDay(),
-              contentLength: entry.content.length,
-              taskAge: new Date().getTime() - new Date(entry.timestamp).getTime() //using timestamp
-            });
+            trackEvent(
+              title === "Today's Tasks" ? Events.TASK_COMPLETED_TODAY : Events.TASK_COMPLETED_OTHER,
+              {
+                taskId: entry.id,
+                category: title === "Today's Tasks" ? "today" : "other",
+                priority: entry.priority,
+                priorityLabel: PRIORITIES.find(p => p.value === entry.priority)?.label || '',
+                timeToComplete: entry.eta,
+                etaMinutes: convertTimeToMinutes(entry.eta),
+                position: index,
+                timeOfDay: new Date().getHours(),
+                dayOfWeek: new Date().getDay(),
+                contentLength: entry.content.length,
+                wordCount: entry.content.trim().split(/\s+/).length,
+                taskAge: new Date().getTime() - new Date(entry.timestamp).getTime(),
+                totalTasksInCategory: entries.filter(e => e.content).length,
+                completedTasksInCategory: entries.filter(e => e.completed).length + 1
+              }
+            );
           }
           return { ...entry, completed: newCompleted };
         }
@@ -235,7 +253,9 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       // Track sorting interaction with detailed metrics
       trackEvent(Events.TASKS_SORTED, {
         category: title,
+        listType: title === "Today's Tasks" ? "today" : "other",
         sortType: nextState,
+        previousSortType: sortState,
         taskCount: entries.filter(e => e.content).length,
         completedCount: entries.filter(e => e.completed).length,
         priorityDistribution: entries.reduce((acc, entry) => {
@@ -243,7 +263,9 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             acc[entry.priority] = (acc[entry.priority] || 0) + 1;
           }
           return acc;
-        }, {} as Record<number, number>)
+        }, {} as Record<number, number>),
+        averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) / 
+                        entries.filter(e => e.content).length || 0
       });
 
       setEntries(prev => {
