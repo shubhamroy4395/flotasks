@@ -13,56 +13,60 @@ amplitude.init('ad21a3a1e9ba786379ac4ae8a6fdb010', {
 // Custom event types
 export const Events = {
   // Task related events - with specific category tracking
-  TASK_LIST_TODAY_OPEN: 'Today Tasks View',
-  TASK_LIST_OTHER_OPEN: 'Other Tasks View',
-  TASK_CREATED_TODAY: 'Today Task Created',
-  TASK_CREATED_OTHER: 'Other Task Created',
-  TASK_COMPLETED_TODAY: 'Today Task Completed',
-  TASK_COMPLETED_OTHER: 'Other Task Completed',
-  TASK_DELETED: 'Task Deleted',
-  TASK_PRIORITY_CHANGED: 'Task Priority Changed',
-  TASK_TIME_SET: 'Task Time Set',
-  TASK_EDIT_STARTED: 'Task Edit Started',
-  TASKS_SORTED: 'Tasks Sorted',
-
-  // Mood related events
-  MOOD_SECTION_OPEN: 'Mood Section Open',
-  MOOD_SELECTED: 'Mood Selected',
-
-  // Gratitude related events
-  GRATITUDE_SECTION_OPEN: 'Gratitude Section Open',
-  GRATITUDE_ADDED: 'Gratitude Added',
-  GRATITUDE_DELETED: 'Gratitude Deleted',
-
-  // Notes related events
-  NOTES_SECTION_OPEN: 'Notes Section Open',
-  NOTE_CREATED: 'Note Created',
-  NOTE_DELETED: 'Note Deleted',
-
-  // Reminder related events
-  REMINDER_SECTION_OPEN: 'Reminder Section Open',
-  REMINDER_SET: 'Reminder Set',
-  REMINDER_COMPLETED: 'Reminder Completed',
-  REMINDER_DELETED: 'Reminder Deleted',
-
-  // Goal related events
-  GOALS_SECTION_OPEN: 'Goals Section Open',
-  GOAL_CREATED: 'Goal Created',
-  GOAL_UPDATED: 'Goal Updated',
-  GOAL_COMPLETED: 'Goal Completed',
-  GOAL_DELETED: 'Goal Deleted',
-
-  // Navigation events
-  NAV_ITEM_CLICKED: 'Navigation Item Clicked',
-  SECTION_EXPANDED: 'Section Expanded',
-  SECTION_COLLAPSED: 'Section Collapsed',
-
-  // UI Interaction events
-  UI_THEME_CHANGED: 'Theme Changed',
-  UI_FILTER_APPLIED: 'Filter Applied',
-  UI_SORT_CHANGED: 'Sort Option Changed',
-  UI_MODAL_OPENED: 'Modal Opened',
-  UI_MODAL_CLOSED: 'Modal Closed'
+  TaskToday: {
+    View: 'TaskToday.View',
+    Created: 'TaskToday.Created',
+    Completed: 'TaskToday.Completed',
+    Edited: 'TaskToday.Edited',
+    Deleted: 'TaskToday.Deleted',
+    PriorityChanged: 'TaskToday.PriorityChanged',
+    TimeSet: 'TaskToday.TimeSet',
+    Sorted: 'TaskToday.Sorted'
+  },
+  TaskOther: {
+    View: 'TaskOther.View',
+    Created: 'TaskOther.Created',
+    Completed: 'TaskOther.Completed',
+    Edited: 'TaskOther.Edited',
+    Deleted: 'TaskOther.Deleted',
+    PriorityChanged: 'TaskOther.PriorityChanged',
+    TimeSet: 'TaskOther.TimeSet',
+    Sorted: 'TaskOther.Sorted'
+  },
+  Mood: {
+    SectionOpen: 'Mood.SectionOpen',
+    Selected: 'Mood.Selected'
+  },
+  Gratitude: {
+    SectionOpen: 'Gratitude.SectionOpen',
+    Added: 'Gratitude.Added',
+    Deleted: 'Gratitude.Deleted'
+  },
+  Notes: {
+    SectionOpen: 'Notes.SectionOpen',
+    Created: 'Notes.Created',
+    Deleted: 'Notes.Deleted'
+  },
+  Reminder: {
+    SectionOpen: 'Reminder.SectionOpen',
+    Set: 'Reminder.Set',
+    Completed: 'Reminder.Completed',
+    Deleted: 'Reminder.Deleted'
+  },
+  Goals: {
+    SectionOpen: 'Goals.SectionOpen',
+    Created: 'Goals.Created',
+    Updated: 'Goals.Updated',
+    Completed: 'Goals.Completed',
+    Deleted: 'Goals.Deleted'
+  },
+  UI: {
+    ModalOpened: 'UI.ModalOpened',
+    ModalClosed: 'UI.ModalClosed',
+    ThemeChanged: 'UI.ThemeChanged',
+    FilterApplied: 'UI.FilterApplied',
+    SortChanged: 'UI.SortChanged'
+  }
 };
 
 // Helper function to track events with properties
@@ -72,15 +76,23 @@ export const trackEvent = (
 ) => {
   // Add common properties to all events
   const commonProps = {
-    timestamp: new Date().toISOString(),
-    userAgent: navigator.userAgent,
-    screenWidth: window.innerWidth,
-    screenHeight: window.innerHeight,
-    timeOfDay: new Date().getHours(),
-    dayOfWeek: new Date().getDay(),
-    isWeekend: [0, 6].includes(new Date().getDay()),
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    sessionId: Date.now().toString(),
+    metadata: {
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      screenWidth: window.innerWidth,
+      screenHeight: window.innerHeight,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      sessionId: Date.now().toString(),
+    },
+    timing: {
+      timeOfDay: new Date().getHours(),
+      dayOfWeek: new Date().getDay(),
+      isWeekend: [0, 6].includes(new Date().getDay()),
+      hour: new Date().getHours(),
+      minute: new Date().getMinutes(),
+      timeframe: new Date().getHours() < 12 ? 'morning' : 
+                new Date().getHours() < 17 ? 'afternoon' : 'evening'
+    }
   };
 
   amplitude.track(eventName, {
