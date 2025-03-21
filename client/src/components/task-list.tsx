@@ -12,9 +12,11 @@ import { trackEvent, Events } from "@/lib/amplitude";
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
   if (!time) return 0;
-  const hours = time.match(/(\d+)h/);
-  const minutes = time.match(/(\d+)min/);
-  return (hours ? parseInt(hours[1]) * 60 : 0) + (minutes ? parseInt(minutes[1]) : 0);
+  const [hours, minutes] = time.split(" ").map(part => {
+    const match = part.match(/(\d+)(h|min)/);
+    return match ? parseInt(match[1]) : 0;
+  });
+  return (hours ? hours * 60 : 0) + (minutes ? minutes : 0);
 };
 
 // Helper function to format minutes to readable time
@@ -56,7 +58,8 @@ const PRIORITIES = [
 ];
 
 const TIME_SLOTS = [
-  "5min", "10min", "15min", "30min", "45min", "1h", "2h"
+  "5min", "10min", "15min", "20min", "30min", "45min",
+  "1h", "1h 30min", "2h", "2h 30min", "3h", "4h", "5h", "6h", "7h", "8h"
 ];
 
 interface TaskListProps {
@@ -226,36 +229,36 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             setShowCelebration(index);
             setTimeout(() => setShowCelebration(null), 2000);
 
-          // Determine event name based on task category
-          const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
+            // Determine event name based on task category
+            const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
 
-          // Track completion with filterable properties
-          trackEvent(eventName, {
-            // Top-level properties for easy filtering
-            category: title === "Today's Tasks" ? "today" : "other",
-            priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
-            priority_value: entry.priority,
-            has_time: Boolean(entry.eta),
-            estimated_minutes: convertTimeToMinutes(entry.eta),
-            completion_time: Date.now(),
+            // Track completion with filterable properties
+            trackEvent(eventName, {
+              // Top-level properties for easy filtering
+              category: title === "Today's Tasks" ? "today" : "other",
+              priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
+              priority_value: entry.priority,
+              has_time: Boolean(entry.eta),
+              estimated_minutes: convertTimeToMinutes(entry.eta),
+              completion_time: Date.now(),
 
-            // Task details
-            task: {
-              id: entry.id,
-              content: entry.content,
-              position: index,
-              age_ms: Date.now() - new Date(entry.timestamp).getTime()
-            },
+              // Task details
+              task: {
+                id: entry.id,
+                content: entry.content,
+                position: index,
+                age_ms: Date.now() - new Date(entry.timestamp).getTime()
+              },
 
-            // Context
-            task_context: {
-              total_tasks: entries.filter(e => e.content).length,
-              completed_tasks: entries.filter(e => e.completed).length + 1,
-              completion_rate: ((entries.filter(e => e.completed).length + 1) / 
-                              entries.filter(e => e.content).length) * 100
-            }
-          });
-        }
+              // Context
+              task_context: {
+                total_tasks: entries.filter(e => e.content).length,
+                completed_tasks: entries.filter(e => e.completed).length + 1,
+                completion_rate: ((entries.filter(e => e.completed).length + 1) /
+                                entries.filter(e => e.content).length) * 100
+              }
+            });
+          }
           return { ...entry, completed: newCompleted };
         }
         return entry;
@@ -284,12 +287,12 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           completed_tasks: entries.filter(e => e.completed).length,
           priority_distribution: entries.reduce((acc, entry) => {
             if (entry.priority) {
-              acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] = 
+              acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] =
                 (acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] || 0) + 1;
             }
             return acc;
           }, {} as Record<string, number>),
-          averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) / 
+          averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) /
                            entries.filter(e => e.content).length || 0
         }
       });
