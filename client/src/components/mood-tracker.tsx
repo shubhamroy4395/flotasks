@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MoodEntry } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
+import { useEffect } from "react";
 
 const MOOD_LABELS: Record<string, { label: string, color: string }> = {
   "😊": { label: "Happy", color: "from-green-50 to-emerald-50" },
@@ -22,6 +23,15 @@ const MOOD_LABELS: Record<string, { label: string, color: string }> = {
 export function MoodTracker() {
   const queryClient = useQueryClient();
 
+  // Track when the mood section is opened
+  useEffect(() => {
+    trackEvent(Events.MOOD_SECTION_OPEN, {
+      componentName: 'MoodTracker',
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight
+    });
+  }, []);
+
   const { data: moodEntries } = useQuery<MoodEntry[]>({
     queryKey: ["/api/mood"],
   });
@@ -33,10 +43,13 @@ export function MoodTracker() {
     onSuccess: (_, mood) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
 
-      // Track mood selection
+      // Track mood selection with detailed properties
       trackEvent(Events.MOOD_SELECTED, {
         mood,
-        label: MOOD_LABELS[mood].label,
+        moodLabel: MOOD_LABELS[mood].label,
+        previousMood: moodEntries?.[0]?.mood || null,
+        timeOfDay: new Date().getHours(),
+        dayOfWeek: new Date().getDay(),
         timestamp: new Date().toISOString()
       });
     },
@@ -78,6 +91,7 @@ export function MoodTracker() {
             <EmojiPicker
               selected={currentMood}
               onSelect={(emoji) => createMood.mutate(emoji)}
+              moods={Object.keys(MOOD_LABELS)}
             />
           </div>
         </motion.div>
