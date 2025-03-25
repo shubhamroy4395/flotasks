@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { useGoogleLogin } from "@react-oauth/google";
 import { trackEvent, Events } from "@/lib/amplitude";
 
 // Enhanced User interface with optional Google profile fields
@@ -89,24 +88,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  // Implement Google login using the react-oauth/google hook
-  const googleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      googleLoginMutation.mutate({ access_token: tokenResponse.access_token });
-    },
-    onError: (errorResponse) => {
-      toast({
-        title: "Google login failed",
-        description: errorResponse.error_description || "Unable to authenticate with Google",
-        variant: "destructive",
-      });
-      trackEvent(Events.UI.GoogleLogin, { success: false, error: errorResponse.error_description });
-    },
-  });
-  
   // Wrapper function for the Google login
+  // This is now just a redirect to the login page since we're using GoogleLogin component directly there
   const loginWithGoogle = () => {
-    googleLogin();
+    toast({
+      title: "Google login",
+      description: "Please use the Google login button on the login page",
+    });
+    setLocation("/login");
   };
 
   // Traditional login mutation
