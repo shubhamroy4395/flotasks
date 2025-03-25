@@ -193,7 +193,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
   );
 
   // Event handlers
-  const handleLineClick = (index: number, e: React.MouseEvent) => {
+  const handleLineClick = (index: number, e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     const entry = entries[index];
     setActiveTask({
@@ -359,7 +359,9 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     addNewItem: () => {
       const index = nextEmptyIndex();
       if (index >= 0) {
-        handleLineClick(index, new MouseEvent('click'));
+        // Create a synthetic React mouse event instead of a native MouseEvent
+        const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent<HTMLElement>;
+        handleLineClick(index, syntheticEvent);
       } else {
         addMoreTasks();
       }
