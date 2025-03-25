@@ -76,7 +76,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
   const [entries, setEntries] = useState(() => {
     const initialLines = title === "Other Tasks" ? 8 : 10;
     const lines = Array(initialLines).fill(null).map((_, i) => ({
-      id: i + 1,
+      id: i + 1, // This is just for the UI's initial rendering
       content: "",
       isEditing: false,
       completed: false,
@@ -85,14 +85,17 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       timestamp: new Date()
     }));
 
+    // Map actual task data onto our UI entries, preserving the server IDs
     tasks.forEach((task, index) => {
       if (index < lines.length) {
         lines[index] = {
           ...lines[index],
+          id: task.id, // Use the actual ID from the server
           content: task.content,
           completed: task.completed,
           priority: task.priority,
-          eta: task.eta || ""
+          eta: task.eta || "",
+          timestamp: task.timestamp || new Date()
         };
       }
     });
@@ -716,13 +719,24 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (entry.id && entry.content) {
-                              // Debug the task ID we're about to delete
+                              // Enhanced debugging for task deletion
                               console.log(`Attempting to delete task with raw ID: ${entry.id} (type: ${typeof entry.id})`);
+                              console.log(`Task details:`, { 
+                                title, 
+                                taskId: entry.id, 
+                                content: entry.content,
+                                from: 'UI delete button'
+                              });
+                              
+                              // Ensure ID is correctly passed as a number (timestamp IDs are large numbers)
+                              const idToDelete = Number(entry.id);
                               
                               if (onDelete) {
-                                onDelete(entry.id);
+                                // Use the parent component's delete handler
+                                onDelete(idToDelete);
                               } else {
-                                deleteEntry.mutate(entry.id);
+                                // Use the local delete mutation
+                                deleteEntry.mutate(idToDelete);
                               }
                             }
                           }}

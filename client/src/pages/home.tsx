@@ -153,9 +153,19 @@ export default function Home() {
   // Delete task mutation for non-authenticated users
   const deletePublicTask = useMutation({
     mutationFn: async (taskId: number) => {
+      // Additional logging to debug task ID issues
+      console.log(`Attempting to delete task with raw ID: ${taskId} (type: ${typeof taskId})`);
       console.log(`Deleting public task with ID: ${taskId}`);
-      const response = await apiRequest("DELETE", `/api/public/tasks/${taskId}`);
-      return taskId;
+      console.log(`Making DELETE request to /api/public/tasks/${taskId}`);
+      
+      try {
+        const response = await apiRequest("DELETE", `/api/public/tasks/${taskId}`);
+        console.log(`Delete response status: ${response?.status}`);
+        return taskId;
+      } catch (err) {
+        console.error("Error deleting public task:", err);
+        throw err;
+      }
     },
     onSuccess: (taskId) => {
       console.log(`Successfully deleted public task: ${taskId}`);
