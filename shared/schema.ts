@@ -7,6 +7,8 @@ export const users = pgTable("users", {
   username: text("username").notNull(),
   email: text("email").notNull(),
   password: text("password").notNull(),  // Will store hashed password
+  picture: text("picture"),  // Profile picture URL (for Google auth)
+  name: text("name"),        // Full name (for Google auth)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => {
   return {

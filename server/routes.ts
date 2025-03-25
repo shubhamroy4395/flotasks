@@ -103,6 +103,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Google Authentication
+  app.post("/api/auth/google", async (req, res) => {
+    try {
+      const { access_token } = req.body;
+      
+      if (!access_token) {
+        return res.status(400).json({ error: "Access token is required" });
+      }
+      
+      // Fetch user info from Google
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return res.status(401).json({ 
+          error: "Google authentication failed", 
+          details: errorData
+        });
+      }
+      
+      const userData = await response.json();
+      
+      // Check if user exists
+      let user = await storage.getUserByEmail(userData.email);
+      
+      // If not, create user
+      if (!user) {
+        user = await storage.createUser({
+          email: userData.email,
+          username: userData.name || userData.email.split('@')[0],
+          password: '', // No password for Google users
+          picture: userData.picture,
+          name: userData.name
+        });
+      }
+      
+      // Login user
+      req.logIn(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed after Google authentication" });
+        }
+        
+        // Return user info (excluding password)
+        const { password, ...userWithoutPassword } = user;
+        return res.json({
+          message: "Google authentication successful",
+          user: userWithoutPassword
+        });
+      });
+    } catch (error) {
+      console.error("Google auth error:", error);
+      res.status(500).json({ error: "Failed to authenticate with Google" });
+    }
+  });
+  
   app.get("/api/auth/user", (req: AuthRequest, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });

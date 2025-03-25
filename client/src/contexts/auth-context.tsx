@@ -3,14 +3,24 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useGoogleLogin } from "@react-oauth/google";
+import { trackEvent, Events } from "@/lib/amplitude";
 
+// Enhanced User interface with optional Google profile fields
 interface User {
   id: number;
   username: string;
   email: string;
+  picture?: string; // Profile picture URL
+  name?: string;    // Full name from Google
 }
 
 interface LoginResponse {
+  message: string;
+  user: User;
+}
+
+interface GoogleLoginResponse {
   message: string;
   user: User;
 }
@@ -22,6 +32,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => Promise<void>;
+  loginWithGoogle: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,7 +59,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [data, isUserLoading]);
 
-  // Login mutation
+  // Google login mutation
+  const googleLoginMutation = useMutation({
+    mutationFn: async (tokenResponse: { access_token: string }) => {
+      try {
+        const response = await apiRequest("POST", "/api/auth/google", tokenResponse);
+        return await response.json() as GoogleLoginResponse;
+      } catch (error: any) {
+        throw new Error(error.message || "Google login failed. Please try again.");
+      }
+    },
+    onSuccess: (response: GoogleLoginResponse) => {
+      setUser(response.user);
+      queryClient.setQueryData(["/api/auth/user"], response.user);
+      toast({
+        title: "Login successful",
+        description: "Welcome to your journal!",
+      });
+      trackEvent(Events.UI.GoogleLogin, { success: true });
+      setLocation("/");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Google login failed",
+        description: error.message || "There was an issue with Google authentication",
+        variant: "destructive",
+      });
+      trackEvent(Events.UI.GoogleLogin, { success: false, error: error.message });
+    }
+  });
+
+  // Implement Google login using the react-oauth/google hook
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      googleLoginMutation.mutate({ access_token: tokenResponse.access_token });
+    },
+    onError: (errorResponse) => {
+      toast({
+        title: "Google login failed",
+        description: errorResponse.error_description || "Unable to authenticate with Google",
+        variant: "destructive",
+      });
+      trackEvent(Events.UI.GoogleLogin, { success: false, error: errorResponse.error_description });
+    },
+  });
+
+  // Traditional login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       try {
@@ -66,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Login successful",
         description: "Welcome back!",
       });
+      trackEvent(Events.UI.Login, { success: true });
       setLocation("/");
     },
     onError: (error: Error) => {
@@ -74,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: error.message || "Please check your credentials and try again",
         variant: "destructive",
       });
+      trackEvent(Events.UI.Login, { success: false, error: error.message });
     },
   });
 
@@ -93,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Registration successful",
         description: "Your account has been created! Please log in.",
       });
+      trackEvent(Events.UI.Register, { success: true });
       setLocation("/login");
     },
     onError: (error: Error) => {
@@ -101,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: error.message || "There was a problem with registration",
         variant: "destructive",
       });
+      trackEvent(Events.UI.Register, { success: false, error: error.message });
     },
   });
 
@@ -122,6 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Logged out",
         description: "You have been logged out successfully",
       });
+      trackEvent(Events.UI.Logout, { success: true });
       // Don't redirect after logout, stay on the current page
     },
     onError: (error: Error) => {
@@ -130,6 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: error.message || "There was a problem logging out",
         variant: "destructive",
       });
+      trackEvent(Events.UI.Logout, { success: false, error: error.message });
     },
   });
 
@@ -153,6 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
+    loginWithGoogle,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

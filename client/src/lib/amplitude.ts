@@ -60,7 +60,18 @@ export const Events = {
     ThemeChanged: 'UI.ThemeChanged',
     FilterApplied: 'UI.FilterApplied',
     SortChanged: 'UI.SortChanged',
-    KeyboardShortcut: 'UI.KeyboardShortcut'
+    KeyboardShortcut: 'UI.KeyboardShortcut',
+    Login: 'UI.Login',
+    Logout: 'UI.Logout',
+    Register: 'UI.Register',
+    GoogleLogin: 'UI.GoogleLogin',
+    AuthError: 'UI.AuthError'
+  },
+  Reminder: {
+    SectionOpen: 'Reminder.SectionOpen',
+    Set: 'Reminder.Set',
+    Completed: 'Reminder.Completed',
+    Deleted: 'Reminder.Deleted'
   }
 };
 
