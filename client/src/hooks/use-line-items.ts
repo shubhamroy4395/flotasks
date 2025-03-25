@@ -49,6 +49,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
 
         // Get the actual entry data from the response
         const data = await response.json();
+        console.log("Successfully saved entry:", data);
         return data;
       } catch (error) {
         console.error("Error creating entry:", error);
@@ -67,22 +68,42 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         const optimisticEntry = {
           id: tempId,
           content,
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(), // Ensure timestamp is a string like in the API
           isSaved: true
         };
 
         // Find the active entry index
         const activeIdx = activeEntry?.index ?? -1;
+        if (activeIdx === -1) {
+          console.warn("No active entry found for optimistic update");
+          return { previousEntries };
+        }
         
         // Update local state immediately to show the entry as saved
         setEntries(prev => {
-          return prev.map((entry, idx) => 
-            idx === activeIdx ? { ...entry, content, isSaved: true, id: tempId } : entry
-          );
+          // Deep clone to avoid reference issues
+          const updatedEntries = [...prev];
+          // Only update if the index is valid
+          if (activeIdx >= 0 && activeIdx < updatedEntries.length) {
+            updatedEntries[activeIdx] = { 
+              ...updatedEntries[activeIdx], 
+              content, 
+              isSaved: true,
+              id: tempId
+            };
+          }
+          return updatedEntries;
         });
 
         // Update cache optimistically
-        queryClient.setQueryData(queryKey, (old: any[] = []) => [...old, optimisticEntry]);
+        queryClient.setQueryData(queryKey, (old: any[] = []) => {
+          // Add to cache if not already there
+          const exists = Array.isArray(old) && old.some(entry => 
+            entry.content === content && Math.abs(new Date(entry.timestamp).getTime() - Date.now()) < 5000
+          );
+          
+          return exists ? old : [...old, optimisticEntry];
+        });
 
         return { previousEntries, tempId, activeIdx };
       } catch (error) {
@@ -91,30 +112,57 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       }
     },
     onSuccess: (data, variables, context) => {
+      console.log("Save success, updating ID from temp to real:", context?.tempId, "→", data.id);
+      
       if (context?.tempId && context.activeIdx !== undefined) {
         // Update the entry with the real server-assigned ID
         setEntries(prev => {
           return prev.map(entry => 
-            entry.id === context.tempId ? { ...entry, id: data.id } : entry
+            entry.id === context.tempId ? { 
+              ...entry,
+              id: data.id,
+              timestamp: new Date(data.timestamp)
+            } : entry
+          );
+        });
+        
+        // Update the cached entry in query cache
+        queryClient.setQueryData(queryKey, (old: any[] = []) => {
+          if (!Array.isArray(old)) return [data];
+          
+          // Replace the temporary entry with the real one
+          return old.map(entry => 
+            entry.id === context.tempId ? data : entry
           );
         });
       }
     },
     onError: (err, variables, context) => {
+      console.error("Save error:", err);
+      
       if (context?.previousEntries) {
         queryClient.setQueryData(queryKey, context.previousEntries);
       }
       
       // Also revert the local state
-      if (context?.tempId) {
-        setEntries(prev => prev.map(entry => 
-          entry.id === context.tempId ? { ...entry, isSaved: false } : entry
-        ));
+      if (context?.tempId && context.activeIdx !== undefined) {
+        setEntries(prev => {
+          // Create a new array to trigger re-render
+          const updatedEntries = [...prev];
+          if (context.activeIdx >= 0 && context.activeIdx < updatedEntries.length) {
+            updatedEntries[context.activeIdx] = {
+              ...updatedEntries[context.activeIdx],
+              isSaved: false
+            };
+          }
+          return updatedEntries.filter(entry => entry.id !== context.tempId || !entry.isSaved);
+        });
       }
       
       setError("Failed to save entry. Please try again.");
     },
     onSettled: () => {
+      // Refresh the data from the server
       queryClient.invalidateQueries({ queryKey });
     }
   });
@@ -182,7 +230,15 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       // Make sure savedEntries is an array before mapping
       const entries = Array.isArray(savedEntries) ? savedEntries : [];
       
-      const savedLines = entries.map(entry => ({
+      // Sort entries by timestamp to ensure consistent ordering
+      const sortedEntries = [...entries].sort((a, b) => {
+        // Convert timestamps to Date objects for comparison
+        const dateA = new Date(a.timestamp || 0);
+        const dateB = new Date(b.timestamp || 0);
+        return dateB.getTime() - dateA.getTime(); // Sort newest first
+      });
+      
+      const savedLines = sortedEntries.map(entry => ({
         id: entry.id,
         content: entry.content,
         isEditing: false,
@@ -190,17 +246,29 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         isSaved: true
       }));
 
-      // Always ensure we have exactly defaultLines empty lines for input
-      const emptyLines = Array(Math.max(defaultLines - savedLines.length, 1)).fill(null).map((_, i) => ({
-        id: Date.now() + i,
+      // Always ensure we have at least one empty line for input
+      const emptyLinesCount = Math.max(defaultLines - savedLines.length, 1);
+      const emptyLines = Array(emptyLinesCount).fill(null).map((_, i) => ({
+        id: -(Date.now() + i), // Use negative IDs for empty lines to avoid conflicts
         content: "",
         isEditing: false,
         timestamp: new Date(),
         isSaved: false
       }));
 
-      // Combine saved and empty lines
-      setEntries([...savedLines, ...emptyLines]);
+      // Combine saved and empty lines, make sure each entry has a unique ID
+      const combinedEntries = [...savedLines, ...emptyLines];
+      
+      // Create a Map to deduplicate entries based on id
+      const uniqueEntriesMap = new Map();
+      combinedEntries.forEach(entry => {
+        uniqueEntriesMap.set(entry.id, entry);
+      });
+      
+      // Convert Map back to array
+      const uniqueEntries = Array.from(uniqueEntriesMap.values());
+      
+      setEntries(uniqueEntries);
       
       // Log for debugging
       console.log(`Initialized ${savedLines.length} saved entries and ${emptyLines.length} empty lines`);
@@ -282,7 +350,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
           setEntries(prev => [
             ...prev,
             {
-              id: Date.now(),
+              id: -(Date.now()), // Use negative IDs for empty lines to avoid conflicts
               content: "",
               isEditing: false,
               timestamp: new Date(),
@@ -295,6 +363,9 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       // Simply clear the active entry without automatic focus changes
       // This makes the UX more predictable and less jumpy
       setActiveEntry(null);
+      
+      // Log for debugging
+      console.log("Handling blur - entries now:", entries.length);
     } catch (error) {
       console.error("Error in handleBlur:", error);
       setError("Failed to save entry. Please try again.");
@@ -304,10 +375,12 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
   const addMoreEntries = useCallback(() => {
     try {
       setEntries(prev => {
+        // Create a negative ID for the new empty entry to avoid conflicts
+        const newId = -(Date.now() + Math.floor(Math.random() * 1000));
         const newEntries = [
           ...prev,
           {
-            id: Date.now(),
+            id: newId,
             content: "",
             isEditing: false,
             timestamp: new Date(),
@@ -329,6 +402,8 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         currentLineCount: entries.length,
         savedLineCount: entries.filter(e => e.isSaved).length
       });
+      
+      console.log(`Added new entry - entries now: ${entries.length + 1}`);
     } catch (error) {
       console.error("Error in addMoreEntries:", error);
       setError("Failed to add new entry. Please try again.");
