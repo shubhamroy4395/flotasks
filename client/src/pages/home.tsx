@@ -11,7 +11,7 @@ import { GoalsSection } from "@/components/goals-section";
 import { NotesSection } from "@/components/notes-section";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, Pencil } from "lucide-react";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -60,17 +60,34 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: todayTasks } = useQuery<Task[]>({
+  // Queries for tasks when authenticated
+  const { data: authTodayTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today"],
     enabled: isAuthenticated,
   });
 
-  const { data: otherTasks } = useQuery<Task[]>({
+  const { data: authOtherTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/other"],
     enabled: isAuthenticated,
   });
 
-  const createTask = useMutation({
+  // Queries for tasks when not authenticated
+  const { data: publicTodayTasks } = useQuery<Task[]>({
+    queryKey: ["/api/public/tasks/today"],
+    enabled: !isAuthenticated,
+  });
+
+  const { data: publicOtherTasks } = useQuery<Task[]>({
+    queryKey: ["/api/public/tasks/other"],
+    enabled: !isAuthenticated,
+  });
+
+  // Get the appropriate tasks based on authentication status
+  const todayTasks = isAuthenticated ? authTodayTasks : publicTodayTasks;
+  const otherTasks = isAuthenticated ? authOtherTasks : publicOtherTasks;
+
+  // Create task mutation for authenticated users
+  const createAuthTask = useMutation({
     mutationFn: async (task: { content: string; priority: number; category: string }) => {
       await apiRequest("POST", "/api/tasks", task);
     },
@@ -80,6 +97,20 @@ export default function Home() {
     },
   });
 
+  // Create task mutation for non-authenticated users
+  const createPublicTask = useMutation({
+    mutationFn: async (task: { content: string; priority: number; category: string }) => {
+      await apiRequest("POST", "/api/public/tasks", task);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/other"] });
+    },
+  });
+
+  // Choose the appropriate mutation based on authentication status
+  const createTask = isAuthenticated ? createAuthTask : createPublicTask;
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -88,38 +119,39 @@ export default function Home() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center justify-center px-4">
-        <div className="text-center max-w-md mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Welcome to My Journal</h1>
-          <p className="text-gray-600 mb-8">
-            Your personal space for tracking tasks, mood, and gratitude. 
-            Login or create an account to get started.
+  // Show welcome banner to non-authenticated users but allow them to use the app
+  const renderWelcomeBanner = !isAuthenticated && (
+    <div className="bg-blue-50 border-b border-blue-100 p-4 mb-6 rounded-lg shadow-sm">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-blue-700 mb-1">Welcome to My Journal</h3>
+          <p className="text-sm text-blue-600">
+            You're using the app as a guest. Your data is stored temporarily.
+            For data that persists across sessions, consider creating an account.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="flex items-center gap-2"
-              onClick={() => window.location.href = "/login"}
-            >
-              <LogIn size={18} />
-              <span>Login</span>
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => window.location.href = "/register"}
-            >
-              <UserPlus size={18} />
-              <span>Create Account</span>
-            </Button>
-          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button 
+            size="sm" 
+            className="flex items-center gap-2"
+            onClick={() => window.location.href = "/login"}
+          >
+            <LogIn size={16} />
+            <span>Login</span>
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => window.location.href = "/register"}
+          >
+            <UserPlus size={16} />
+            <span>Create Account</span>
+          </Button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -139,8 +171,22 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
+          
+          {!isAuthenticated && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden sm:flex items-center gap-2 text-gray-500"
+              onClick={() => window.location.href = "/login"}
+            >
+              <Pencil size={16} />
+              <span>Sign in to save your data</span>
+            </Button>
+          )}
         </div>
       </div>
+
+      {renderWelcomeBanner}
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

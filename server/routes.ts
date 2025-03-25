@@ -110,8 +110,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(req.user);
   });
 
-  // Protected Routes
-  // Tasks
+  // Tasks - Public and protected routes
+  // Public tasks
+  app.get("/api/public/tasks/:category", async (req, res) => {
+    const category = req.params.category;
+    
+    // Get tasks from session storage
+    const sessionTasks = req.session.tasks || {};
+    const tasks = sessionTasks[category] || [];
+    
+    res.json(tasks);
+  });
+
+  app.post("/api/public/tasks", async (req, res) => {
+    const result = insertTaskSchema.omit({ userId: true }).safeParse(req.body);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    // Initialize session storage for tasks if needed
+    if (!req.session.tasks) {
+      req.session.tasks = {};
+    }
+    
+    if (!req.session.tasks[result.data.category]) {
+      req.session.tasks[result.data.category] = [];
+    }
+    
+    // Generate a temporary ID for the task
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    const task = {
+      ...result.data,
+      id: newId,
+      timestamp: new Date()
+    };
+    
+    // Add task to session
+    req.session.tasks[result.data.category].push(task);
+    
+    res.json(task);
+  });
+
+  app.patch("/api/public/tasks/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid task ID" });
+    }
+    
+    // Find and update task in session
+    if (!req.session.tasks) {
+      return res.status(404).json({ error: "No tasks found" });
+    }
+    
+    let taskFound = false;
+    
+    // Loop through all categories to find the task
+    Object.keys(req.session.tasks).forEach(category => {
+      const tasks = req.session.tasks[category];
+      const taskIndex = tasks.findIndex((t: any) => t.id === id);
+      
+      if (taskIndex !== -1) {
+        // Update task
+        req.session.tasks[category][taskIndex] = {
+          ...req.session.tasks[category][taskIndex],
+          ...req.body
+        };
+        taskFound = true;
+        res.json(req.session.tasks[category][taskIndex]);
+      }
+    });
+    
+    if (!taskFound) {
+      res.status(404).json({ error: "Task not found" });
+    }
+  });
+
+  app.delete("/api/public/tasks/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid task ID" });
+    }
+    
+    // Find and delete task in session
+    if (!req.session.tasks) {
+      return res.status(404).json({ error: "No tasks found" });
+    }
+    
+    let taskFound = false;
+    
+    // Loop through all categories to find the task
+    Object.keys(req.session.tasks).forEach(category => {
+      const tasks = req.session.tasks[category];
+      const taskIndex = tasks.findIndex((t: any) => t.id === id);
+      
+      if (taskIndex !== -1) {
+        // Remove task
+        req.session.tasks[category].splice(taskIndex, 1);
+        taskFound = true;
+      }
+    });
+    
+    if (taskFound) {
+      res.status(204).send();
+    } else {
+      res.status(404).json({ error: "Task not found" });
+    }
+  });
+
+  // Protected routes for authenticated users
   app.get("/api/tasks/:category", isAuthenticated, async (req: AuthRequest, res) => {
     const category = req.params.category;
     const userId = req.user?.id;
@@ -160,7 +267,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Mood
+  // Mood - Public and protected routes
+  // Public mood
+  app.get("/api/public/mood", async (req, res) => {
+    // Get mood entries from session storage
+    const moodEntries = req.session.moodEntries || [];
+    res.json(moodEntries);
+  });
+
+  app.post("/api/public/mood", async (req, res) => {
+    const result = insertMoodSchema.omit({ userId: true }).safeParse(req.body);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    
+    // Initialize session storage for mood entries if needed
+    if (!req.session.moodEntries) {
+      req.session.moodEntries = [];
+    }
+    
+    // Generate a temporary ID for the entry
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    const entry = {
+      ...result.data,
+      id: newId,
+      timestamp: new Date()
+    };
+    
+    // Add entry to session
+    req.session.moodEntries.push(entry);
+    
+    res.json(entry);
+  });
+
+  // Protected mood routes
   app.get("/api/mood", isAuthenticated, async (req: AuthRequest, res) => {
     const userId = req.user?.id;
     
@@ -186,7 +327,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(entry);
   });
 
-  // Gratitude
+  // Gratitude - Public and protected routes
+  // Public gratitude
+  app.get("/api/public/gratitude", async (req, res) => {
+    // Get gratitude entries from session storage
+    const gratitudeEntries = req.session.gratitudeEntries || [];
+    res.json(gratitudeEntries);
+  });
+
+  app.post("/api/public/gratitude", async (req, res) => {
+    const result = insertGratitudeSchema.omit({ userId: true }).safeParse(req.body);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    
+    // Initialize session storage for gratitude entries if needed
+    if (!req.session.gratitudeEntries) {
+      req.session.gratitudeEntries = [];
+    }
+    
+    // Generate a temporary ID for the entry
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    const entry = {
+      ...result.data,
+      id: newId,
+      timestamp: new Date()
+    };
+    
+    // Add entry to session
+    req.session.gratitudeEntries.push(entry);
+    
+    res.json(entry);
+  });
+
+  app.delete("/api/public/gratitude/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid gratitude entry ID" });
+    }
+    
+    // Find and delete gratitude entry in session
+    if (!req.session.gratitudeEntries) {
+      return res.status(404).json({ error: "No gratitude entries found" });
+    }
+    
+    const entryIndex = req.session.gratitudeEntries.findIndex((e: any) => e.id === id);
+    
+    if (entryIndex !== -1) {
+      // Remove entry
+      req.session.gratitudeEntries.splice(entryIndex, 1);
+      res.status(204).send();
+    } else {
+      res.status(404).json({ error: "Gratitude entry not found" });
+    }
+  });
+
+  // Protected gratitude routes
   app.get("/api/gratitude", isAuthenticated, async (req: AuthRequest, res) => {
     const userId = req.user?.id;
     
@@ -225,7 +422,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notes
+  // Notes - Public and protected routes
+  // Public notes
+  app.get("/api/public/notes", async (req, res) => {
+    // Get notes from session storage
+    const notes = req.session.notes || [];
+    res.json(notes);
+  });
+
+  app.post("/api/public/notes", async (req, res) => {
+    const result = insertNoteSchema.omit({ userId: true }).safeParse(req.body);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    
+    // Initialize session storage for notes if needed
+    if (!req.session.notes) {
+      req.session.notes = [];
+    }
+    
+    // Generate a temporary ID for the note
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    const note = {
+      ...result.data,
+      id: newId,
+      timestamp: new Date()
+    };
+    
+    // Add note to session
+    req.session.notes.push(note);
+    
+    res.json(note);
+  });
+
+  app.delete("/api/public/notes/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid note ID" });
+    }
+    
+    // Find and delete note in session
+    if (!req.session.notes) {
+      return res.status(404).json({ error: "No notes found" });
+    }
+    
+    const noteIndex = req.session.notes.findIndex((n: any) => n.id === id);
+    
+    if (noteIndex !== -1) {
+      // Remove note
+      req.session.notes.splice(noteIndex, 1);
+      res.status(204).send();
+    } else {
+      res.status(404).json({ error: "Note not found" });
+    }
+  });
+
+  // Protected notes routes
   app.get("/api/notes", isAuthenticated, async (req: AuthRequest, res) => {
     const userId = req.user?.id;
     
