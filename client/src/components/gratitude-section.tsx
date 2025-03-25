@@ -102,26 +102,35 @@ export function GratitudeSection() {
               exit={{ opacity: 0, y: -20 }}
             >
               <Card className="p-4 mb-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="I am grateful for..."
-                      value={newEntry}
-                      onChange={(e) => setNewEntry(e.target.value)}
-                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
-                      autoFocus
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Button type="submit" className="w-full font-medium">Add Entry</Button>
-                </form>
+                <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="I am grateful for..."
+                    value={newEntry}
+                    onChange={(e) => setNewEntry(e.target.value)}
+                    onBlur={() => {
+                      if (newEntry.trim()) {
+                        createEntry.mutate(newEntry);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newEntry.trim()) {
+                        createEntry.mutate(newEntry);
+                      }
+                    }}
+                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               </Card>
             </motion.div>
           )}

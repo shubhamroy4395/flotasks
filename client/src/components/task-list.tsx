@@ -134,6 +134,16 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     );
   }, []);
 
+  const handleAutoSave = (index: number, content: string) => {
+    if (content.trim()) {
+      onSave({ 
+        content, 
+        priority: entries[index].priority || 0,
+        category: title === "Today's Tasks" ? "today" : "other"
+      });
+    }
+  };
+
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const entry = entries[index];
