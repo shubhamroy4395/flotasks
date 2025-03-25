@@ -10,8 +10,7 @@ import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
 import { NotesSection } from "@/components/notes-section";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import { LogIn, UserPlus, Pencil } from "lucide-react";
+import { NavBar } from "@/components/nav-bar";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -119,43 +118,9 @@ export default function Home() {
     );
   }
 
-  // Show welcome banner to non-authenticated users but allow them to use the app
-  const renderWelcomeBanner = !isAuthenticated && (
-    <div className="bg-blue-50 border-b border-blue-100 p-4 mb-6 rounded-lg shadow-sm">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-blue-700 mb-1">Welcome to My Journal</h3>
-          <p className="text-sm text-blue-600">
-            You're using the app as a guest. Your data is stored temporarily.
-            For data that persists across sessions, consider creating an account.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button 
-            size="sm" 
-            className="flex items-center gap-2"
-            onClick={() => window.location.href = "/login"}
-          >
-            <LogIn size={16} />
-            <span>Login</span>
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => window.location.href = "/register"}
-          >
-            <UserPlus size={16} />
-            <span>Create Account</span>
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
-      {/* Date and Time Bar */}
+      {/* Top Date/Time Bar */}
       <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10 shadow-md">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -172,21 +137,10 @@ export default function Home() {
             </span>
           </div>
           
-          {!isAuthenticated && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hidden sm:flex items-center gap-2 text-gray-500"
-              onClick={() => window.location.href = "/login"}
-            >
-              <Pencil size={16} />
-              <span>Sign in to save your data</span>
-            </Button>
-          )}
+          {/* User account dropdown */}
+          <NavBar />
         </div>
       </div>
-
-      {renderWelcomeBanner}
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
