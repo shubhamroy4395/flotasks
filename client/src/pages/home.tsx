@@ -132,9 +132,32 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/other"] });
     },
   });
+  
+  // Delete task mutation for authenticated users
+  const deleteAuthTask = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest("DELETE", `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
+    },
+  });
 
-  // Choose the appropriate mutation based on authentication status
+  // Delete task mutation for non-authenticated users
+  const deletePublicTask = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest("DELETE", `/api/public/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/other"] });
+    },
+  });
+
+  // Choose the appropriate mutations based on authentication status
   const createTask = isAuthenticated ? createAuthTask : createPublicTask;
+  const deleteTask = isAuthenticated ? deleteAuthTask : deletePublicTask;
 
   if (isLoading) {
     return (
@@ -177,6 +200,7 @@ export default function Home() {
                 title="Today's Tasks"
                 tasks={todayTasks || []}
                 onSave={(task) => createTask.mutate({ ...task, category: "today" })}
+                onDelete={(taskId) => deleteTask.mutate(taskId)}
               />
             </PerformanceMonitor>
           </div>
@@ -192,6 +216,7 @@ export default function Home() {
                 title="Other Tasks"
                 tasks={otherTasks || []}
                 onSave={(task) => createTask.mutate({ ...task, category: "other" })}
+                onDelete={(taskId) => deleteTask.mutate(taskId)}
               />
             </PerformanceMonitor>
           </div>

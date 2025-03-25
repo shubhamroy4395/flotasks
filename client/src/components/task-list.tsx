@@ -416,45 +416,70 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
         return Promise.resolve(); // No need to call API for local-only entries
       }
       
-      // Use the correct API endpoint based on authentication state
-      const apiEndpoint = isAuthenticated ? `/api/tasks/${id}` : `/api/public/tasks/${id}`;
-      const response = await fetch(apiEndpoint, { method: 'DELETE' });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to delete task: ${response.statusText}`);
+      try {
+        // Use the correct API endpoint based on authentication state
+        const apiEndpoint = isAuthenticated ? `/api/tasks/${id}` : `/api/public/tasks/${id}`;
+        const response = await fetch(apiEndpoint, { method: 'DELETE' });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to delete task: ${response.statusText}`);
+        }
+        
+        // If onDelete prop is provided, call it with the ID
+        if (onDelete) {
+          onDelete(id);
+        }
+        
+        const endTime = performance.now();
+  
+        trackEvent(Events.Performance.ApiCall, {
+          endpoint: apiEndpoint,
+          method: 'DELETE',
+          durationMs: endTime - startTime
+        });
+        
+        return id;
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        throw error; // Re-throw to trigger onError
       }
-      
-      const endTime = performance.now();
-
-      trackEvent(Events.Performance.ApiCall, {
-        endpoint: apiEndpoint,
-        method: 'DELETE',
-        durationMs: endTime - startTime
-      });
     },
     onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: ["/api/tasks"] });
-      const previousTasks = queryClient.getQueryData<Task[]>(["/api/tasks"]);
+      // Category-specific query keys
+      const categoryKey = title === "Today's Tasks" ? "today" : "other";
+      const authQueryKey = isAuthenticated 
+        ? [`/api/tasks/${categoryKey}`] 
+        : [`/api/public/tasks/${categoryKey}`];
+        
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: authQueryKey });
+      
+      // Snapshot the previous value
+      const previousTasks = queryClient.getQueryData<Task[]>(authQueryKey);
 
       // Optimistically update the UI
       setEntries(prev => prev.filter(entry => entry.id !== deletedId));
 
       // For server-stored tasks, update the cache
       if (deletedId > 0) {
-        queryClient.setQueryData<Task[]>(["/api/tasks"], old =>
+        queryClient.setQueryData<Task[]>(authQueryKey, old =>
           old?.filter(task => task.id !== deletedId) || []
         );
       }
 
-      return { previousTasks };
+      return { previousTasks, authQueryKey };
     },
     onError: (err, variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["/api/tasks"], context.previousTasks);
+      if (context?.previousTasks && context.authQueryKey) {
+        queryClient.setQueryData(context.authQueryKey, context.previousTasks);
       }
+      
+      console.error("Failed to delete task:", err);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    onSettled: (result, error, variables, context) => {
+      if (context?.authQueryKey) {
+        queryClient.invalidateQueries({ queryKey: context.authQueryKey });
+      }
     }
   });
 
