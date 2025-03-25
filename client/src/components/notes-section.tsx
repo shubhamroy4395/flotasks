@@ -147,11 +147,10 @@ export function NotesSection() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  </div>
-                  >
-                    Add Note
-                  </Button>
-                </form>
+                  <form onSubmit={handleSubmit}>
+                    <Button type="submit">Add Note</Button>
+                  </form>
+                </div>
               </Card>
             </motion.div>
           )}
