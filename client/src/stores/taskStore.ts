@@ -16,7 +16,7 @@ export interface TaskState {
   
   // Actions
   fetchTasks: () => Promise<void>;
-  addTask: (task: Omit<Task, 'id'>) => Promise<Task | undefined>;
+  addTask: (task: { content: string; priority: number; category: string; completed: boolean; eta?: string | null; timestamp?: Date; userId?: number | null }) => Promise<Task | undefined>;
   deleteTask: (id: number, category: 'today' | 'other') => Promise<boolean>;
   toggleComplete: (id: number, category: 'today' | 'other') => Promise<void>;
   clearError: () => void;
