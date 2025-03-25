@@ -8,8 +8,7 @@ import { format } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Note } from "@shared/schema";
-import { Events } from "@/lib/amplitude";
-import { trackEvent } from "@/lib/amplitude";
+import { Events, trackEvent } from "@/lib/amplitude";
 import debounce from 'lodash/debounce';
 
 interface NoteLine {
@@ -49,7 +48,7 @@ export function NotesSection() {
       timestamp: new Date(note.timestamp)
     }));
 
-    const emptyLines = Array(3).fill(null).map((_, i) => ({
+    const emptyLines = Array(Math.max(3 - savedLines.length, 0)).fill(null).map((_, i) => ({
       id: savedLines.length + i + 1,
       content: "",
       isEditing: false,
@@ -189,7 +188,9 @@ export function NotesSection() {
     );
 
     setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
-    debouncedSave(value);
+    if (value.trim()) {
+      debouncedSave(value);
+    }
   };
 
   const handleBlur = () => {
@@ -197,22 +198,27 @@ export function NotesSection() {
 
     if (activeEntry.isDirty && activeEntry.content.trim()) {
       debouncedSave(activeEntry.content);
+
+      // Move to next empty line if available
+      const nextEmptyIndex = entries.findIndex((entry, idx) => idx > activeEntry.index && !entry.content.trim());
+      if (nextEmptyIndex !== -1) {
+        handleLineClick(nextEmptyIndex, new MouseEvent('click'));
+        return;
+      }
     }
 
-    if (!activeEntry.content.trim()) {
-      setActiveEntry(null);
-    }
+    setActiveEntry(null);
   };
 
   const addMoreEntries = () => {
     setEntries(prev => [
       ...prev,
-      ...Array(3).fill(null).map((_, i) => ({
-        id: prev.length + i + 1,
+      {
+        id: prev.length + 1,
         content: "",
         isEditing: false,
         timestamp: new Date()
-      }))
+      }
     ]);
   };
 
@@ -298,7 +304,7 @@ export function NotesSection() {
           onClick={addMoreEntries}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add More Notes
+          Add Another Note
         </Button>
       </CardContent>
     </Card>

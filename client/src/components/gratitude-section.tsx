@@ -18,6 +18,7 @@ interface EntryLine {
 }
 
 export function GratitudeSection() {
+  // State management
   const [entries, setEntries] = useState<EntryLine[]>([]);
   const [activeEntry, setActiveEntry] = useState<{
     index: number;
@@ -33,8 +34,8 @@ export function GratitudeSection() {
   // Query for gratitude entries with caching
   const { data: savedEntries = [] } = useQuery<GratitudeEntry[]>({
     queryKey: ["/api/gratitude"],
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    gcTime: 5 * 60 * 1000 // Cache for 5 minutes
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000
   });
 
   // Initialize entries with saved data and empty lines
@@ -46,7 +47,7 @@ export function GratitudeSection() {
       timestamp: new Date(entry.timestamp)
     }));
 
-    const emptyLines = Array(3).fill(null).map((_, i) => ({
+    const emptyLines = Array(Math.max(3 - savedLines.length, 0)).fill(null).map((_, i) => ({
       id: savedLines.length + i + 1,
       content: "",
       isEditing: false,
@@ -188,7 +189,6 @@ export function GratitudeSection() {
     );
 
     setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
-
     if (value.trim()) {
       debouncedSave(value);
     }
@@ -199,22 +199,27 @@ export function GratitudeSection() {
 
     if (activeEntry.isDirty && activeEntry.content.trim()) {
       debouncedSave(activeEntry.content);
+
+      // Move to next empty line if available
+      const nextEmptyIndex = entries.findIndex((entry, idx) => idx > activeEntry.index && !entry.content.trim());
+      if (nextEmptyIndex !== -1) {
+        handleLineClick(nextEmptyIndex, new MouseEvent('click'));
+        return;
+      }
     }
 
-    if (!activeEntry.content.trim()) {
-      setActiveEntry(null);
-    }
+    setActiveEntry(null);
   };
 
   const addMoreEntries = () => {
     setEntries(prev => [
       ...prev,
-      ...Array(3).fill(null).map((_, i) => ({
-        id: prev.length + i + 1,
+      {
+        id: prev.length + 1,
         content: "",
         isEditing: false,
         timestamp: new Date()
-      }))
+      }
     ]);
   };
 
@@ -263,9 +268,11 @@ export function GratitudeSection() {
                     className="flex items-center justify-between w-full cursor-text"
                     layout
                   >
-                    <span className="text-gray-700 font-medium">
-                      {entry.content || " "}
-                    </span>
+                    <div className="flex-1">
+                      <span className="text-gray-700 font-medium">
+                        {entry.content || " "}
+                      </span>
+                    </div>
                     {entry.content && (
                       <Button
                         variant="ghost"
@@ -293,7 +300,7 @@ export function GratitudeSection() {
           onClick={addMoreEntries}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add More Entries
+          Add Another Entry
         </Button>
       </CardContent>
     </Card>
