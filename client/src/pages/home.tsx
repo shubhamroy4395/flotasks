@@ -12,11 +12,21 @@ import { NotesSection } from "@/components/notes-section";
 import { useAuth } from "@/contexts/auth-context";
 import { NavBar } from "@/components/nav-bar";
 import { startTimer, endTimer } from "@/lib/performance";
+import { PerformanceMonitor } from "@/components/performance-monitor";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const queryClient = useQueryClient();
   const { isAuthenticated, isLoading } = useAuth();
+  
+  // Start measuring page load time
+  useEffect(() => {
+    startTimer('home_page_load');
+    
+    return () => {
+      endTimer('home_page_load', 'Page.HomeLoad');
+    };
+  }, []);
 
   // Handle page refresh/exit confirmation
   useEffect(() => {
@@ -81,6 +91,21 @@ export default function Home() {
     queryKey: ["/api/public/tasks/other"],
     enabled: !isAuthenticated,
   });
+  
+  // Track data loading times
+  useEffect(() => {
+    if (isAuthenticated) {
+      startTimer('auth_tasks_fetch');
+      return () => {
+        endTimer('auth_tasks_fetch', 'API.FetchAuthTasks');
+      };
+    } else {
+      startTimer('public_tasks_fetch');
+      return () => {
+        endTimer('public_tasks_fetch', 'API.FetchPublicTasks');
+      };
+    }
+  }, [isAuthenticated, authTodayTasks, authOtherTasks, publicTodayTasks, publicOtherTasks]);
 
   // Get the appropriate tasks based on authentication status
   const todayTasks = isAuthenticated ? authTodayTasks : publicTodayTasks;
@@ -147,29 +172,48 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column - Today's Tasks (wider) */}
           <div className="lg:col-span-5">
-            <TaskList
-              title="Today's Tasks"
-              tasks={todayTasks || []}
-              onSave={(task) => createTask.mutate({ ...task, category: "today" })}
-            />
+            <PerformanceMonitor componentName="TodayTaskList">
+              <TaskList
+                title="Today's Tasks"
+                tasks={todayTasks || []}
+                onSave={(task) => createTask.mutate({ ...task, category: "today" })}
+              />
+            </PerformanceMonitor>
           </div>
 
           {/* Middle Column - Goals and Other Tasks */}
           <div className="lg:col-span-4 space-y-6">
-            <GoalsSection />
-            <TaskList
-              title="Other Tasks"
-              tasks={otherTasks || []}
-              onSave={(task) => createTask.mutate({ ...task, category: "other" })}
-            />
+            <PerformanceMonitor componentName="GoalsSection">
+              <GoalsSection />
+            </PerformanceMonitor>
+            
+            <PerformanceMonitor componentName="OtherTaskList">
+              <TaskList
+                title="Other Tasks"
+                tasks={otherTasks || []}
+                onSave={(task) => createTask.mutate({ ...task, category: "other" })}
+              />
+            </PerformanceMonitor>
           </div>
 
           {/* Right Column - Mood, Gratitude, Reminders */}
           <div className="lg:col-span-3 space-y-6">
-            <MoodTracker />
-            <GratitudeSection />
-            <ReminderSection />
-            <NotesSection />
+            {/* Performance monitoring for each section */}
+            <PerformanceMonitor componentName="MoodTracker">
+              <MoodTracker />
+            </PerformanceMonitor>
+            
+            <PerformanceMonitor componentName="GratitudeSection">
+              <GratitudeSection />
+            </PerformanceMonitor>
+            
+            <PerformanceMonitor componentName="ReminderSection">
+              <ReminderSection />
+            </PerformanceMonitor>
+            
+            <PerformanceMonitor componentName="NotesSection">
+              <NotesSection />
+            </PerformanceMonitor>
           </div>
         </div>
       </div>
