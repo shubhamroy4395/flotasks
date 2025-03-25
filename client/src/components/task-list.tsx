@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
@@ -100,6 +100,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     content: string;
     priority: number;
     eta: string;
+    isDirty: boolean;
   } | null>(null);
 
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -107,6 +108,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [sortState, setSortState] = useState<'lno' | 'onl' | 'default'>('default');
   const [initialEntries, setInitialEntries] = useState(entries);
   const { toast } = useToast();
+  const lastSavedContent = useRef<string>("");
 
   // Store initial entries when they're first created
   useEffect(() => {
@@ -124,18 +126,74 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     setTotalTime(newTotal);
   }, [entries]);
 
-  // Track component mount
-  useEffect(() => {
-    trackEvent(
-      title === "Today's Tasks" ? Events.TASK_LIST_TODAY_OPEN : Events.TASK_LIST_OTHER_OPEN,
-      {
-        taskCount: tasks.length,
-        completedCount: tasks.filter(t => t.completed).length,
-        averagePriority: tasks.reduce((acc, t) => acc + t.priority, 0) / tasks.length || 0,
-        timeOfDay: new Date().getHours(),
-      }
+  const saveTask = useCallback((content: string, priority: number, eta: string) => {
+    if (!content.trim() || !activeTask) return;
+
+    // Update entries
+    setEntries(prev =>
+      prev.map((entry, i) =>
+        i === activeTask.index
+          ? {
+              ...entry,
+              content: content.trim(),
+              priority,
+              eta,
+              timestamp: new Date()
+            }
+          : entry
+      )
     );
-  }, []);
+
+    // Save to backend
+    onSave({
+      content: content.trim(),
+      priority,
+      category: title === "Today's Tasks" ? "today" : "other"
+    });
+
+    // Track event
+    const eventName = title === "Today's Tasks" ? Events.TaskToday.Created : Events.TaskOther.Created;
+    trackEvent(eventName, {
+      category: title === "Today's Tasks" ? "today" : "other",
+      priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N',
+      priority_value: priority,
+      has_time: Boolean(eta),
+      estimated_minutes: convertTimeToMinutes(eta),
+      task: {
+        id: activeTask.index + 1,
+        content: content.trim(),
+        time: eta,
+        position: activeTask.index,
+        word_count: content.trim().split(/\s+/).length,
+        length: content.length
+      },
+      task_context: {
+        total_tasks: entries.filter(e => e.content).length,
+        completed_tasks: entries.filter(e => e.completed).length,
+        priority_distribution: PRIORITIES.reduce((acc, p) => {
+          acc[p.label] = entries.filter(e => e.priority === p.value).length;
+          return acc;
+        }, {} as Record<string, number>)
+      }
+    });
+
+    // Only show toast if this is a new task or significant change
+    if (content.trim() !== lastSavedContent.current) {
+      toast({
+        title: "Task saved!",
+        duration: 1000,
+      });
+      lastSavedContent.current = content.trim();
+    }
+  }, [title, onSave, entries, activeTask, toast]);
+
+  // Debounced save for content changes
+  const debouncedSave = useCallback(
+    debounce((content: string, priority: number, eta: string) => {
+      saveTask(content, priority, eta);
+    }, 1000),
+    [saveTask]
+  );
 
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -144,84 +202,42 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       index,
       content: entry.content || "",
       priority: entry.priority || 0,
-      eta: entry.eta || ""
+      eta: entry.eta || "",
+      isDirty: false
     });
-
-    // Track task editing interaction
-    if (entry.content) {
-      trackEvent(Events.TASK_EDIT_STARTED, {
-        taskId: entry.id,
-        currentPriority: entry.priority,
-        currentEta: entry.eta,
-        position: index,
-        category: title === "Today's Tasks" ? "today" : "other"
-      });
-    }
+    lastSavedContent.current = entry.content || "";
   };
-
-  // Debounced auto-save function
-  const debouncedSave = useCallback(
-    debounce((content: string, priority: number, eta: string) => {
-      if (!content.trim()) return;
-
-      onSave({
-        content: content.trim(),
-        priority,
-        category: title === "Today's Tasks" ? "today" : "other"
-      });
-
-      // Determine event name based on task category
-      const eventName = title === "Today's Tasks" ? Events.TaskToday.Created : Events.TaskOther.Created;
-
-      // Track task creation with filterable properties
-      trackEvent(eventName, {
-        category: title === "Today's Tasks" ? "today" : "other",
-        priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N',
-        priority_value: priority,
-        has_time: Boolean(eta),
-        estimated_minutes: convertTimeToMinutes(eta),
-        task: {
-          id: activeTask?.index + 1,
-          content: content.trim(),
-          time: eta,
-          position: activeTask?.index,
-          word_count: content.trim().split(/\s+/).length,
-          length: content.length
-        },
-        task_context: {
-          total_tasks: entries.filter(e => e.content).length,
-          completed_tasks: entries.filter(e => e.completed).length,
-          priority_distribution: PRIORITIES.reduce((acc, p) => {
-            acc[p.label] = entries.filter(e => e.priority === p.value).length;
-            return acc;
-          }, {} as Record<string, number>)
-        }
-      });
-
-      toast({
-        title: "Task saved!",
-        duration: 1000,
-      });
-    }, 500),
-    [title, onSave, entries]
-  );
 
   const handleInputChange = (value: string) => {
     if (!activeTask) return;
-    setActiveTask({ ...activeTask, content: value });
+    setActiveTask({ ...activeTask, content: value, isDirty: true });
     debouncedSave(value, activeTask.priority, activeTask.eta);
   };
 
   const handlePriorityChange = (value: number) => {
     if (!activeTask) return;
-    setActiveTask({ ...activeTask, priority: value });
-    debouncedSave(activeTask.content, value, activeTask.eta);
+    setActiveTask({ ...activeTask, priority: value, isDirty: true });
+    saveTask(activeTask.content, value, activeTask.eta);
   };
 
   const handleEtaChange = (value: string) => {
     if (!activeTask) return;
-    setActiveTask({ ...activeTask, eta: value });
-    debouncedSave(activeTask.content, activeTask.priority, value);
+    setActiveTask({ ...activeTask, eta: value, isDirty: true });
+    saveTask(activeTask.content, activeTask.priority, value);
+  };
+
+  const handleBlur = () => {
+    if (!activeTask) return;
+
+    // Save if there are unsaved changes
+    if (activeTask.isDirty) {
+      saveTask(activeTask.content, activeTask.priority, activeTask.eta);
+    }
+
+    // Only close if empty
+    if (!activeTask.content.trim()) {
+      setActiveTask(null);
+    }
   };
 
   const toggleComplete = (index: number) => {
@@ -436,12 +452,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         autoFocus
                         value={activeTask.content}
                         onChange={(e) => handleInputChange(e.target.value)}
-                        onBlur={() => {
-                          // Only close if there's no content
-                          if (!activeTask.content.trim()) {
-                            setActiveTask(null);
-                          }
-                        }}
+                        onBlur={handleBlur}
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-gray-700 placeholder:text-gray-400"
                         placeholder="What needs to be done?"
                       />
