@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
+import { useState, useRef } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,26 +10,51 @@ import { Plus, X, Trash2 } from "lucide-react";
 import { Events } from "@/lib/amplitude";
 import { useAutoSave } from "@/hooks/use-auto-save";
 
-export function GratitudeSection() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [newEntry, setNewEntry] = useState("");
-  const queryClient = useQueryClient();
+interface EntryLine {
+  id: number;
+  content: string;
+  isEditing: boolean;
+  timestamp: Date;
+}
 
-  const { data: entries } = useQuery<GratitudeEntry[]>({
+export function GratitudeSection() {
+  // State management
+  const [entries, setEntries] = useState<EntryLine[]>(() => {
+    const initialLines = 3;
+    return Array(initialLines).fill(null).map((_, i) => ({
+      id: i + 1,
+      content: "",
+      isEditing: false,
+      timestamp: new Date()
+    }));
+  });
+
+  const [activeEntry, setActiveEntry] = useState<{
+    index: number;
+    content: string;
+    isDirty: boolean;
+  } | null>(null);
+
+  const queryClient = useQueryClient();
+  const lastSavedContentRef = useRef<string>("");
+  const savingRef = useRef(false);
+
+  // Fetch existing entries
+  const { data: savedEntries = [] } = useQuery<GratitudeEntry[]>({
     queryKey: ["/api/gratitude"],
   });
 
+  // Create entry mutation
   const createEntry = useMutation({
     mutationFn: async (content: string) => {
       await apiRequest("POST", "/api/gratitude", { content });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
-      setNewEntry("");
-      setIsOpen(false);
     },
   });
 
+  // Delete entry mutation
   const deleteEntry = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/gratitude/${id}`);
@@ -39,23 +64,47 @@ export function GratitudeSection() {
     },
   });
 
-  const { handleChange, handleBlur } = useAutoSave({
-    onSave: async (content) => {
-      await createEntry.mutateAsync(content);
-    },
-    trackingEvent: Events.Gratitude.Added,
-    debounceMs: 800
-  });
-
-  const handleInputChange = (value: string) => {
-    setNewEntry(value);
-    handleChange(value, {
-      existingEntries: entries?.length || 0
+  const handleLineClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const entry = entries[index];
+    setActiveEntry({
+      index,
+      content: entry.content || "",
+      isDirty: false
     });
+    lastSavedContentRef.current = entry.content || "";
   };
 
-  const handleFormOpen = () => {
-    setIsOpen(true);
+  const handleInputChange = (value: string) => {
+    if (!activeEntry) return;
+    setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
+    if (value.trim()) {
+      createEntry.mutate(value);
+    }
+  };
+
+  const handleBlur = () => {
+    if (!activeEntry) return;
+
+    if (activeEntry.isDirty && activeEntry.content.trim()) {
+      createEntry.mutate(activeEntry.content);
+    }
+
+    if (!activeEntry.content.trim()) {
+      setActiveEntry(null);
+    }
+  };
+
+  const addMoreEntries = () => {
+    setEntries(prev => [
+      ...prev,
+      ...Array(3).fill(null).map((_, i) => ({
+        id: prev.length + i + 1,
+        content: "",
+        isEditing: false,
+        timestamp: new Date()
+      }))
+    ]);
   };
 
   return (
@@ -64,54 +113,74 @@ export function GratitudeSection() {
         <CardTitle className="font-semibold">Gratitude Journal</CardTitle>
       </CardHeader>
       <CardContent>
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <Card className="p-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="I am grateful for..."
-                    value={newEntry}
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    onBlur={() => {
-                      handleBlur(newEntry, {
-                        existingEntries: entries?.length || 0
-                      });
-                      if (!newEntry.trim()) {
-                        setIsOpen(false);
-                      }
-                    }}
-                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
-                    autoFocus
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className="space-y-2">
+          <AnimatePresence mode="sync">
+            {entries.map((entry, index) => (
+              <motion.div
+                key={entry.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="group flex items-center gap-4 py-3 border-b border-dashed border-gray-200 cursor-pointer relative hover:bg-white hover:bg-opacity-60 transition-all duration-300"
+                whileHover={{ scale: 1.002 }}
+                transition={{ duration: 0.2 }}
+                layout
+                onClick={(e) => handleLineClick(index, e)}
+              >
+                <span className="text-sm text-gray-400 w-6 font-mono font-bold">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+
+                {activeEntry?.index === index ? (
+                  <motion.div
+                    className="flex-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    layout
+                  >
+                    <Input
+                      autoFocus
+                      value={activeEntry.content}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      onBlur={handleBlur}
+                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-medium text-gray-700 placeholder:text-gray-400"
+                      placeholder="I am grateful for..."
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    className="flex-1 cursor-text"
+                    layout
+                  >
+                    <span className="text-gray-700 font-medium">
+                      {entry.content || " "}
+                    </span>
+                  </motion.div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full mt-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-none font-medium"
+          onClick={addMoreEntries}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add More Entries
+        </Button>
+
+        <div className="space-y-2 mt-6">
           <AnimatePresence>
-            {entries?.map((entry, index) => (
+            {savedEntries.map((entry) => (
               <motion.div
                 key={entry.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-colors group"
-                transition={{ delay: index * 0.1 }}
               >
                 <div className="flex items-center justify-between">
                   <p className="text-gray-700 font-medium">{entry.content}</p>
@@ -129,19 +198,6 @@ export function GratitudeSection() {
           </AnimatePresence>
         </div>
       </CardContent>
-      <CardFooter className="pt-2 pb-4">
-        {!isOpen && (
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-none font-medium"
-            onClick={handleFormOpen}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Gratitude Entry
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 }
