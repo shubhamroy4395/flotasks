@@ -155,15 +155,11 @@ export function GratitudeSection() {
             "Gratitude turns what we have into enough." — Melody Beattie
           </div>
 
-          <AnimatePresence mode="sync">
+          <div className="space-y-3">
             {entries.map((entry, index) => (
-              <motion.div
+              <div
                 key={entry.id}
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                className={`group relative ${entry.isSaved ? 'mb-5' : 'mb-2'}`}
-                layout
+                className={`group relative ${entry.isSaved ? 'mb-4' : 'mb-3'}`}
               >
                 {entry.isSaved && (
                   <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-sm z-10">
@@ -172,7 +168,7 @@ export function GratitudeSection() {
                 )}
                 
                 <div 
-                  className={`rounded-lg p-4 border-l-4 shadow-sm cursor-pointer transition-all duration-300 
+                  className={`rounded-lg p-4 border-l-4 shadow-sm cursor-pointer 
                     ${entry.isSaved 
                       ? `bg-gradient-to-r ${getCardColorClass(index)} hover:shadow-md` 
                       : 'bg-white border-l-gray-200 hover:border-l-gray-400'}
@@ -181,11 +177,8 @@ export function GratitudeSection() {
                   onClick={(e) => handleLineClick(index, e)}
                 >
                   {activeEntry?.index === index ? (
-                    <motion.div
+                    <div
                       className="flex flex-col gap-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      layout
                       ref={!entry.isSaved && !entry.content ? firstEmptyInputRef : null}
                     >
                       <div className="flex items-center justify-between">
@@ -213,9 +206,9 @@ export function GratitudeSection() {
                           Saving automatically when you click away
                         </div>
                       )}
-                    </motion.div>
+                    </div>
                   ) : (
-                    <motion.div layout>
+                    <div>
                       {entry.isSaved ? (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
@@ -245,12 +238,12 @@ export function GratitudeSection() {
                           <span className="text-center italic">Click to add a gratitude reflection...</span>
                         </div>
                       )}
-                    </motion.div>
+                    </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
+          </div>
         </div>
 
         <Button
