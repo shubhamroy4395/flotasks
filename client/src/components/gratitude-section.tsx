@@ -72,60 +72,95 @@ export function GratitudeSection() {
     }
   }, [fetchedEntries]);
 
-  // Save entry to server
+  // Save entry to server with optimistic updates
   const saveEntry = useCallback(async (content: string): Promise<void> => {
     if (!content.trim()) return;
     
+    // Create local entry immediately for faster UI updates
+    const tempId = -(Date.now());
+    const optimisticEntry = {
+      id: tempId,
+      content: content,
+      timestamp: new Date(),
+      isEditing: false,
+      isOptimistic: true
+    };
+    
+    // Apply optimistic update - don't wait for server
+    setEntries(current => {
+      const updated = current.map(entry => ({
+        ...entry,
+        isEditing: false
+      }));
+      
+      // Replace the edited entry with optimistic one if editing
+      if (editingIndex !== null && updated[editingIndex]) {
+        updated[editingIndex] = optimisticEntry;
+      } else {
+        // Or add as new entry
+        updated.push(optimisticEntry);
+      }
+      
+      // Ensure we have an empty entry for adding more
+      const hasEmpty = updated.some(entry => !entry.content);
+      if (!hasEmpty) {
+        updated.push({
+          id: -(Date.now() + 1), // Different ID from optimistic entry
+          content: "",
+          timestamp: new Date(),
+          isEditing: false
+        });
+      }
+      
+      return updated;
+    });
+    
+    // Clear editing state immediately
+    setEditingIndex(null);
+    setInputValue("");
+    
+    // Then do the actual server request in background
     setIsLoading(true);
     try {
+      const startTime = performance.now();
       const response = await apiRequest("POST", apiEndpoint, { content });
       const savedEntry = await response.json();
+      const endTime = performance.now();
       
-      // Add the new entry to our list
-      setEntries(current => {
-        // Create new array with the saved entry
-        const updated = current.map(entry => ({
-          ...entry,
-          isEditing: false
-        }));
-        
-        // Replace the edited entry with saved one if editing
-        if (editingIndex !== null) {
-          updated[editingIndex] = {
-            id: savedEntry.id,
-            content: savedEntry.content,
-            timestamp: new Date(savedEntry.timestamp),
-            isEditing: false
-          };
-        }
-        
-        // Make sure we still have an empty entry
-        const hasEmpty = updated.some(entry => !entry.content);
-        if (!hasEmpty) {
-          updated.push({
-            id: -(Date.now()),
-            content: "",
-            timestamp: new Date(),
-            isEditing: false
-          });
-        }
-        
-        return updated;
+      trackEvent("api_performance", {
+        endpoint: apiEndpoint,
+        method: 'POST',
+        durationMs: endTime - startTime,
+        success: true
       });
       
-      // Clear editing state
-      setEditingIndex(null);
-      setInputValue("");
-      
-      // Refetch to ensure we have latest data
-      refetch();
+      // Update with real server data
+      setEntries(current => {
+        return current.map(entry => {
+          // Replace our optimistic entry with the real one
+          if (entry.isOptimistic && entry.content === content) {
+            return {
+              id: savedEntry.id,
+              content: savedEntry.content,
+              timestamp: new Date(savedEntry.timestamp),
+              isEditing: false
+            };
+          }
+          return entry;
+        });
+      });
     } catch (error) {
       console.error("Error saving gratitude entry:", error);
       setError("Failed to save. Please try again.");
+      
+      // On error, remove the optimistic entry
+      setEntries(current => {
+        return current.filter(entry => !(entry.isOptimistic && entry.content === content));
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [apiEndpoint, editingIndex, refetch]);
+  }, [apiEndpoint, editingIndex]);
 
   // Delete entry
   const deleteEntry = useCallback(async (id: number) => {

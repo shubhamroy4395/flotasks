@@ -396,6 +396,12 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
   const deleteEntry = useMutation({
     mutationFn: async (id: number) => {
       const startTime = performance.now();
+      
+      // Handle temporary IDs differently (they don't exist on the server)
+      if (id < 0) {
+        return Promise.resolve(); // No need to call API for local-only entries
+      }
+      
       await apiRequest("DELETE", `/api/tasks/${id}`);
       const endTime = performance.now();
 
@@ -412,9 +418,12 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       // Optimistically update the UI
       setEntries(prev => prev.filter(entry => entry.id !== deletedId));
 
-      queryClient.setQueryData<Task[]>(["/api/tasks"], old =>
-        old?.filter(task => task.id !== deletedId) || []
-      );
+      // For server-stored tasks, update the cache
+      if (deletedId > 0) {
+        queryClient.setQueryData<Task[]>(["/api/tasks"], old =>
+          old?.filter(task => task.id !== deletedId) || []
+        );
+      }
 
       return { previousTasks };
     },
