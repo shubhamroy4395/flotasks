@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -8,7 +8,7 @@ import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Trash2 } from "lucide-react";
 import { Events } from "@/lib/amplitude";
-import { useAutoSave } from "@/hooks/use-auto-save";
+import debounce from 'lodash/debounce';
 
 interface EntryLine {
   id: number;
@@ -18,17 +18,7 @@ interface EntryLine {
 }
 
 export function GratitudeSection() {
-  // State management
-  const [entries, setEntries] = useState<EntryLine[]>(() => {
-    const initialLines = 3;
-    return Array(initialLines).fill(null).map((_, i) => ({
-      id: i + 1,
-      content: "",
-      isEditing: false,
-      timestamp: new Date()
-    }));
-  });
-
+  const [entries, setEntries] = useState<EntryLine[]>([]);
   const [activeEntry, setActiveEntry] = useState<{
     index: number;
     content: string;
@@ -43,6 +33,25 @@ export function GratitudeSection() {
   const { data: savedEntries = [] } = useQuery<GratitudeEntry[]>({
     queryKey: ["/api/gratitude"],
   });
+
+  // Initialize entries with saved data and empty lines
+  useEffect(() => {
+    const savedLines = savedEntries.map(entry => ({
+      id: entry.id,
+      content: entry.content,
+      isEditing: false,
+      timestamp: new Date(entry.timestamp)
+    }));
+
+    const emptyLines = Array(3).fill(null).map((_, i) => ({
+      id: savedLines.length + i + 1,
+      content: "",
+      isEditing: false,
+      timestamp: new Date()
+    }));
+
+    setEntries([...savedLines, ...emptyLines]);
+  }, [savedEntries]);
 
   // Create entry mutation
   const createEntry = useMutation({
@@ -64,6 +73,18 @@ export function GratitudeSection() {
     },
   });
 
+  const debouncedSave = useRef(
+    debounce(async (content: string) => {
+      if (!content.trim() || savingRef.current) return;
+      savingRef.current = true;
+      try {
+        await createEntry.mutateAsync(content);
+      } finally {
+        savingRef.current = false;
+      }
+    }, 1000)
+  ).current;
+
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const entry = entries[index];
@@ -79,7 +100,7 @@ export function GratitudeSection() {
     if (!activeEntry) return;
     setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
     if (value.trim()) {
-      createEntry.mutate(value);
+      debouncedSave(value);
     }
   };
 
@@ -87,7 +108,7 @@ export function GratitudeSection() {
     if (!activeEntry) return;
 
     if (activeEntry.isDirty && activeEntry.content.trim()) {
-      createEntry.mutate(activeEntry.content);
+      debouncedSave(activeEntry.content);
     }
 
     if (!activeEntry.content.trim()) {
@@ -149,12 +170,25 @@ export function GratitudeSection() {
                   </motion.div>
                 ) : (
                   <motion.div
-                    className="flex-1 cursor-text"
+                    className="flex items-center justify-between w-full cursor-text"
                     layout
                   >
                     <span className="text-gray-700 font-medium">
                       {entry.content || " "}
                     </span>
+                    {entry.content && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEntry.mutate(entry.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </motion.div>
                 )}
               </motion.div>
@@ -171,32 +205,6 @@ export function GratitudeSection() {
           <Plus className="mr-2 h-4 w-4" />
           Add More Entries
         </Button>
-
-        <div className="space-y-2 mt-6">
-          <AnimatePresence>
-            {savedEntries.map((entry) => (
-              <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-colors group"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-gray-700 font-medium">{entry.content}</p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => deleteEntry.mutate(entry.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
       </CardContent>
     </Card>
   );
