@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MoodEntry } from "@shared/schema";
-import { trackEvent, Events } from "@/lib/amplitude";
+import { track as trackEvent, Events } from "@/lib/amplitude";
 import { useEffect } from "react";
 
 const MOOD_LABELS: Record<string, { label: string, color: string }> = {

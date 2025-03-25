@@ -4,7 +4,7 @@ import { Input } from "./ui/input";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { GratitudeEntry } from "@shared/schema";
-import { trackEvent, Events } from "@/lib/amplitude";
+import { track as trackEvent, Events } from "@/lib/amplitude";
 
 export function GratitudeSection() {
   const [newEntry, setNewEntry] = useState("");
