@@ -250,51 +250,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/public/tasks/:id", async (req, res) => {
-    // Convert to string then back to number to ensure proper handling of timestamp IDs
-    const idStr = req.params.id;
-    console.log(`Received delete request for task ID: ${idStr}`);
-    
-    // Support for both number and string IDs
-    const id = Number(idStr);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid task ID" });
-    }
-    
-    // Find and delete task in session
-    if (!req.session.tasks) {
-      return res.status(404).json({ error: "No tasks found" });
-    }
-    
-    let taskFound = false;
-    let categories = Object.keys(req.session.tasks);
-    
-    console.log(`Searching for task ID ${id} in categories: ${categories.join(', ')}`);
-    
-    // Loop through all categories to find the task
-    for (const category of categories) {
-      const tasks = req.session.tasks[category];
-      console.log(`Tasks in category ${category}:`, tasks.map((t: any) => ({ id: t.id, content: t.content })));
+    try {
+      // Get the task ID from the URL parameter
+      const rawId = req.params.id;
+      console.log(`[DELETE] Processing request to delete task ID: ${rawId}`);
       
-      const taskIndex = tasks.findIndex((t: any) => {
-        // Compare as strings for maximum compatibility
-        return String(t.id) === String(id);
-      });
-      
-      if (taskIndex !== -1) {
-        console.log(`Found task at index ${taskIndex} in category ${category}`);
-        // Remove task
-        req.session.tasks[category].splice(taskIndex, 1);
-        taskFound = true;
-        break;
+      // Validate the ID - simple check to ensure it's a valid number
+      const taskId = Number(rawId);
+      if (isNaN(taskId)) {
+        console.log(`[DELETE] Invalid task ID format: ${rawId}`);
+        return res.status(400).json({ error: "Invalid task ID format" });
       }
-    }
-    
-    if (taskFound) {
-      console.log(`Successfully deleted task with ID ${id}`);
-      res.status(204).send();
-    } else {
-      console.log(`Task with ID ${id} not found`);
-      res.status(404).json({ error: "Task not found" });
+      
+      // Check if session has any tasks at all
+      if (!req.session.tasks) {
+        console.log(`[DELETE] No tasks found in session`);
+        return res.status(404).json({ error: "No tasks found in session" });
+      }
+      
+      // Get all categories that might contain tasks
+      const categories = Object.keys(req.session.tasks);
+      console.log(`[DELETE] Searching through categories: ${categories.join(', ')}`);
+      
+      // Variable to track if we found and deleted the task
+      let taskDeleted = false;
+      
+      // Search through each category to find the task
+      for (const category of categories) {
+        // Skip if this category doesn't exist in the session
+        if (!Array.isArray(req.session.tasks[category])) {
+          console.log(`[DELETE] Category ${category} doesn't exist or isn't an array`);
+          continue;
+        }
+        
+        // Log the current tasks in this category for debugging
+        console.log(`[DELETE] Tasks in ${category}:`, 
+          req.session.tasks[category].map((t: any) => ({ 
+            id: t.id, 
+            content: String(t.content).substring(0, 20) // Truncate long content
+          }))
+        );
+        
+        // Find the index of the task with the matching ID
+        const taskIndex = req.session.tasks[category].findIndex((task: any) => {
+          const taskIdMatch = Number(task.id) === taskId;
+          if (taskIdMatch) {
+            console.log(`[DELETE] Found matching task in ${category}: ID=${task.id}, Content=${task.content}`);
+          }
+          return taskIdMatch;
+        });
+        
+        // If task was found in this category
+        if (taskIndex !== -1) {
+          console.log(`[DELETE] Removing task at index ${taskIndex} from ${category}`);
+          
+          // Remove the task from the array
+          req.session.tasks[category].splice(taskIndex, 1);
+          
+          // Mark as deleted and stop searching other categories
+          taskDeleted = true;
+          break;
+        }
+      }
+      
+      // If we deleted the task, return success
+      if (taskDeleted) {
+        console.log(`[DELETE] Successfully deleted task ID: ${taskId}`);
+        return res.status(204).end();
+      } 
+      
+      // If we didn't find the task to delete
+      console.log(`[DELETE] Task with ID ${taskId} was not found in any category`);
+      return res.status(404).json({ error: "Task not found" });
+      
+    } catch (error) {
+      // Handle any unexpected errors
+      console.error(`[DELETE] Error deleting task:`, error);
+      return res.status(500).json({ error: "Server error while deleting task" });
     }
   });
 

@@ -718,26 +718,32 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (entry.id && entry.content) {
-                              // Enhanced debugging for task deletion
-                              console.log(`Attempting to delete task with raw ID: ${entry.id} (type: ${typeof entry.id})`);
-                              console.log(`Task details:`, { 
-                                title, 
-                                taskId: entry.id, 
-                                content: entry.content,
-                                from: 'UI delete button'
-                              });
-                              
-                              // Ensure ID is correctly passed as a number (timestamp IDs are large numbers)
-                              const idToDelete = Number(entry.id);
-                              
-                              if (onDelete) {
-                                // Use the parent component's delete handler
-                                onDelete(idToDelete);
-                              } else {
-                                // Use the local delete mutation
-                                deleteEntry.mutate(idToDelete);
-                              }
+                            e.preventDefault();
+                            
+                            // Ensure we have a valid task ID
+                            if (!entry.id) {
+                              console.error('[TASK_DELETE] Cannot delete task without ID');
+                              return;
+                            }
+                            
+                            // Enhanced debugging
+                            console.log(`[TASK_DELETE] Delete button clicked for:`, {
+                              title,
+                              taskId: entry.id,
+                              taskIdType: typeof entry.id,
+                              content: entry.content?.substring(0, 30) + (entry.content?.length > 30 ? '...' : '')
+                            });
+                            
+                            // Convert to number (important for timestamp-based IDs)
+                            const idToDelete = Number(entry.id);
+                            
+                            // Use the appropriate delete handler
+                            if (onDelete) {
+                              console.log(`[TASK_DELETE] Using parent component's onDelete handler`);
+                              onDelete(idToDelete);
+                            } else {
+                              console.log(`[TASK_DELETE] Using local deleteEntry mutation`);
+                              deleteEntry.mutate(idToDelete);
                             }
                           }}
                           className="h-6 w-6 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-transparent transition-opacity ml-1"

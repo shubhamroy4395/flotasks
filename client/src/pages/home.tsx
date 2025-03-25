@@ -150,30 +150,67 @@ export default function Home() {
     }
   });
 
-  // Delete task mutation for non-authenticated users
+  // Delete task mutation for non-authenticated users (completely rewritten)
   const deletePublicTask = useMutation({
     mutationFn: async (taskId: number) => {
-      // Additional logging to debug task ID issues
-      console.log(`Attempting to delete task with raw ID: ${taskId} (type: ${typeof taskId})`);
-      console.log(`Deleting public task with ID: ${taskId}`);
-      console.log(`Making DELETE request to /api/public/tasks/${taskId}`);
+      // Convert taskId to number if it's not already (for safety)
+      const id = Number(taskId);
+      
+      // Enhanced logging for debugging
+      console.log(`[DELETE_TASK] Starting deletion process for task ID: ${id} (type: ${typeof id})`);
       
       try {
-        const response = await apiRequest("DELETE", `/api/public/tasks/${taskId}`);
-        console.log(`Delete response status: ${response?.status}`);
-        return taskId;
+        // Make the DELETE request to the API
+        const response = await fetch(`/api/public/tasks/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        // Check if the request was successful
+        if (response.status === 204) {
+          console.log(`[DELETE_TASK] Server confirmed deletion of task ${id} (status 204)`);
+          return id;
+        }
+        
+        // If there was an error response from the server
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[DELETE_TASK] Server error (${response.status}): ${errorText}`);
+          throw new Error(`Failed to delete task: ${response.status} ${errorText}`);
+        }
+        
+        return id;
       } catch (err) {
-        console.error("Error deleting public task:", err);
+        console.error(`[DELETE_TASK] Error during deletion:`, err);
         throw err;
       }
     },
     onSuccess: (taskId) => {
-      console.log(`Successfully deleted public task: ${taskId}`);
+      console.log(`[DELETE_TASK] Successfully completed deletion of task ID: ${taskId}`);
+      
+      // Update the UI by invalidating the queries that fetch tasks
       queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/other"] });
+      
+      // Show a success toast notification
+      toast({
+        title: "Task deleted",
+        description: "Your task has been successfully removed.",
+        variant: "default"
+      });
     },
     onError: (error) => {
-      console.error("Error deleting public task:", error);
+      console.error(`[DELETE_TASK] Mutation error:`, error);
+      
+      // Show an error toast notification
+      toast({
+        title: "Could not delete task",
+        description: "There was a problem deleting your task. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
