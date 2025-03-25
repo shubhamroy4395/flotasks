@@ -4,13 +4,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
-import { trackEvent, Events } from "@/lib/amplitude";
+import { Events, trackEvent } from "@/lib/amplitude";
 import debounce from 'lodash/debounce';
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -71,10 +72,9 @@ interface TaskListProps {
   title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
-  onDelete?: (taskId: number) => void;
 }
 
-export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
+export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const queryClient = useQueryClient();
   // State management
   const [entries, setEntries] = useState(() => {
@@ -412,11 +412,38 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     },
     delete: () => {
       if (activeEntry) {
-        deleteEntry.mutate(activeEntry.id);
+        deleteTask.mutate(activeEntry.id);
         setActiveTask(null);
       }
     }
   };
+
+  const deleteTask = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/tasks/${id}`);
+    },
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/tasks"] });
+      const previousTasks = queryClient.getQueryData<Task[]>(["/api/tasks"]);
+
+      // Optimistically update the UI
+      setEntries(prev => prev.filter(entry => entry.id !== deletedId));
+
+      queryClient.setQueryData<Task[]>(["/api/tasks"], old =>
+        old?.filter(task => task.id !== deletedId) || []
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["/api/tasks"], context.previousTasks);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    }
+  });
 
   const deleteEntry = useMutation({
     mutationFn: async (id: number) => {
@@ -452,6 +479,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     }
   });
+
 
   useKeyboardShortcuts(keyboardHandlers, {
     enabled: true,
@@ -660,12 +688,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                   >
                     <span>{entry.content || " "}</span>
                     {entry.content && (
-                      <motion.div
-                        className="flex items-center gap-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                      >
+                      <div className="flex items-center gap-2">
                         {entry.priority !== undefined && (
                           <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
                             PRIORITIES.find(p => p.value === entry.priority)?.color
@@ -679,7 +702,19 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                             {entry.eta}
                           </span>
                         )}
-                      </motion.div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTask.mutate(entry.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </motion.div>
                 )}
@@ -687,16 +722,16 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
             ))}
           </AnimatePresence>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-4"
+          onClick={addMoreTasks}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add More Tasks
+        </Button>
       </CardContent>
     </Card>
   );
-}
-
-async function apiRequest(method: string, url: string) {
-  const response = await fetch(url, { method });
-  if (!response.ok) {
-    const message = `An error has occured: ${response.statusText}`;
-    throw new Error(message);
-  }
-  return response.json();
 }
