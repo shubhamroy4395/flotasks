@@ -250,15 +250,43 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       if (activeEntry.isDirty && activeEntry.content.trim()) {
         debouncedSave(activeEntry.content);
 
-        // Find next empty line
+        // Auto-focus behavior: find next empty line
         const nextEmptyIndex = entries.findIndex(
           (entry, idx) => idx > activeEntry.index && !entry.content.trim() && !entry.isSaved
         );
 
         if (nextEmptyIndex !== -1) {
-          // Create a synthetic event object with the minimum properties needed
-          const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
-          handleLineClick(nextEmptyIndex, syntheticEvent);
+          // Small delay to ensure the current blur completes first
+          setTimeout(() => {
+            // Create a synthetic event object with the minimum properties needed
+            const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
+            handleLineClick(nextEmptyIndex, syntheticEvent);
+          }, 50);
+          return;
+        }
+
+        // If we've filled all available lines, automatically add a new one
+        if (entries.filter(e => !e.content.trim() && !e.isSaved).length === 0) {
+          setTimeout(() => {
+            const newEntries = [
+              ...entries,
+              {
+                id: Date.now(),
+                content: "",
+                isEditing: false,
+                timestamp: new Date(),
+                isSaved: false
+              }
+            ];
+            
+            setEntries(newEntries);
+            
+            // Focus the newly added entry
+            setTimeout(() => {
+              const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
+              handleLineClick(newEntries.length - 1, syntheticEvent);
+            }, 50);
+          }, 100);
           return;
         }
       }
@@ -272,21 +300,37 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
 
   const addMoreEntries = useCallback(() => {
     try {
-      setEntries(prev => [
-        ...prev,
-        {
-          id: Date.now(),
-          content: "",
-          isEditing: false,
-          timestamp: new Date(),
-          isSaved: false
-        }
-      ]);
+      setEntries(prev => {
+        const newEntries = [
+          ...prev,
+          {
+            id: Date.now(),
+            content: "",
+            isEditing: false,
+            timestamp: new Date(),
+            isSaved: false
+          }
+        ];
+        
+        // Automatically focus the new entry after a short delay
+        setTimeout(() => {
+          const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
+          handleLineClick(newEntries.length - 1, syntheticEvent);
+        }, 50);
+        
+        return newEntries;
+      });
+      
+      // Track the action
+      trackEvent(`${eventPrefix}.AddNewLine`, {
+        currentLineCount: entries.length,
+        savedLineCount: entries.filter(e => e.isSaved).length
+      });
     } catch (error) {
       console.error("Error in addMoreEntries:", error);
       setError("Failed to add new entry. Please try again.");
     }
-  }, []);
+  }, [entries, handleLineClick, eventPrefix]);
 
   return {
     entries,
