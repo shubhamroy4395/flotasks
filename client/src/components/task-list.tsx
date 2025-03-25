@@ -716,6 +716,9 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (entry.id && entry.content) {
+                              // Debug the task ID we're about to delete
+                              console.log(`Attempting to delete task with raw ID: ${entry.id} (type: ${typeof entry.id})`);
+                              
                               if (onDelete) {
                                 onDelete(entry.id);
                               } else {

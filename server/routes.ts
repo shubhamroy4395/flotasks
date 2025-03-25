@@ -250,7 +250,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/public/tasks/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
+    // Convert to string then back to number to ensure proper handling of timestamp IDs
+    const idStr = req.params.id;
+    console.log(`Received delete request for task ID: ${idStr}`);
+    
+    // Support for both number and string IDs
+    const id = Number(idStr);
     if (isNaN(id)) {
       return res.status(400).json({ error: "Invalid task ID" });
     }
@@ -261,22 +266,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     let taskFound = false;
+    let categories = Object.keys(req.session.tasks);
+    
+    console.log(`Searching for task ID ${id} in categories: ${categories.join(', ')}`);
     
     // Loop through all categories to find the task
-    Object.keys(req.session.tasks).forEach(category => {
+    for (const category of categories) {
       const tasks = req.session.tasks[category];
-      const taskIndex = tasks.findIndex((t: any) => t.id === id);
+      console.log(`Tasks in category ${category}:`, tasks.map((t: any) => ({ id: t.id, content: t.content })));
+      
+      const taskIndex = tasks.findIndex((t: any) => {
+        // Compare as strings for maximum compatibility
+        return String(t.id) === String(id);
+      });
       
       if (taskIndex !== -1) {
+        console.log(`Found task at index ${taskIndex} in category ${category}`);
         // Remove task
         req.session.tasks[category].splice(taskIndex, 1);
         taskFound = true;
+        break;
       }
-    });
+    }
     
     if (taskFound) {
+      console.log(`Successfully deleted task with ID ${id}`);
       res.status(204).send();
     } else {
+      console.log(`Task with ID ${id} not found`);
       res.status(404).json({ error: "Task not found" });
     }
   });
@@ -425,7 +442,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/public/gratitude/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
+    // Convert to string then back to number to ensure proper handling of timestamp IDs
+    const idStr = req.params.id;
+    console.log(`Received delete request for gratitude ID: ${idStr}`);
+    
+    // Support for both number and string IDs
+    const id = Number(idStr);
     if (isNaN(id)) {
       return res.status(400).json({ error: "Invalid gratitude entry ID" });
     }
@@ -435,13 +457,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "No gratitude entries found" });
     }
     
-    const entryIndex = req.session.gratitudeEntries.findIndex((e: any) => e.id === id);
+    console.log(`Gratitude entries:`, req.session.gratitudeEntries.map((e: any) => ({ id: e.id, content: e.content })));
+    
+    const entryIndex = req.session.gratitudeEntries.findIndex((e: any) => String(e.id) === String(id));
     
     if (entryIndex !== -1) {
+      console.log(`Found gratitude entry at index ${entryIndex}`);
       // Remove entry
       req.session.gratitudeEntries.splice(entryIndex, 1);
+      console.log(`Successfully deleted gratitude entry with ID ${id}`);
       res.status(204).send();
     } else {
+      console.log(`Gratitude entry with ID ${id} not found`);
       res.status(404).json({ error: "Gratitude entry not found" });
     }
   });
@@ -520,7 +547,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/public/notes/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
+    // Convert to string then back to number to ensure proper handling of timestamp IDs
+    const idStr = req.params.id;
+    console.log(`Received delete request for note ID: ${idStr}`);
+    
+    // Support for both number and string IDs
+    const id = Number(idStr);
     if (isNaN(id)) {
       return res.status(400).json({ error: "Invalid note ID" });
     }
@@ -530,13 +562,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "No notes found" });
     }
     
-    const noteIndex = req.session.notes.findIndex((n: any) => n.id === id);
+    console.log(`Notes:`, req.session.notes.map((n: any) => ({ id: n.id, content: n.content })));
+    
+    const noteIndex = req.session.notes.findIndex((n: any) => String(n.id) === String(id));
     
     if (noteIndex !== -1) {
+      console.log(`Found note at index ${noteIndex}`);
       // Remove note
       req.session.notes.splice(noteIndex, 1);
+      console.log(`Successfully deleted note with ID ${id}`);
       res.status(204).send();
     } else {
+      console.log(`Note with ID ${id} not found`);
       res.status(404).json({ error: "Note not found" });
     }
   });
