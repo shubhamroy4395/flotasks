@@ -17,6 +17,7 @@ interface Entry {
   content: string;
   timestamp: Date;
   isEditing?: boolean;
+  isOptimistic?: boolean; // Flag for optimistic updates
 }
 
 export function GratitudeSection() {
