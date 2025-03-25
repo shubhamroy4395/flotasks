@@ -1,16 +1,19 @@
 import * as amplitude from '@amplitude/analytics-browser';
 
-// Initialize Amplitude with project key
 amplitude.init('ad21a3a1e9ba786379ac4ae8a6fdb010', {
   defaultTracking: {
     sessions: true,
     pageViews: true,
     formInteractions: true,
     fileDownloads: true,
-  }
+  },
+  logLevel: amplitude.Types.LogLevel.Warn
 });
 
-// Custom event types
+export const track = (eventType: string, eventProperties?: Record<string, any>) => {
+  amplitude.track(eventType, eventProperties);
+};
+
 export const Events = {
   // Task related events - with specific category tracking
   TaskToday: {
@@ -69,36 +72,5 @@ export const Events = {
   }
 };
 
-// Helper function to track events with properties
-export const trackEvent = (
-  eventName: string, 
-  eventProperties?: Record<string, any>
-) => {
-  // Add common properties to all events
-  const commonProps = {
-    metadata: {
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      screenWidth: window.innerWidth,
-      screenHeight: window.innerHeight,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      sessionId: Date.now().toString(),
-    },
-    timing: {
-      timeOfDay: new Date().getHours(),
-      dayOfWeek: new Date().getDay(),
-      isWeekend: [0, 6].includes(new Date().getDay()),
-      hour: new Date().getHours(),
-      minute: new Date().getMinutes(),
-      timeframe: new Date().getHours() < 12 ? 'morning' : 
-                new Date().getHours() < 17 ? 'afternoon' : 'evening'
-    }
-  };
-
-  amplitude.track(eventName, {
-    ...commonProps,
-    ...eventProperties
-  });
-};
 
 export default amplitude;
