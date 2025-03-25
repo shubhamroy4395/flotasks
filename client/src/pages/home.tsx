@@ -8,8 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
-import { NotesSection } from "@/components/notes-section"; // Import the new component
-
+import { NotesSection } from "@/components/notes-section";
+import { Logo } from "@/components/logo";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -67,6 +67,7 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
+          <Logo />
         </div>
       </div>
 
@@ -89,6 +90,7 @@ export default function Home() {
 
           {/* Right Column - Gratitude and Reminders */}
           <div className="lg:col-span-3 space-y-6">
+            <Logo className="mb-4" />
             <GratitudeSection />
             <ReminderSection />
             <NotesSection />
