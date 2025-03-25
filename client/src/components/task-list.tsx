@@ -156,9 +156,44 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     }
   };
 
-  const handleSave = () => {
+  const handleAutoSave = (newContent: string, newPriority: number, newEta: string) => {
     if (!activeTask) return;
-    const { content, priority, eta } = activeTask;
+    
+    const updatedEntries = [...entries];
+    updatedEntries[activeTask.index] = {
+      ...updatedEntries[activeTask.index],
+      content: newContent,
+      priority: newPriority,
+      eta: newEta
+    };
+    setEntries(updatedEntries);
+
+    if (newContent.trim()) {
+      onSave({
+        content: newContent,
+        priority: newPriority,
+        category: title === "Today's Tasks" ? "today" : "other"
+      });
+    }
+  };
+
+  const handleInputChange = (value: string) => {
+    if (!activeTask) return;
+    handleAutoSave(value, activeTask.priority, activeTask.eta);
+    setActiveTask({ ...activeTask, content: value });
+  };
+
+  const handlePriorityChange = (value: number) => {
+    if (!activeTask) return;
+    handleAutoSave(activeTask.content, value, activeTask.eta);
+    setActiveTask({ ...activeTask, priority: value });
+  };
+
+  const handleEtaChange = (value: string) => {
+    if (!activeTask) return;
+    handleAutoSave(activeTask.content, activeTask.priority, value);
+    setActiveTask({ ...activeTask, eta: value });
+  };tiveTask;
 
     if (content.trim()) {
       onSave({
@@ -428,8 +463,8 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                       <Input
                         autoFocus
                         value={activeTask.content}
-                        onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
-                        onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                        onChange={(e) => handleInputChange(e.target.value)}
+                        onBlur={() => setActiveTask(null)}
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-gray-700 placeholder:text-gray-400"
                         placeholder="What needs to be done?"
                       />
