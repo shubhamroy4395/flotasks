@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Implement Google login using the react-oauth/google hook
-  const loginWithGoogle = useGoogleLogin({
+  const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       googleLoginMutation.mutate({ access_token: tokenResponse.access_token });
     },
@@ -103,6 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       trackEvent(Events.UI.GoogleLogin, { success: false, error: errorResponse.error_description });
     },
   });
+  
+  // Wrapper function for the Google login
+  const loginWithGoogle = () => {
+    googleLogin();
+  };
 
   // Traditional login mutation
   const loginMutation = useMutation({

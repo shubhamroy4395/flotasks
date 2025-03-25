@@ -9,6 +9,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { FcGoogle } from "react-icons/fc";
+import { GoogleLogin } from "@react-oauth/google";
+import { trackEvent, Events } from "@/lib/amplitude";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 // Login validation schema
 const loginSchema = z.object({
@@ -21,6 +28,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function Login() {
   const { login } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Form setup
   const form = useForm<LoginFormValues>({
@@ -124,6 +133,58 @@ export default function Login() {
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-4">
+            <div className="relative flex items-center">
+              <Separator className="flex-1" />
+              <span className="mx-4 text-sm text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
+            </div>
+            
+            <div className="w-full flex justify-center">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  try {
+                    // Send the token to the backend
+                    const response = await apiRequest("POST", "/api/auth/google", { 
+                      credential: credentialResponse.credential 
+                    });
+                    
+                    const userData = await response.json();
+                    
+                    // Update the local user state
+                    queryClient.setQueryData(["/api/auth/user"], userData.user);
+                    
+                    toast({
+                      title: "Login successful",
+                      description: "Welcome to your journal!",
+                    });
+                    
+                    trackEvent(Events.UI.GoogleLogin, { success: true });
+                    setLocation("/");
+                  } catch (error: any) {
+                    toast({
+                      title: "Google login failed",
+                      description: error.message || "There was an issue with Google authentication",
+                      variant: "destructive",
+                    });
+                    trackEvent(Events.UI.GoogleLogin, { success: false, error: error.message });
+                  }
+                }}
+                onError={() => {
+                  toast({
+                    title: "Google login failed",
+                    description: "Unable to authenticate with Google",
+                    variant: "destructive",
+                  });
+                  trackEvent(Events.UI.GoogleLogin, { success: false, error: "Google OAuth error" });
+                }}
+                theme="outline"
+                size="large"
+                shape="rectangular"
+                text="continue_with"
+                logo_alignment="center"
+              />
+            </div>
+            
             <div className="text-sm text-center text-muted-foreground">
               Don't have an account?{" "}
               <Button

@@ -9,6 +9,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { FcGoogle } from "react-icons/fc";
 
 // Registration validation schema
 const registerSchema = z.object({
@@ -25,7 +27,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const [, setLocation] = useLocation();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
 
   // Form setup
   const form = useForm<RegisterFormValues>({
@@ -168,6 +170,22 @@ export default function Register() {
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-4">
+            <div className="relative flex items-center">
+              <Separator className="flex-1" />
+              <span className="mx-4 text-sm text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
+            </div>
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full flex items-center justify-center gap-2"
+              onClick={() => loginWithGoogle()}
+            >
+              <FcGoogle size={20} />
+              <span>Continue with Google</span>
+            </Button>
+            
             <div className="text-sm text-center text-muted-foreground">
               Already have an account?{" "}
               <Button
