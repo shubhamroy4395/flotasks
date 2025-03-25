@@ -291,14 +291,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
         );
         
-        // Find the index of the task with the matching ID
-        const taskIndex = req.session.tasks[category].findIndex((task: any) => {
+        // Find the exact task ID first
+        let taskIndex = req.session.tasks[category].findIndex((task: any) => {
           const taskIdMatch = Number(task.id) === taskId;
           if (taskIdMatch) {
-            console.log(`[DELETE] Found matching task in ${category}: ID=${task.id}, Content=${task.content}`);
+            console.log(`[DELETE] Found exact matching task in ${category}: ID=${task.id}, Content=${task.content}`);
           }
           return taskIdMatch;
         });
+        
+        // If exact match wasn't found, try finding a task with an ID close to the requested ID
+        // This helps handle slight timestamp differences between client and server
+        if (taskIndex === -1 && req.session.tasks[category].length > 0) {
+          console.log(`[DELETE] Exact task ID ${taskId} not found, checking for similar IDs`);
+          
+          // Get all task IDs in this category
+          const taskIds = req.session.tasks[category].map((t: any) => Number(t.id));
+          console.log(`[DELETE] Available task IDs in ${category}:`, taskIds.slice(0, 5) + (taskIds.length > 5 ? '... (more)' : ''));
+          
+          // Find the most recently created task
+          let mostRecentTask = -1;
+          let mostRecentTaskId = -1;
+          let smallestDiff = Infinity;
+          
+          for (let i = 0; i < req.session.tasks[category].length; i++) {
+            const currentId = Number(req.session.tasks[category][i].id);
+            const diff = Math.abs(currentId - taskId);
+            
+            // Check if this task is closer to the requested ID than previous matches
+            if (diff < smallestDiff) {
+              smallestDiff = diff;
+              mostRecentTask = i;
+              mostRecentTaskId = currentId;
+            }
+          }
+          
+          // Only use the most recent task if it's within a reasonable threshold (10 seconds)
+          const THRESHOLD = 10000;
+          if (smallestDiff < THRESHOLD) {
+            console.log(`[DELETE] Found similar task ID: ${mostRecentTaskId} (requested: ${taskId}, diff: ${smallestDiff}ms)`);
+            taskIndex = mostRecentTask;
+          }
+        }
         
         // If task was found in this category
         if (taskIndex !== -1) {
