@@ -8,7 +8,6 @@ import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
-import { useToast } from "@/hooks/use-toast";
 import debounce from 'lodash/debounce';
 
 // Helper function to convert time string to minutes
@@ -68,8 +67,9 @@ interface TaskListProps {
 }
 
 export function TaskList({ title, tasks, onSave }: TaskListProps) {
-  const initialLines = title === "Other Tasks" ? 8 : 10;
+  // State management
   const [entries, setEntries] = useState(() => {
+    const initialLines = title === "Other Tasks" ? 8 : 10;
     const lines = Array(initialLines).fill(null).map((_, i) => ({
       id: i + 1,
       content: "",
@@ -107,15 +107,16 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [showCelebration, setShowCelebration] = useState<number | null>(null);
   const [sortState, setSortState] = useState<'lno' | 'onl' | 'default'>('default');
   const [initialEntries, setInitialEntries] = useState(entries);
-  const { toast } = useToast();
-  const lastSavedContent = useRef<string>("");
 
-  // Store initial entries when they're first created
+  // Refs for tracking state
+  const lastSavedContentRef = useRef<string>("");
+  const savingRef = useRef(false);
+
+  // Effect hooks
   useEffect(() => {
     setInitialEntries([...entries]);
   }, [tasks]);
 
-  // Calculate total time whenever entries change
   useEffect(() => {
     const newTotal = entries.reduce((total, entry) => {
       if (!entry.completed && entry.content && entry.eta) {
@@ -126,10 +127,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     setTotalTime(newTotal);
   }, [entries]);
 
+  // Core save functionality
   const saveTask = useCallback((content: string, priority: number, eta: string) => {
-    if (!content.trim() || !activeTask) return;
+    if (!content.trim() || !activeTask || savingRef.current) return;
 
-    // Update entries
+    savingRef.current = true;
+
+    // Update entries silently
     setEntries(prev =>
       prev.map((entry, i) =>
         i === activeTask.index
@@ -151,41 +155,29 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       category: title === "Today's Tasks" ? "today" : "other"
     });
 
-    // Track event
-    const eventName = title === "Today's Tasks" ? Events.TaskToday.Created : Events.TaskOther.Created;
-    trackEvent(eventName, {
-      category: title === "Today's Tasks" ? "today" : "other",
-      priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N',
-      priority_value: priority,
-      has_time: Boolean(eta),
-      estimated_minutes: convertTimeToMinutes(eta),
-      task: {
-        id: activeTask.index + 1,
-        content: content.trim(),
-        time: eta,
-        position: activeTask.index,
-        word_count: content.trim().split(/\s+/).length,
-        length: content.length
-      },
-      task_context: {
-        total_tasks: entries.filter(e => e.content).length,
-        completed_tasks: entries.filter(e => e.completed).length,
-        priority_distribution: PRIORITIES.reduce((acc, p) => {
-          acc[p.label] = entries.filter(e => e.priority === p.value).length;
-          return acc;
-        }, {} as Record<string, number>)
-      }
-    });
-
-    // Only show toast if this is a new task or significant change
-    if (content.trim() !== lastSavedContent.current) {
-      toast({
-        title: "Task saved!",
-        duration: 1000,
+    // Track event only for new tasks or significant changes
+    if (content.trim() !== lastSavedContentRef.current) {
+      const eventName = title === "Today's Tasks" ? Events.TaskToday.Created : Events.TaskOther.Created;
+      trackEvent(eventName, {
+        category: title === "Today's Tasks" ? "today" : "other",
+        priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N',
+        priority_value: priority,
+        has_time: Boolean(eta),
+        estimated_minutes: convertTimeToMinutes(eta),
+        task: {
+          id: activeTask.index + 1,
+          content: content.trim(),
+          time: eta,
+          position: activeTask.index,
+          word_count: content.trim().split(/\s+/).length,
+          length: content.length
+        }
       });
-      lastSavedContent.current = content.trim();
+      lastSavedContentRef.current = content.trim();
     }
-  }, [title, onSave, entries, activeTask, toast]);
+
+    savingRef.current = false;
+  }, [title, onSave, activeTask]);
 
   // Debounced save for content changes
   const debouncedSave = useCallback(
@@ -195,6 +187,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     [saveTask]
   );
 
+  // Event handlers
   const handleLineClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const entry = entries[index];
@@ -205,36 +198,34 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       eta: entry.eta || "",
       isDirty: false
     });
-    lastSavedContent.current = entry.content || "";
+    lastSavedContentRef.current = entry.content || "";
   };
 
   const handleInputChange = (value: string) => {
     if (!activeTask) return;
-    setActiveTask({ ...activeTask, content: value, isDirty: true });
+    setActiveTask(prev => ({ ...prev!, content: value, isDirty: true }));
     debouncedSave(value, activeTask.priority, activeTask.eta);
   };
 
   const handlePriorityChange = (value: number) => {
     if (!activeTask) return;
-    setActiveTask({ ...activeTask, priority: value, isDirty: true });
+    setActiveTask(prev => ({ ...prev!, priority: value, isDirty: true }));
     saveTask(activeTask.content, value, activeTask.eta);
   };
 
   const handleEtaChange = (value: string) => {
     if (!activeTask) return;
-    setActiveTask({ ...activeTask, eta: value, isDirty: true });
+    setActiveTask(prev => ({ ...prev!, eta: value, isDirty: true }));
     saveTask(activeTask.content, activeTask.priority, value);
   };
 
   const handleBlur = () => {
     if (!activeTask) return;
 
-    // Save if there are unsaved changes
     if (activeTask.isDirty) {
       saveTask(activeTask.content, activeTask.priority, activeTask.eta);
     }
 
-    // Only close if empty
     if (!activeTask.content.trim()) {
       setActiveTask(null);
     }
