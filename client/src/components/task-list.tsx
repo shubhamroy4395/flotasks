@@ -15,9 +15,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
   if (!time) return 0;
-  const hours = time.match(/(\d+)h/);
+  const hours = time.match(/(\d+(\.\d+)?h)/);
   const minutes = time.match(/(\d+)min/);
-  return (hours ? parseInt(hours[1]) * 60 : 0) + (minutes ? parseInt(minutes[1]) : 0);
+  const hoursMinutes = hours ? parseFloat(hours[1].replace('h','')) * 60 : 0;
+  const justMinutes = minutes ? parseInt(minutes[1]) : 0;
+  return hoursMinutes + justMinutes;
 };
 
 // Helper function to format minutes to readable time
@@ -59,8 +61,11 @@ const PRIORITIES = [
 ];
 
 const TIME_SLOTS = [
-  "5min", "10min", "15min", "30min", "45min", "1h", "2h"
+  "5min", "10min", "15min", "30min", "45min",
+  "1h", "1.5h", "2h", "3h", "4h", "6h", "8h", "12h", "24h"
 ];
+
+const QUICK_TIME_OPTIONS = ["5min", "15min", "30min", "1h"];
 
 interface TaskListProps {
   title: string;
@@ -215,12 +220,32 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     if (!activeTask) return;
     setActiveTask(prev => ({ ...prev!, priority: value, isDirty: true }));
     saveTask(activeTask.content, value, activeTask.eta);
+
+    // Auto-close if time is also selected
+    if (activeTask.eta) {
+      setActiveTask(null);
+      // Focus next empty line if available
+      const nextEmptyIndex = entries.findIndex((entry, idx) => idx > activeTask.index && !entry.content.trim());
+      if (nextEmptyIndex !== -1) {
+        handleLineClick(nextEmptyIndex, new MouseEvent('click'));
+      }
+    }
   };
 
   const handleEtaChange = (value: string) => {
     if (!activeTask) return;
     setActiveTask(prev => ({ ...prev!, eta: value, isDirty: true }));
     saveTask(activeTask.content, activeTask.priority, value);
+
+    // Auto-close if priority is also selected
+    if (activeTask.priority > 0) {
+      setActiveTask(null);
+      // Focus next empty line if available
+      const nextEmptyIndex = entries.findIndex((entry, idx) => idx > activeTask.index && !entry.content.trim());
+      if (nextEmptyIndex !== -1) {
+        handleLineClick(nextEmptyIndex, new MouseEvent('click'));
+      }
+    }
   };
 
   const handleBlur = () => {
@@ -595,17 +620,35 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                         </Popover>
                       </div>
 
-                      <select
-                        value={activeTask.eta}
-                        onChange={(e) => handleEtaChange(e.target.value)}
-                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value="">Time</option>
-                        {TIME_SLOTS.map(slot => (
-                          <option key={slot} value={slot}>{slot}</option>
-                        ))}
-                      </select>
+                      <div className="flex-1 flex items-center gap-2">
+                        <div className="flex gap-1">
+                          {QUICK_TIME_OPTIONS.map(time => (
+                            <Button
+                              key={time}
+                              size="sm"
+                              variant="ghost"
+                              className={`px-2 bg-gradient-to-r from-gray-50 to-slate-50 text-gray-700 font-medium transform transition-all duration-200 hover:scale-105 ${
+                                activeTask.eta === time ? 'ring-2 ring-offset-2' : ''
+                              }`}
+                              onClick={() => handleEtaChange(time)}
+                            >
+                              {time}
+                            </Button>
+                          ))}
+                        </div>
+
+                        <select
+                          value={activeTask.eta}
+                          onChange={(e) => handleEtaChange(e.target.value)}
+                          className="ml-2 rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-medium min-w-[100px]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="">Custom Time</option>
+                          {TIME_SLOTS.map(slot => (
+                            <option key={slot} value={slot}>{slot}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </motion.div>
                 ) : (
