@@ -17,11 +17,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-        <main className="container mx-auto px-4">
-          <Router />
-        </main>
-      </div>
+      <Router />
       <Toaster />
     </QueryClientProvider>
   );

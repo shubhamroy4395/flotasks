@@ -8,8 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
-import { NotesSection } from "@/components/notes-section";
-import { Logo } from "@/components/logo";
+import { NotesSection } from "@/components/notes-section"; // Import the new component
+
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -30,7 +30,26 @@ export default function Home() {
     };
   }, []);
 
-  // Update time every second
+  // Clear all data on every refresh and clear database data
+  useEffect(() => {
+    // Clear all data from the cache
+    queryClient.clear();
+
+    // Invalidate all queries to force fresh data fetch
+    queryClient.invalidateQueries();
+
+    // Clear database data
+    const clearData = async () => {
+      try {
+        await apiRequest("DELETE", "/api/data");
+      } catch (error) {
+        console.error("Failed to clear data:", error);
+      }
+    };
+
+    clearData();
+  }, [queryClient]);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -40,12 +59,17 @@ export default function Home() {
     queryKey: ["/api/tasks/today"],
   });
 
+  const { data: otherTasks } = useQuery<Task[]>({
+    queryKey: ["/api/tasks/other"],
+  });
+
   const createTask = useMutation({
     mutationFn: async (task: { content: string; priority: number; category: string }) => {
       await apiRequest("POST", "/api/tasks", task);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
     },
   });
 
@@ -67,13 +91,12 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
-          <Logo />
         </div>
       </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column - Today's Tasks */}
+          {/* Left Column - Today's Tasks (wider) */}
           <div className="lg:col-span-5">
             <TaskList
               title="Today's Tasks"
@@ -82,18 +105,22 @@ export default function Home() {
             />
           </div>
 
-          {/* Middle Column - Goals and Mood */}
+          {/* Middle Column - Goals and Other Tasks */}
           <div className="lg:col-span-4 space-y-6">
             <GoalsSection />
-            <MoodTracker />
+            <TaskList
+              title="Other Tasks"
+              tasks={otherTasks || []}
+              onSave={(task) => createTask.mutate({ ...task, category: "other" })}
+            />
           </div>
 
-          {/* Right Column - Gratitude and Reminders */}
+          {/* Right Column - Mood, Gratitude, Reminders */}
           <div className="lg:col-span-3 space-y-6">
-            <Logo className="mb-4" />
+            <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
-            <NotesSection />
+            <NotesSection /> {/* Added NotesSection */}
           </div>
         </div>
       </div>
