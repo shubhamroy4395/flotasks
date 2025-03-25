@@ -11,3 +11,20 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Custom styles for Google login button */
+.google-login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.google-login-button iframe {
+  scale: 0.9;
+}
+
+/* Fix for button overflow */
+.google-login-button div {
+  max-height: 40px;
+  overflow: visible !important;
+}

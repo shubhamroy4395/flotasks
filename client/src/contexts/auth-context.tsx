@@ -89,13 +89,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Wrapper function for the Google login
-  // This is now just a redirect to the login page since we're using GoogleLogin component directly there
+  // This is now a no-op as we're using the GoogleLogin component directly in the navbar
   const loginWithGoogle = () => {
     toast({
       title: "Google login",
-      description: "Please use the Google login button on the login page",
+      description: "Please use the Google login button in the top-right corner",
     });
-    setLocation("/login");
   };
 
   // Traditional login mutation
@@ -143,10 +142,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSuccess: () => {
       toast({
         title: "Registration successful",
-        description: "Your account has been created! Please log in.",
+        description: "Your account has been created! Please sign in with Google.",
       });
       trackEvent(Events.UI.Register, { success: true });
-      setLocation("/login");
+      setLocation("/"); // Redirect to home page instead of login page
     },
     onError: (error: Error) => {
       toast({

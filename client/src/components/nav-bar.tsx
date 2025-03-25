@@ -89,56 +89,58 @@ export function NavBar() {
           </DropdownMenu>
         ) : (
           <div className="flex items-center space-x-2">
-            <GoogleLogin
-              onSuccess={(credentialResponse) => {
-                trackEvent(Events.UI.GoogleLogin, {
-                  success: true,
-                  timestamp: new Date().toISOString()
-                });
-
-                // Make API request to our backend
-                apiRequest("POST", "/api/auth/google", {
-                  credential: credentialResponse.credential
-                })
-                  .then(() => {
-                    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                    toast({
-                      title: "Successfully signed in",
-                      description: "Welcome back!",
-                      duration: 3000
-                    });
-                  })
-                  .catch(error => {
-                    console.error("Google login error:", error);
-                    toast({
-                      title: "Sign in failed",
-                      description: "Could not sign in with Google. Please try again.",
-                      variant: "destructive",
-                      duration: 5000
-                    });
+            <div className="google-login-button">
+              <GoogleLogin
+                onSuccess={(credentialResponse) => {
+                  trackEvent(Events.UI.GoogleLogin, {
+                    success: true,
+                    timestamp: new Date().toISOString()
                   });
-              }}
-              onError={() => {
-                trackEvent(Events.UI.AuthError, {
-                  type: 'google_oauth_error',
-                  timestamp: new Date().toISOString()
-                });
-                
-                toast({
-                  title: "Sign in failed",
-                  description: "Could not sign in with Google. Please try again.",
-                  variant: "destructive",
-                  duration: 5000
-                });
-              }}
-              logo_alignment="center"
-              shape="pill"
-              type="standard"
-              theme="outline"
-              size="large"
-              text="signin_with"
-              locale="en"
-            />
+  
+                  // Make API request to our backend
+                  apiRequest("POST", "/api/auth/google", {
+                    credential: credentialResponse.credential
+                  })
+                    .then(() => {
+                      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                      toast({
+                        title: "Successfully signed in",
+                        description: "Welcome back!",
+                        duration: 3000
+                      });
+                    })
+                    .catch(error => {
+                      console.error("Google login error:", error);
+                      toast({
+                        title: "Sign in failed",
+                        description: "Could not sign in with Google. Please try again.",
+                        variant: "destructive",
+                        duration: 5000
+                      });
+                    });
+                }}
+                onError={() => {
+                  trackEvent(Events.UI.AuthError, {
+                    type: 'google_oauth_error',
+                    timestamp: new Date().toISOString()
+                  });
+                  
+                  toast({
+                    title: "Sign in failed",
+                    description: "Could not sign in with Google. Please try again.",
+                    variant: "destructive",
+                    duration: 5000
+                  });
+                }}
+                logo_alignment="center"
+                shape="circle"
+                type="icon"
+                theme="filled_blue"
+                size="medium"
+                text="signin_with"
+                locale="en"
+              />
+            </div>
           </div>
         )}
       </div>

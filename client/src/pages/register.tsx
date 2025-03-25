@@ -190,10 +190,10 @@ export default function Register() {
               Already have an account?{" "}
               <Button
                 variant="link"
-                onClick={() => setLocation("/login")}
+                onClick={() => setLocation("/")}
                 className="p-0 h-auto"
               >
-                Sign in
+                Go to home page and sign in
               </Button>
             </div>
           </CardFooter>
