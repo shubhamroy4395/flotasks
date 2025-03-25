@@ -96,7 +96,10 @@ export const useTaskStore = create<TaskState>()(
             });
             
             // Send to server
-            const savedTask = await apiRequest('POST', endpoint, task);
+            const response = await apiRequest('POST', endpoint, task);
+            
+            // Parse response to get the saved task with correct types
+            const savedTask = await response.json() as Task;
             
             // Update the local state with the server response
             set(state => {

@@ -6,7 +6,7 @@ import { Card } from "./card";
 import { Plus, X } from "lucide-react";
 
 interface TaskInputProps {
-  onSubmit: (task: { content: string; priority: number; category: string }) => void;
+  onSubmit: (task: { content: string; priority: number; category: string; completed?: boolean }) => void;
 }
 
 export function TaskInput({ onSubmit }: TaskInputProps) {
@@ -19,7 +19,7 @@ export function TaskInput({ onSubmit }: TaskInputProps) {
     e.preventDefault();
     if (!content.trim()) return;
     
-    onSubmit({ content, priority, category });
+    onSubmit({ content, priority, category, completed: false });
     setContent("");
     setPriority(0);
     setCategory("todo");

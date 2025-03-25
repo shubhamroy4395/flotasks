@@ -200,9 +200,10 @@ export function TaskListV2({ title, category }: TaskListProps) {
                   className="w-full mt-2 text-gray-500 hover:text-primary"
                   onClick={() => {
                     handleAddTask({ 
-                      content: '', 
+                      content: 'New task', 
                       priority: 0, 
-                      category: category
+                      category: category,
+                      completed: false
                     });
                   }}
                 >
