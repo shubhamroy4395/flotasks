@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+
 @layer base {
   * {
     @apply border-border;
@@ -10,4 +12,13 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+}
+
+.logo-text {
+  font-family: 'Dancing Script', cursive;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }

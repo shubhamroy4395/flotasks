@@ -25,7 +25,7 @@ export function MoodTracker() {
 
   // Track when the mood section is opened
   useEffect(() => {
-    trackEvent(Events.MOOD_SECTION_OPEN, {
+    trackEvent(Events.Mood.SectionOpen, {
       componentName: 'MoodTracker',
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -47,8 +47,7 @@ export function MoodTracker() {
     onSuccess: (_, mood) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
 
-      // Track mood selection with detailed properties
-      trackEvent(Events.MOOD_SELECTED, {
+      trackEvent(Events.Mood.Selected, {
         mood,
         moodLabel: MOOD_LABELS[mood].label,
         previousMood: moodEntries?.[0]?.mood || null,
@@ -70,7 +69,10 @@ export function MoodTracker() {
 
   return (
     <Card>
-      <CardHeader className="border-b">
+      <CardHeader className="border-b relative">
+        <div className="absolute right-4 top-2">
+          <h1 className="logo-text text-3xl">Flo Tasks</h1>
+        </div>
         <CardTitle>How are you feeling?</CardTitle>
       </CardHeader>
       <CardContent>
