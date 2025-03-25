@@ -4,23 +4,20 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2 } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
-import { Events, trackEvent } from "@/lib/amplitude";
+import { trackEvent, Events } from "@/lib/amplitude";
 import debounce from 'lodash/debounce';
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
   if (!time) return 0;
-  const hours = time.match(/(\d+(\.\d+)?h)/);
+  const hours = time.match(/(\d+)h/);
   const minutes = time.match(/(\d+)min/);
-  const hoursMinutes = hours ? parseFloat(hours[1].replace('h','')) * 60 : 0;
-  const justMinutes = minutes ? parseInt(minutes[1]) : 0;
-  return hoursMinutes + justMinutes;
+  return (hours ? parseInt(hours[1]) * 60 : 0) + (minutes ? parseInt(minutes[1]) : 0);
 };
 
 // Helper function to format minutes to readable time
@@ -62,19 +59,17 @@ const PRIORITIES = [
 ];
 
 const TIME_SLOTS = [
-  "5min", "10min", "15min", "30min", "45min",
-  "1h", "1.5h", "2h", "3h", "4h", "6h", "8h", "12h", "24h"
+  "5min", "10min", "15min", "30min", "45min", "1h", "2h"
 ];
-
-const QUICK_TIME_OPTIONS = ["5min", "15min", "30min", "1h"];
 
 interface TaskListProps {
   title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
+  onDelete?: (taskId: number) => void;
 }
 
-export function TaskList({ title, tasks, onSave }: TaskListProps) {
+export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
   const queryClient = useQueryClient();
   // State management
   const [entries, setEntries] = useState(() => {
@@ -220,32 +215,12 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     if (!activeTask) return;
     setActiveTask(prev => ({ ...prev!, priority: value, isDirty: true }));
     saveTask(activeTask.content, value, activeTask.eta);
-
-    // Auto-close if time is also selected
-    if (activeTask.eta) {
-      setActiveTask(null);
-      // Focus next empty line if available
-      const nextEmptyIndex = entries.findIndex((entry, idx) => idx > activeTask.index && !entry.content.trim());
-      if (nextEmptyIndex !== -1) {
-        handleLineClick(nextEmptyIndex, new MouseEvent('click'));
-      }
-    }
   };
 
   const handleEtaChange = (value: string) => {
     if (!activeTask) return;
     setActiveTask(prev => ({ ...prev!, eta: value, isDirty: true }));
     saveTask(activeTask.content, activeTask.priority, value);
-
-    // Auto-close if priority is also selected
-    if (activeTask.priority > 0) {
-      setActiveTask(null);
-      // Focus next empty line if available
-      const nextEmptyIndex = entries.findIndex((entry, idx) => idx > activeTask.index && !entry.content.trim());
-      if (nextEmptyIndex !== -1) {
-        handleLineClick(nextEmptyIndex, new MouseEvent('click'));
-      }
-    }
   };
 
   const handleBlur = () => {
@@ -412,38 +387,11 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     },
     delete: () => {
       if (activeEntry) {
-        deleteTask.mutate(activeEntry.id);
+        deleteEntry.mutate(activeEntry.id);
         setActiveTask(null);
       }
     }
   };
-
-  const deleteTask = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/tasks/${id}`);
-    },
-    onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: ["/api/tasks"] });
-      const previousTasks = queryClient.getQueryData<Task[]>(["/api/tasks"]);
-
-      // Optimistically update the UI
-      setEntries(prev => prev.filter(entry => entry.id !== deletedId));
-
-      queryClient.setQueryData<Task[]>(["/api/tasks"], old =>
-        old?.filter(task => task.id !== deletedId) || []
-      );
-
-      return { previousTasks };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["/api/tasks"], context.previousTasks);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-    }
-  });
 
   const deleteEntry = useMutation({
     mutationFn: async (id: number) => {
@@ -479,7 +427,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     }
   });
-
 
   useKeyboardShortcuts(keyboardHandlers, {
     enabled: true,
@@ -648,35 +595,17 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         </Popover>
                       </div>
 
-                      <div className="flex-1 flex items-center gap-2">
-                        <div className="flex gap-1">
-                          {QUICK_TIME_OPTIONS.map(time => (
-                            <Button
-                              key={time}
-                              size="sm"
-                              variant="ghost"
-                              className={`px-2 bg-gradient-to-r from-gray-50 to-slate-50 text-gray-700 font-medium transform transition-all duration-200 hover:scale-105 ${
-                                activeTask.eta === time ? 'ring-2 ring-offset-2' : ''
-                              }`}
-                              onClick={() => handleEtaChange(time)}
-                            >
-                              {time}
-                            </Button>
-                          ))}
-                        </div>
-
-                        <select
-                          value={activeTask.eta}
-                          onChange={(e) => handleEtaChange(e.target.value)}
-                          className="ml-2 rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-medium min-w-[100px]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <option value="">Custom Time</option>
-                          {TIME_SLOTS.map(slot => (
-                            <option key={slot} value={slot}>{slot}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <select
+                        value={activeTask.eta}
+                        onChange={(e) => handleEtaChange(e.target.value)}
+                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="">Time</option>
+                        {TIME_SLOTS.map(slot => (
+                          <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
                     </div>
                   </motion.div>
                 ) : (
@@ -688,7 +617,12 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                   >
                     <span>{entry.content || " "}</span>
                     {entry.content && (
-                      <div className="flex items-center gap-2">
+                      <motion.div
+                        className="flex items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                      >
                         {entry.priority !== undefined && (
                           <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
                             PRIORITIES.find(p => p.value === entry.priority)?.color
@@ -702,19 +636,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                             {entry.eta}
                           </span>
                         )}
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteTask.mutate(entry.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </motion.div>
                     )}
                   </motion.div>
                 )}
@@ -722,16 +644,16 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             ))}
           </AnimatePresence>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full mt-4"
-          onClick={addMoreTasks}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add More Tasks
-        </Button>
       </CardContent>
     </Card>
   );
+}
+
+async function apiRequest(method: string, url: string) {
+  const response = await fetch(url, { method });
+  if (!response.ok) {
+    const message = `An error has occured: ${response.statusText}`;
+    throw new Error(message);
+  }
+  return response.json();
 }
