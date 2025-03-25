@@ -3,65 +3,54 @@ import React from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import { trackEvent } from '@/lib/amplitude';
 
-// Simple line item structure
-type LineItem = {
-  id: number; // Positive for saved items, negative for temporary
+// Simple interface for line items
+interface LineItem {
+  id: number;
   content: string;
   timestamp: Date;
   isSaved: boolean;
   isEditing: boolean;
-};
+}
 
-// Current editing state
-type EditingState = {
-  index: number;
-  content: string;
-} | null;
-
+// Interface for hook options
 interface UseLineItemsOptions {
   queryKey: string[];
   eventPrefix: string;
   defaultLines?: number;
 }
 
-/**
- * A completely rewritten hook for managing line items (notes, gratitude entries, etc.)
- * with proper edge case handling and simpler logic
- */
+// Super-simplified hook for line items
 export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLineItemsOptions) {
-  // Core state
+  // Basic state
   const [items, setItems] = useState<LineItem[]>([]);
-  const [editingState, setEditingState] = useState<EditingState>(null);
+  const [editingState, setEditingState] = useState<{index: number, content: string} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  /**
-   * Initialize the items from saved data
-   */
-  const initializeItems = useCallback((savedItems: any[]) => {
+  // Initialize items from server data
+  const initializeItems = useCallback((serverItems: any[]) => {
     try {
-      // Ensure we have an array to work with
-      const validItems = Array.isArray(savedItems) ? savedItems : [];
+      // Make sure we have an array
+      const validItems = Array.isArray(serverItems) ? serverItems : [];
       
-      // Create a map for deduplication by content
+      // Filter out duplicates by content (keep most recent)
       const uniqueMap = new Map();
       validItems.forEach(item => {
-        // Keep the most recent item when there are duplicates
+        if (!item || !item.content) return;
+        
         const existingItem = uniqueMap.get(item.content);
         if (!existingItem || new Date(item.timestamp) > new Date(existingItem.timestamp)) {
           uniqueMap.set(item.content, item);
         }
       });
       
-      // Convert map to array and sort newest first
-      const uniqueItems = Array.from(uniqueMap.values())
-        .filter(item => item.content?.trim()) // Ignore empty items
-        .sort((a, b) => {
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        });
+      // Convert to array and sort by date (newest first)
+      const sortedItems = Array.from(uniqueMap.values())
+        .filter(item => item && item.content?.trim())
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       
-      // Create formatted items for our internal state
-      const savedLines = uniqueItems.map(item => ({
+      // Convert to our internal format
+      const savedItems = sortedItems.map(item => ({
         id: item.id,
         content: item.content,
         timestamp: new Date(item.timestamp),
@@ -69,84 +58,67 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         isEditing: false
       }));
       
-      // Always add empty input lines
-      const emptyCount = Math.max(defaultLines - savedLines.length, 1);
-      const emptyLines = Array(emptyCount).fill(null).map((_, i) => ({
-        id: -(Date.now() + i), // Use negative IDs for unsaved items
+      // Add empty lines as needed
+      const emptyCount = Math.max(defaultLines - savedItems.length, 1);
+      const emptyItems = Array(emptyCount).fill(null).map((_, i) => ({
+        id: -(Date.now() + i),
         content: '',
         timestamp: new Date(),
         isSaved: false,
         isEditing: false
       }));
       
-      // Set our items state
-      setItems([...savedLines, ...emptyLines]);
-      console.log(`Initialized ${savedLines.length} saved items and ${emptyCount} empty lines`);
+      // Set state with combined items
+      setItems([...savedItems, ...emptyItems]);
+      console.log(`Initialized ${savedItems.length} saved items and ${emptyCount} empty lines`);
     } catch (error) {
-      console.error("Error initializing items:", error);
-      setError("Failed to load items. Please refresh the page.");
+      console.error('Error initializing items:', error);
+      setError('Failed to load items. Please refresh the page.');
     }
   }, [defaultLines]);
   
-  /**
-   * Save an item to the server
-   */
-  const saveItem = useCallback(async (content: string) => {
+  // Save item to server
+  const saveItem = useCallback(async (content: string): Promise<any> => {
     if (!content.trim()) return null;
     
     setIsLoading(true);
-    setError(null);
-    
     try {
-      const startTime = performance.now();
-      
       // Send to server
-      const response = await apiRequest("POST", queryKey[0], { content });
-      const savedItem = await response.json();
-      
-      // Track for analytics
-      const endTime = performance.now();
-      trackEvent(`${eventPrefix}.Save`, {
-        durationMs: endTime - startTime,
-        contentLength: content.length
-      });
-      
-      console.log("Item saved successfully:", savedItem);
-      return savedItem;
+      const response = await apiRequest('POST', queryKey[0], { content });
+      const result = await response.json();
+      console.log('Item saved successfully:', result);
+      return result;
     } catch (error) {
-      console.error("Error saving item:", error);
-      setError("Failed to save. Please try again.");
+      console.error('Error saving item:', error);
+      setError('Failed to save. Please try again.');
       return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [queryKey, eventPrefix]);
-  
-  /**
-   * Delete an item from the server
-   */
-  const deleteItem = useCallback(async (id: number) => {
-    if (id < 0) return true; // Item was never saved
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      await apiRequest("DELETE", `${queryKey[0]}/${id}`);
-      console.log(`Item ${id} deleted successfully`);
-      return true;
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      setError("Failed to delete. Please try again.");
-      return false;
     } finally {
       setIsLoading(false);
     }
   }, [queryKey]);
   
-  /**
-   * Handle clicking on a line to edit it
-   */
+  // Delete item from server
+  const removeItem = useCallback(async (id: number) => {
+    if (id < 0) {
+      // Just remove from local state if not saved
+      setItems(current => current.filter(item => item.id !== id));
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await apiRequest('DELETE', `${queryKey[0]}/${id}`);
+      setItems(current => current.filter(item => item.id !== id));
+      console.log(`Item ${id} deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      setError('Failed to delete. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [queryKey]);
+  
+  // Handle clicking on a line
   const handleLineClick = useCallback((index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -156,200 +128,133 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       return;
     }
     
+    // Set editing state
     const item = items[index];
     
-    // Update item state to show it's being edited
+    // Update editing flags
     setItems(current => 
-      current.map((i, idx) => ({
-        ...i,
+      current.map((item, idx) => ({
+        ...item,
         isEditing: idx === index
       }))
     );
     
     // Set editing state
     setEditingState({
-      index, 
+      index,
       content: item.content
     });
     
     console.log(`Now editing line ${index}`);
   }, [items]);
   
-  /**
-   * Handle input changes while editing
-   */
+  // Handle input changes
   const handleInputChange = useCallback((value: string) => {
     if (!editingState) return;
     
-    // Update the editing state
+    // Update editing state
     setEditingState({
       ...editingState,
       content: value
     });
     
-    // Update the item in the list
+    // Update item content
     setItems(current => 
-      current.map((item, index) => 
-        index === editingState.index 
-          ? { ...item, content: value }
-          : item
+      current.map((item, idx) => 
+        idx === editingState.index ? { ...item, content: value } : item
       )
     );
   }, [editingState]);
   
-  /**
-   * Handle when the user finishes editing (blur event)
-   */
+  // Handle blur (save when user clicks away)
   const handleBlur = useCallback(async () => {
     if (!editingState) return;
     
     const { index, content } = editingState;
-    const currentItem = items[index];
+    const item = items[index];
     
-    // Reset editing state first to prevent UI jumps
+    // Reset editing state
     setEditingState(null);
+    setItems(current => current.map(item => ({ ...item, isEditing: false })));
     
-    // Update all items to remove editing flag
-    setItems(current => 
-      current.map(item => ({
-        ...item,
-        isEditing: false
-      }))
-    );
+    // Don't save if empty
+    if (!content.trim()) {
+      // If this was a saved item and now empty, delete it
+      if (item.isSaved) {
+        await removeItem(item.id);
+      }
+      return;
+    }
     
-    // Check if content changed and if it's not empty
-    if (content.trim() && content !== currentItem.content) {
-      // Optimistically update this item
-      const tempId = -Date.now();
-      setItems(current => 
-        current.map((item, idx) => 
-          idx === index
-            ? { 
-                ...item, 
-                id: tempId, 
-                content, 
-                timestamp: new Date(),
-                isSaved: false 
-              }
-            : item
-        )
-      );
-      
-      // Save to server
-      const savedItem = await saveItem(content);
-      
-      if (savedItem) {
-        // Update with real data from server
-        setItems(current => {
-          // Create a copy of our current items
-          const updated = [...current];
-          
-          // Find and update the item we just saved
-          const itemIndex = updated.findIndex(item => 
-            item.id === tempId || 
-            (item.id === currentItem.id && index === updated.indexOf(item))
-          );
-          
-          if (itemIndex >= 0) {
-            updated[itemIndex] = {
-              id: savedItem.id,
-              content: savedItem.content,
-              timestamp: new Date(savedItem.timestamp),
-              isSaved: true,
-              isEditing: false
-            };
-          }
-          
-          // Check for any duplicates and remove them
-          const deduplicated = updated.filter((item, idx) => {
-            // Keep the item we just saved
-            if (idx === itemIndex) return true;
-            
-            // Remove any items with the same content
-            const isDuplicate = item.content === savedItem.content && 
-              Math.abs(new Date(item.timestamp).getTime() - new Date(savedItem.timestamp).getTime()) < 5000;
-            
-            return !isDuplicate;
-          });
-          
-          // Make sure we always have an empty line at the end
-          const hasEmptyLine = deduplicated.some(item => !item.content.trim());
-          
-          if (!hasEmptyLine) {
-            deduplicated.push({
-              id: -Date.now(),
-              content: '',
-              timestamp: new Date(),
-              isSaved: false,
-              isEditing: false
-            });
-          }
-          
-          return deduplicated;
+    // Don't save if not changed
+    if (content === item.content && item.isSaved) {
+      return;
+    }
+    
+    // Save to server
+    const savedItem = await saveItem(content);
+    if (savedItem) {
+      // Update item with server data
+      setItems(current => {
+        // Create a new array with the updated item
+        const updated = [...current];
+        updated[index] = {
+          id: savedItem.id,
+          content: savedItem.content,
+          timestamp: new Date(savedItem.timestamp),
+          isSaved: true,
+          isEditing: false
+        };
+        
+        // Remove duplicates
+        const result = updated.filter((item, idx) => {
+          if (idx === index) return true; // Keep the updated item
+          if (!item.content.trim()) return true; // Keep empty items for input
+          // Remove duplicates with the same content
+          return item.content !== savedItem.content;
         });
-      }
-    } else if (!content.trim() && currentItem.isSaved) {
-      // If user cleared a saved item, delete it
-      const deleted = await deleteItem(currentItem.id);
-      
-      if (deleted) {
-        // Remove from our list
-        setItems(current => 
-          current.filter((_, idx) => idx !== index)
-        );
-      }
+        
+        // Make sure we have at least one empty item for new input
+        const hasEmptyItem = result.some(item => !item.content.trim());
+        if (!hasEmptyItem) {
+          result.push({
+            id: -(Date.now()),
+            content: '',
+            timestamp: new Date(),
+            isSaved: false,
+            isEditing: false
+          });
+        }
+        
+        return result;
+      });
     }
     
     console.log("Finished editing, items count:", items.length);
-  }, [editingState, items, saveItem, deleteItem]);
+  }, [editingState, items, saveItem, removeItem]);
   
-  /**
-   * Add a new empty entry
-   */
+  // Add a new empty item
   const addNewItem = useCallback(() => {
-    const newId = -Date.now();
+    const newId = -(Date.now());
+    const newItem = {
+      id: newId,
+      content: '',
+      timestamp: new Date(),
+      isSaved: false,
+      isEditing: false
+    };
     
-    setItems(current => [
-      ...current,
-      {
-        id: newId,
-        content: '',
-        timestamp: new Date(),
-        isSaved: false,
-        isEditing: false
-      }
-    ]);
+    setItems(current => [...current, newItem]);
     
-    // Automatically focus the new item
+    // Focus the new item
     setTimeout(() => {
-      const newIndex = items.length; // The index of the item we just added
+      const newIndex = items.length;
       const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
       handleLineClick(newIndex, syntheticEvent);
     }, 50);
     
     console.log("Added new empty item");
   }, [items.length, handleLineClick]);
-  
-  /**
-   * Remove an item
-   */
-  const removeItem = useCallback(async (id: number) => {
-    // Find the item
-    const itemIndex = items.findIndex(item => item.id === id);
-    if (itemIndex === -1) return;
-    
-    const item = items[itemIndex];
-    
-    // If it's saved, delete from server
-    if (item.isSaved) {
-      const success = await deleteItem(id);
-      if (!success) return;
-    }
-    
-    // Remove from our list
-    setItems(current => current.filter(item => item.id !== id));
-    console.log(`Removed item ${id}`);
-  }, [items, deleteItem]);
   
   return {
     items,

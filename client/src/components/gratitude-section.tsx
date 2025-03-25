@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -6,62 +6,204 @@ import { useQuery } from "@tanstack/react-query";
 import type { GratitudeEntry } from "@shared/schema";
 import { Heart, Plus, Trash2, Sun, Star, PenLine, Calendar, Bookmark } from "lucide-react";
 import { trackEvent } from "@/lib/amplitude";
-import { useLineItems } from "@/hooks/use-line-items";
 import { useAuth } from "@/contexts/auth-context";
 import { format } from "date-fns";
 import { EmojiPicker } from "./ui/emoji-picker";
+import { apiRequest } from "@/lib/queryClient";
+
+// Simple entry interface for local state
+interface Entry {
+  id: number;
+  content: string;
+  timestamp: Date;
+  isEditing?: boolean;
+}
 
 export function GratitudeSection() {
   const startTimeRef = useRef(performance.now());
   const { isAuthenticated } = useAuth();
   const firstEmptyInputRef = useRef<HTMLDivElement | null>(null);
   const [selectedEmoji, setSelectedEmoji] = useState<string>("❤️");
+  
+  // Local state
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState("");
 
-  // Authenticated query
-  const { data: authEntries = [] } = useQuery<GratitudeEntry[]>({
-    queryKey: ["/api/gratitude"],
+  // API endpoint based on auth status
+  const apiEndpoint = isAuthenticated ? "/api/gratitude" : "/api/public/gratitude";
+
+  // Fetch entries
+  const { data: fetchedEntries = [], refetch } = useQuery<GratitudeEntry[]>({
+    queryKey: [apiEndpoint],
     staleTime: 30000,
-    gcTime: 5 * 60 * 1000,
-    retry: 3,
-    enabled: isAuthenticated
-  });
-
-  // Public query
-  const { data: publicEntries = [] } = useQuery<GratitudeEntry[]>({
-    queryKey: ["/api/public/gratitude"],
-    staleTime: 30000,
-    gcTime: 5 * 60 * 1000,
-    retry: 3,
-    enabled: !isAuthenticated
-  });
-
-  // Use the appropriate data source based on authentication status
-  const savedEntries = isAuthenticated ? authEntries : publicEntries;
-
-  // Choose the appropriate endpoint for line items
-  const queryEndpoint = isAuthenticated ? "/api/gratitude" : "/api/public/gratitude";
-
-  const {
-    items,
-    editingState,
-    error,
-    isLoading,
-    initializeItems,
-    handleLineClick,
-    handleInputChange,
-    handleBlur,
-    addNewItem,
-    removeItem
-  } = useLineItems({
-    queryKey: [queryEndpoint],
-    eventPrefix: "Gratitude",
-    defaultLines: 3
+    retry: 3
   });
 
   // Initialize entries when data changes
   useEffect(() => {
-    initializeItems(savedEntries);
-  }, [savedEntries, initializeItems]);
+    if (fetchedEntries.length > 0) {
+      // Create our local entries from fetched data
+      const savedEntries = fetchedEntries.map(entry => ({
+        id: entry.id,
+        content: entry.content,
+        timestamp: new Date(entry.timestamp)
+      }));
+      
+      // Make sure we have at least one empty entry for input
+      const emptyEntry = {
+        id: -(Date.now()),
+        content: "",
+        timestamp: new Date()
+      };
+      
+      setEntries([...savedEntries, emptyEntry]);
+    } else {
+      // If no entries, create empty ones
+      const emptyEntries = Array(3).fill(null).map((_, i) => ({
+        id: -(Date.now() + i),
+        content: "",
+        timestamp: new Date()
+      }));
+      
+      setEntries(emptyEntries);
+    }
+  }, [fetchedEntries]);
+
+  // Save entry to server
+  const saveEntry = useCallback(async (content: string): Promise<void> => {
+    if (!content.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", apiEndpoint, { content });
+      const savedEntry = await response.json();
+      
+      // Add the new entry to our list
+      setEntries(current => {
+        // Create new array with the saved entry
+        const updated = current.map(entry => ({
+          ...entry,
+          isEditing: false
+        }));
+        
+        // Replace the edited entry with saved one if editing
+        if (editingIndex !== null) {
+          updated[editingIndex] = {
+            id: savedEntry.id,
+            content: savedEntry.content,
+            timestamp: new Date(savedEntry.timestamp),
+            isEditing: false
+          };
+        }
+        
+        // Make sure we still have an empty entry
+        const hasEmpty = updated.some(entry => !entry.content);
+        if (!hasEmpty) {
+          updated.push({
+            id: -(Date.now()),
+            content: "",
+            timestamp: new Date(),
+            isEditing: false
+          });
+        }
+        
+        return updated;
+      });
+      
+      // Clear editing state
+      setEditingIndex(null);
+      setInputValue("");
+      
+      // Refetch to ensure we have latest data
+      refetch();
+    } catch (error) {
+      console.error("Error saving gratitude entry:", error);
+      setError("Failed to save. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiEndpoint, editingIndex, refetch]);
+
+  // Delete entry
+  const deleteEntry = useCallback(async (id: number) => {
+    if (id < 0) {
+      // Simply remove from local state if not saved
+      setEntries(current => current.filter(e => e.id !== id));
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await apiRequest("DELETE", `${apiEndpoint}/${id}`);
+      setEntries(current => current.filter(e => e.id !== id));
+      refetch();
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      setError("Failed to delete. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiEndpoint, refetch]);
+
+  // Handle clicking on an entry
+  const handleEntryClick = useCallback((index: number) => {
+    // Update local state to show this entry is being edited
+    setEntries(current => {
+      return current.map((entry, i) => ({
+        ...entry,
+        isEditing: i === index
+      }));
+    });
+    
+    // Set editing index and input value
+    setEditingIndex(index);
+    setInputValue(entries[index]?.content || "");
+  }, [entries]);
+
+  // Handle input changes
+  const handleInputChange = useCallback((value: string) => {
+    setInputValue(value);
+  }, []);
+
+  // Handle blur event (save when clicking away)
+  const handleBlur = useCallback(() => {
+    if (editingIndex !== null && inputValue.trim()) {
+      saveEntry(inputValue);
+    }
+    
+    // Clear editing state
+    setEditingIndex(null);
+    setInputValue("");
+    
+    // Remove editing flag from entries
+    setEntries(current => 
+      current.map(entry => ({
+        ...entry,
+        isEditing: false
+      }))
+    );
+  }, [editingIndex, inputValue, saveEntry]);
+
+  // Add new empty entry
+  const addNewEntry = useCallback(() => {
+    const newEntry = {
+      id: -(Date.now()),
+      content: "",
+      timestamp: new Date()
+    };
+    
+    // Add to entries list
+    setEntries(current => [...current, newEntry]);
+    
+    // Focus the new entry (after a brief delay to allow rendering)
+    setTimeout(() => {
+      const newIndex = entries.length;
+      handleEntryClick(newIndex);
+    }, 50);
+  }, [entries.length, handleEntryClick]);
 
   // Track component performance
   useEffect(() => {
@@ -69,26 +211,10 @@ export function GratitudeSection() {
     trackEvent("component_mount", {
       component: 'GratitudeSection',
       loadTimeMs: loadTime,
-      savedEntriesCount: savedEntries.length,
+      savedEntriesCount: fetchedEntries.length,
       isAuthenticated
     });
-  }, [savedEntries.length, isAuthenticated]);
-  
-  // Find the first empty line after mount to assist users
-  useEffect(() => {
-    if (items.length > 0 && !isLoading) {
-      // Find the first empty input field
-      const firstEmptyIndex = items.findIndex(item => !item.content);
-      
-      if (firstEmptyIndex !== -1 && firstEmptyInputRef.current) {
-        // Focus on it with a slight delay
-        setTimeout(() => {
-          const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
-          handleLineClick(firstEmptyIndex, syntheticEvent);
-        }, 100);
-      }
-    }
-  }, [items, isLoading, handleLineClick]);
+  }, [fetchedEntries.length, isAuthenticated]);
 
   // Get a random prompt for inspiration
   const getRandomPrompt = () => {
@@ -130,6 +256,9 @@ export function GratitudeSection() {
     return icons[index % icons.length];
   };
 
+  // Count saved entries
+  const savedEntriesCount = entries.filter(e => e.content && e.id > 0).length;
+
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 bg-gradient-to-r from-amber-50 to-rose-50">
@@ -138,7 +267,7 @@ export function GratitudeSection() {
           <CardTitle className="font-semibold">Gratitude Journal</CardTitle>
         </div>
         <div className="hidden sm:block px-3 py-1 bg-white bg-opacity-70 rounded-full text-xs text-gray-600 font-medium">
-          {items.filter(item => item.isSaved).length} Moments of Gratitude
+          {savedEntriesCount} Moments of Gratitude
         </div>
       </CardHeader>
       <CardContent className="pt-5">
@@ -154,12 +283,12 @@ export function GratitudeSection() {
           </div>
 
           <div className="space-y-3">
-            {items.map((item, index) => (
+            {entries.map((entry, index) => (
               <div
-                key={item.id}
-                className={`group relative ${item.isSaved ? 'mb-4' : 'mb-3'}`}
+                key={entry.id}
+                className={`group relative ${entry.content ? 'mb-4' : 'mb-3'}`}
               >
-                {item.isSaved && (
+                {entry.content && entry.id > 0 && (
                   <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-sm z-10">
                     {getIconForEntry(index)}
                   </div>
@@ -167,21 +296,21 @@ export function GratitudeSection() {
                 
                 <div 
                   className={`rounded-lg p-4 border-l-4 shadow-sm cursor-pointer 
-                    ${item.isSaved 
+                    ${entry.content && entry.id > 0
                       ? `bg-gradient-to-r ${getCardColorClass(index)} hover:shadow-md` 
                       : 'bg-white border-l-gray-200 hover:border-l-gray-400'}
                     ${isLoading ? 'opacity-60' : ''} 
-                    ${item.isEditing ? 'shadow-md' : ''}`}
-                  onClick={(e) => handleLineClick(index, e)}
+                    ${editingIndex === index ? 'shadow-md' : ''}`}
+                  onClick={() => handleEntryClick(index)}
                 >
-                  {item.isEditing ? (
+                  {editingIndex === index ? (
                     <div
                       className="flex flex-col gap-2"
-                      ref={!item.isSaved && !item.content ? firstEmptyInputRef : null}
+                      ref={!entry.content ? firstEmptyInputRef : null}
                     >
                       <div className="flex items-center justify-between">
                         <div className="text-xs font-medium text-gray-500 mb-1">
-                          {item.isSaved ? 'Editing gratitude entry' : 'New gratitude entry'}
+                          {entry.id > 0 ? 'Editing gratitude entry' : 'New gratitude entry'}
                         </div>
                         <div className="flex items-center space-x-1">
                           <EmojiPicker onSelect={setSelectedEmoji} selected={selectedEmoji} />
@@ -190,7 +319,7 @@ export function GratitudeSection() {
                       
                       <Input
                         autoFocus
-                        value={editingState?.content || item.content}
+                        value={inputValue}
                         onChange={(e) => handleInputChange(e.target.value)}
                         onBlur={handleBlur}
                         className="border border-gray-200 bg-white bg-opacity-70 font-medium text-gray-800 placeholder:text-gray-400 rounded-md"
@@ -205,13 +334,13 @@ export function GratitudeSection() {
                     </div>
                   ) : (
                     <div>
-                      {item.isSaved ? (
+                      {entry.content ? (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
                               <span className="text-sm font-medium text-gray-700">{selectedEmoji}</span>
                               <span className="ml-2 text-xs text-gray-500">
-                                {format(new Date(item.timestamp), 'MMMM d, h:mm a')}
+                                {format(new Date(entry.timestamp), 'MMMM d, h:mm a')}
                               </span>
                             </div>
                             <Button
@@ -220,14 +349,14 @@ export function GratitudeSection() {
                               className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 hover:bg-white hover:bg-opacity-60 h-8 w-8"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeItem(item.id);
+                                deleteEntry(entry.id);
                               }}
                               disabled={isLoading}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
-                          <p className="text-gray-800 font-medium">{item.content}</p>
+                          <p className="text-gray-800 font-medium">{entry.content}</p>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center h-16 text-gray-400">
@@ -246,7 +375,7 @@ export function GratitudeSection() {
           variant="outline"
           size="lg"
           className="w-full mt-6 bg-gradient-to-r from-rose-50 to-amber-50 hover:from-rose-100 hover:to-amber-100 border border-rose-200 text-rose-600 font-medium rounded-lg"
-          onClick={addNewItem}
+          onClick={addNewEntry}
           disabled={isLoading}
         >
           <Plus className="mr-2 h-4 w-4" />
