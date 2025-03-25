@@ -147,7 +147,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
       {/* Top Date/Time Bar */}
-      <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10 shadow-md">
+      <div className="bg-white border-b border-gray-100 py-4 px-6 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-extrabold text-gray-800">
