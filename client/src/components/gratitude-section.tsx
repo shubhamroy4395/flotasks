@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -7,24 +7,13 @@ import { apiRequest } from "@/lib/queryClient";
 import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Trash2 } from "lucide-react";
-import { trackEvent, Events } from "@/lib/amplitude";
+import { Events } from "@/lib/amplitude";
+import { useAutoSave } from "@/hooks/use-auto-save";
 
 export function GratitudeSection() {
   const [isOpen, setIsOpen] = useState(false);
   const [newEntry, setNewEntry] = useState("");
   const queryClient = useQueryClient();
-
-  // Track section opening
-  useEffect(() => {
-    trackEvent(Events.GRATITUDE_SECTION_OPEN, {
-      componentName: 'GratitudeSection',
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-      timeOfDay: new Date().getHours(),
-      dayOfWeek: new Date().getDay(),
-      isWeekend: [0, 6].includes(new Date().getDay())
-    });
-  }, []);
 
   const { data: entries } = useQuery<GratitudeEntry[]>({
     queryKey: ["/api/gratitude"],
@@ -38,17 +27,6 @@ export function GratitudeSection() {
       queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
       setNewEntry("");
       setIsOpen(false);
-
-      // Track gratitude entry creation
-      trackEvent(Events.GRATITUDE_ADDED, {
-        contentLength: newEntry.length,
-        wordCount: newEntry.split(/\s+/).length,
-        timeOfDay: new Date().getHours(),
-        dayOfWeek: new Date().getDay(),
-        isWeekend: [0, 6].includes(new Date().getDay()),
-        totalEntries: (entries?.length || 0) + 1,
-        formOpenDuration: Date.now() - formOpenTime
-      });
     },
   });
 
@@ -56,36 +34,28 @@ export function GratitudeSection() {
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/gratitude/${id}`);
     },
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
-
-      // Track gratitude entry deletion
-      const deletedEntry = entries?.find(entry => entry.id === id);
-      trackEvent(Events.GRATITUDE_DELETED, {
-        entryAge: deletedEntry ? Date.now() - new Date(deletedEntry.timestamp).getTime() : null,
-        remainingEntries: (entries?.length || 1) - 1,
-        timeOfDay: new Date().getHours(),
-        dayOfWeek: new Date().getDay()
-      });
     },
   });
 
-  // Track form open time for duration calculation
-  const [formOpenTime, setFormOpenTime] = useState(Date.now());
+  const { handleChange, handleBlur } = useAutoSave({
+    onSave: async (content) => {
+      await createEntry.mutateAsync(content);
+    },
+    trackingEvent: Events.Gratitude.Added,
+    debounceMs: 800
+  });
 
-  const handleFormOpen = () => {
-    setIsOpen(true);
-    setFormOpenTime(Date.now());
-    trackEvent('Gratitude Form Opened', {
-      timeOfDay: new Date().getHours(),
+  const handleInputChange = (value: string) => {
+    setNewEntry(value);
+    handleChange(value, {
       existingEntries: entries?.length || 0
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEntry.trim()) return;
-    createEntry.mutate(newEntry);
+  const handleFormOpen = () => {
+    setIsOpen(true);
   };
 
   return (
@@ -102,26 +72,31 @@ export function GratitudeSection() {
               exit={{ opacity: 0, y: -20 }}
             >
               <Card className="p-4 mb-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="I am grateful for..."
-                      value={newEntry}
-                      onChange={(e) => setNewEntry(e.target.value)}
-                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
-                      autoFocus
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Button type="submit" className="w-full font-medium">Add Entry</Button>
-                </form>
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="I am grateful for..."
+                    value={newEntry}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onBlur={() => {
+                      handleBlur(newEntry, {
+                        existingEntries: entries?.length || 0
+                      });
+                      if (!newEntry.trim()) {
+                        setIsOpen(false);
+                      }
+                    }}
+                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </Card>
             </motion.div>
           )}

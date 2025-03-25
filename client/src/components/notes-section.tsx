@@ -1,34 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Note } from "@shared/schema";
-import { trackEvent, Events } from "@/lib/amplitude";
+import { Events } from "@/lib/amplitude";
+import { useAutoSave } from "@/hooks/use-auto-save";
 
 export function NotesSection() {
   const [isAdding, setIsAdding] = useState(false);
   const [newNote, setNewNote] = useState("");
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const formOpenTime = useRef(Date.now());
-
-  // Track section open
-  useEffect(() => {
-    trackEvent(Events.NOTES_SECTION_OPEN, {
-      componentName: 'NotesSection',
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-      timeOfDay: new Date().getHours(),
-      dayOfWeek: new Date().getDay(),
-      isWeekend: [0, 6].includes(new Date().getDay())
-    });
-  }, []);
 
   const { data: notes = [] } = useQuery<Note[]>({
     queryKey: ["/api/notes"],
@@ -40,21 +27,7 @@ export function NotesSection() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
-      toast({
-        title: "Note added!",
-        duration: 2000,
-      });
-
-      // Track note creation
-      trackEvent(Events.NOTE_CREATED, {
-        contentLength: newNote.length,
-        wordCount: newNote.trim().split(/\s+/).length,
-        formDuration: Date.now() - formOpenTime.current,
-        existingNotes: notes.length,
-        timeOfDay: new Date().getHours(),
-        dayOfWeek: new Date().getDay(),
-        isWeekend: [0, 6].includes(new Date().getDay())
-      });
+      
     },
   });
 
@@ -62,52 +35,30 @@ export function NotesSection() {
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/notes/${id}`);
     },
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
-
-      // Track note deletion
-      const deletedNote = notes.find(note => note.id === id);
-      if (deletedNote) {
-        trackEvent(Events.NOTE_DELETED, {
-          noteAge: Date.now() - new Date(deletedNote.timestamp).getTime(),
-          contentLength: deletedNote.content.length,
-          remainingNotes: notes.length - 1,
-          timeOfDay: new Date().getHours(),
-          dayOfWeek: new Date().getDay()
-        });
-      }
     },
   });
 
-  const handleFormOpen = () => {
-    setIsAdding(true);
-    formOpenTime.current = Date.now();
-    trackEvent(Events.UI_MODAL_OPENED, {
-      modalType: 'note-form',
-      timeOfDay: new Date().getHours(),
+  const { handleChange, handleBlur } = useAutoSave({
+    onSave: async (content) => {
+      await createNote.mutateAsync(content);
+    },
+    trackingEvent: Events.Notes.Created,
+    debounceMs: 800
+  });
+
+  const handleInputChange = (value: string) => {
+    setNewNote(value);
+    handleChange(value, {
+      formDuration: Date.now() - formOpenTime.current,
       existingNotes: notes.length
     });
   };
 
-  const handleFormClose = () => {
-    setIsAdding(false);
-    trackEvent(Events.UI_MODAL_CLOSED, {
-      modalType: 'note-form',
-      formDuration: Date.now() - formOpenTime.current,
-      hadContent: newNote.length > 0
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNote.trim()) return;
-
-    createNote.mutate(newNote.trim(), {
-      onSuccess: () => {
-        setNewNote("");
-        setIsAdding(false);
-      },
-    });
+  const handleFormOpen = () => {
+    setIsAdding(true);
+    formOpenTime.current = Date.now();
   };
 
   return (
@@ -124,32 +75,32 @@ export function NotesSection() {
               exit={{ opacity: 0, y: -20 }}
             >
               <Card className="p-4 mb-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Write a quick note..."
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
-                      autoFocus
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleFormClose}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full font-medium"
-                    disabled={!newNote.trim()}
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Write a quick note..."
+                    value={newNote}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onBlur={() => {
+                      handleBlur(newNote, {
+                        formDuration: Date.now() - formOpenTime.current,
+                        existingNotes: notes.length
+                      });
+                      if (!newNote.trim()) {
+                        setIsAdding(false);
+                      }
+                    }}
+                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsAdding(false)}
                   >
-                    Add Note
+                    <X className="h-4 w-4" />
                   </Button>
-                </form>
+                </div>
               </Card>
             </motion.div>
           )}
