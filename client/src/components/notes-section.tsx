@@ -168,7 +168,24 @@ export function NotesSection() {
   // Handle blur event (save when clicking away)
   const handleBlur = useCallback(() => {
     if (editingIndex !== null && inputValue.trim()) {
-      saveNote(inputValue);
+      // Save immediately without waiting for API response
+      const noteToSave = inputValue;
+      
+      // Update local state optimistically
+      setNotes(current => {
+        const updated = [...current];
+        if (updated[editingIndex]) {
+          updated[editingIndex] = {
+            ...updated[editingIndex],
+            content: noteToSave,
+            isEditing: false
+          };
+        }
+        return updated;
+      });
+      
+      // Trigger actual save in the background
+      saveNote(noteToSave);
     }
     
     // Clear editing state
@@ -184,19 +201,27 @@ export function NotesSection() {
     );
   }, [editingIndex, inputValue, saveNote]);
 
-  // Add new empty note
-  const addNewNote = useCallback(() => {
-    const newNote = {
-      id: -(Date.now()),
-      content: "",
-      timestamp: new Date(),
-      isEditing: false
-    };
+  // Add multiple new empty notes (3 by default)
+  const addNewNote = useCallback((count = 3) => {
+    // Create multiple new note entries
+    setNotes(current => {
+      const newNotes = [];
+      const timestamp = new Date();
+      
+      // Create specified number of new notes
+      for (let i = 0; i < count; i++) {
+        newNotes.push({
+          id: -(Date.now() + i), // Ensure unique IDs
+          content: "",
+          timestamp,
+          isEditing: i === 0 // First note will be in edit mode
+        });
+      }
+      
+      return [...current, ...newNotes];
+    });
     
-    // Add to notes list
-    setNotes(current => [...current, newNote]);
-    
-    // Focus the new note (after a brief delay to allow rendering)
+    // Focus the first new note (after a brief delay to allow rendering)
     setTimeout(() => {
       const newIndex = notes.length;
       handleNoteClick(newIndex);

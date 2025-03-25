@@ -171,7 +171,24 @@ export function GratitudeSection() {
   // Handle blur event (save when clicking away)
   const handleBlur = useCallback(() => {
     if (editingIndex !== null && inputValue.trim()) {
-      saveEntry(inputValue);
+      // Save immediately without waiting for API response
+      const entryToSave = inputValue;
+      
+      // Update local state optimistically
+      setEntries(current => {
+        const updated = [...current];
+        if (updated[editingIndex]) {
+          updated[editingIndex] = {
+            ...updated[editingIndex],
+            content: entryToSave,
+            isEditing: false
+          };
+        }
+        return updated;
+      });
+      
+      // Trigger actual save in the background
+      saveEntry(entryToSave);
     }
     
     // Clear editing state
