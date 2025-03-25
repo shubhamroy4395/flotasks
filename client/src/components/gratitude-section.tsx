@@ -4,7 +4,6 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
 import type { GratitudeEntry } from "@shared/schema";
-import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Plus, Trash2, Sun, Star, PenLine, Calendar, Bookmark } from "lucide-react";
 import { trackEvent } from "@/lib/amplitude";
 import { useLineItems } from "@/hooks/use-line-items";
@@ -43,26 +42,26 @@ export function GratitudeSection() {
   const queryEndpoint = isAuthenticated ? "/api/gratitude" : "/api/public/gratitude";
 
   const {
-    entries,
-    activeEntry,
+    items,
+    editingState,
     error,
     isLoading,
-    initializeEntries,
+    initializeItems,
     handleLineClick,
     handleInputChange,
     handleBlur,
-    addMoreEntries,
-    deleteEntry
+    addNewItem,
+    removeItem
   } = useLineItems({
     queryKey: [queryEndpoint],
     eventPrefix: "Gratitude",
     defaultLines: 3
   });
 
-  // Initialize entries
+  // Initialize entries when data changes
   useEffect(() => {
-    initializeEntries(savedEntries);
-  }, [savedEntries, initializeEntries]);
+    initializeItems(savedEntries);
+  }, [savedEntries, initializeItems]);
 
   // Track component performance
   useEffect(() => {
@@ -77,20 +76,21 @@ export function GratitudeSection() {
   
   // Find the first empty line after mount to assist users
   useEffect(() => {
-    if (entries.length > 0 && !isLoading) {
-      // Find the first empty, non-saved entry index
-      const firstEmptyIndex = entries.findIndex(entry => !entry.content && !entry.isSaved);
+    if (items.length > 0 && !isLoading) {
+      // Find the first empty input field
+      const firstEmptyIndex = items.findIndex(item => !item.content);
       
       if (firstEmptyIndex !== -1 && firstEmptyInputRef.current) {
-        // Focus on the first empty input with a slight delay for better UX
+        // Focus on it with a slight delay
         setTimeout(() => {
           const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
           handleLineClick(firstEmptyIndex, syntheticEvent);
         }, 100);
       }
     }
-  }, [entries, isLoading, handleLineClick]);
+  }, [items, isLoading, handleLineClick]);
 
+  // Get a random prompt for inspiration
   const getRandomPrompt = () => {
     const prompts = [
       "I am grateful for a person who...",
@@ -107,6 +107,7 @@ export function GratitudeSection() {
     return prompts[Math.floor(Math.random() * prompts.length)];
   };
 
+  // Card styling helpers
   const getCardColorClass = (index: number) => {
     const colors = [
       'from-rose-50 to-amber-50 border-l-rose-300',
@@ -115,20 +116,17 @@ export function GratitudeSection() {
       'from-violet-50 to-purple-50 border-l-violet-300',
       'from-amber-50 to-yellow-50 border-l-amber-300'
     ];
-    
-    // Get color based on entry index, cycling through the options
     return colors[index % colors.length];
   };
 
   const getIconForEntry = (index: number) => {
     const icons = [
-      <Heart className="h-4 w-4 text-rose-500" />,
-      <Star className="h-4 w-4 text-amber-500" />,
-      <Sun className="h-4 w-4 text-yellow-500" />,
-      <Bookmark className="h-4 w-4 text-blue-500" />,
-      <Calendar className="h-4 w-4 text-emerald-500" />
+      <Heart key="heart" className="h-4 w-4 text-rose-500" />,
+      <Star key="star" className="h-4 w-4 text-amber-500" />,
+      <Sun key="sun" className="h-4 w-4 text-yellow-500" />,
+      <Bookmark key="bookmark" className="h-4 w-4 text-blue-500" />,
+      <Calendar key="calendar" className="h-4 w-4 text-emerald-500" />
     ];
-    
     return icons[index % icons.length];
   };
 
@@ -140,7 +138,7 @@ export function GratitudeSection() {
           <CardTitle className="font-semibold">Gratitude Journal</CardTitle>
         </div>
         <div className="hidden sm:block px-3 py-1 bg-white bg-opacity-70 rounded-full text-xs text-gray-600 font-medium">
-          {entries.filter(e => e.isSaved).length} Moments of Gratitude
+          {items.filter(item => item.isSaved).length} Moments of Gratitude
         </div>
       </CardHeader>
       <CardContent className="pt-5">
@@ -156,12 +154,12 @@ export function GratitudeSection() {
           </div>
 
           <div className="space-y-3">
-            {entries.map((entry, index) => (
+            {items.map((item, index) => (
               <div
-                key={entry.id}
-                className={`group relative ${entry.isSaved ? 'mb-4' : 'mb-3'}`}
+                key={item.id}
+                className={`group relative ${item.isSaved ? 'mb-4' : 'mb-3'}`}
               >
-                {entry.isSaved && (
+                {item.isSaved && (
                   <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-sm z-10">
                     {getIconForEntry(index)}
                   </div>
@@ -169,21 +167,21 @@ export function GratitudeSection() {
                 
                 <div 
                   className={`rounded-lg p-4 border-l-4 shadow-sm cursor-pointer 
-                    ${entry.isSaved 
+                    ${item.isSaved 
                       ? `bg-gradient-to-r ${getCardColorClass(index)} hover:shadow-md` 
                       : 'bg-white border-l-gray-200 hover:border-l-gray-400'}
                     ${isLoading ? 'opacity-60' : ''} 
-                    ${activeEntry?.index === index ? 'shadow-md' : ''}`}
+                    ${item.isEditing ? 'shadow-md' : ''}`}
                   onClick={(e) => handleLineClick(index, e)}
                 >
-                  {activeEntry?.index === index ? (
+                  {item.isEditing ? (
                     <div
                       className="flex flex-col gap-2"
-                      ref={!entry.isSaved && !entry.content ? firstEmptyInputRef : null}
+                      ref={!item.isSaved && !item.content ? firstEmptyInputRef : null}
                     >
                       <div className="flex items-center justify-between">
                         <div className="text-xs font-medium text-gray-500 mb-1">
-                          {entry.isSaved ? 'Editing gratitude entry' : 'New gratitude entry'}
+                          {item.isSaved ? 'Editing gratitude entry' : 'New gratitude entry'}
                         </div>
                         <div className="flex items-center space-x-1">
                           <EmojiPicker onSelect={setSelectedEmoji} selected={selectedEmoji} />
@@ -192,7 +190,7 @@ export function GratitudeSection() {
                       
                       <Input
                         autoFocus
-                        value={activeEntry.content}
+                        value={editingState?.content || item.content}
                         onChange={(e) => handleInputChange(e.target.value)}
                         onBlur={handleBlur}
                         className="border border-gray-200 bg-white bg-opacity-70 font-medium text-gray-800 placeholder:text-gray-400 rounded-md"
@@ -200,22 +198,20 @@ export function GratitudeSection() {
                         disabled={isLoading}
                       />
                       
-                      {activeEntry.isDirty && activeEntry.content.trim().length > 0 && (
-                        <div className="flex items-center mt-1 text-xs text-amber-600">
-                          <PenLine className="h-3 w-3 mr-1" />
-                          Saving automatically when you click away
-                        </div>
-                      )}
+                      <div className="flex items-center mt-1 text-xs text-amber-600">
+                        <PenLine className="h-3 w-3 mr-1" />
+                        Saving automatically when you click away
+                      </div>
                     </div>
                   ) : (
                     <div>
-                      {entry.isSaved ? (
+                      {item.isSaved ? (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
                               <span className="text-sm font-medium text-gray-700">{selectedEmoji}</span>
                               <span className="ml-2 text-xs text-gray-500">
-                                {format(new Date(entry.timestamp), 'MMMM d, h:mm a')}
+                                {format(new Date(item.timestamp), 'MMMM d, h:mm a')}
                               </span>
                             </div>
                             <Button
@@ -224,14 +220,14 @@ export function GratitudeSection() {
                               className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 hover:bg-white hover:bg-opacity-60 h-8 w-8"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                deleteEntry.mutate(entry.id);
+                                removeItem(item.id);
                               }}
                               disabled={isLoading}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
-                          <p className="text-gray-800 font-medium">{entry.content}</p>
+                          <p className="text-gray-800 font-medium">{item.content}</p>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center h-16 text-gray-400">
@@ -250,7 +246,7 @@ export function GratitudeSection() {
           variant="outline"
           size="lg"
           className="w-full mt-6 bg-gradient-to-r from-rose-50 to-amber-50 hover:from-rose-100 hover:to-amber-100 border border-rose-200 text-rose-600 font-medium rounded-lg"
-          onClick={addMoreEntries}
+          onClick={addNewItem}
           disabled={isLoading}
         >
           <Plus className="mr-2 h-4 w-4" />

@@ -39,26 +39,26 @@ export function NotesSection() {
   const queryEndpoint = isAuthenticated ? "/api/notes" : "/api/public/notes";
 
   const {
-    entries,
-    activeEntry,
+    items,
+    editingState,
     error,
     isLoading,
-    initializeEntries,
+    initializeItems,
     handleLineClick,
     handleInputChange,
     handleBlur,
-    addMoreEntries,
-    deleteEntry
+    addNewItem,
+    removeItem
   } = useLineItems({
     queryKey: [queryEndpoint],
     eventPrefix: "Notes",
     defaultLines: 3
   });
 
-  // Initialize entries
+  // Initialize entries when data changes
   useEffect(() => {
-    initializeEntries(savedNotes);
-  }, [savedNotes, initializeEntries]);
+    initializeItems(savedNotes);
+  }, [savedNotes, initializeItems]);
 
   // Track component performance
   useEffect(() => {
@@ -79,7 +79,7 @@ export function NotesSection() {
           <CardTitle className="font-semibold">Quick Notes</CardTitle>
         </div>
         <div className="hidden sm:block text-xs text-gray-500">
-          {entries.filter(e => e.isSaved).length} Notes Captured
+          {items.filter(item => item.isSaved).length} Notes Captured
         </div>
       </CardHeader>
       
@@ -92,29 +92,29 @@ export function NotesSection() {
 
         <div className="space-y-3 mt-2">
           <div className="space-y-3">
-            {entries.map((entry, index) => (
+            {items.map((item, index) => (
               <div
-                key={entry.id}
+                key={item.id}
                 className="group relative"
               >
                 <div 
                   className={`rounded-lg p-3 border cursor-pointer
-                    ${entry.isSaved ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200 hover:border-gray-300'}
+                    ${item.isSaved ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200 hover:border-gray-300'}
                     ${isLoading ? 'opacity-60' : ''} 
-                    ${activeEntry?.index === index ? 'shadow-md' : 'hover:shadow-sm'}`}
+                    ${item.isEditing ? 'shadow-md' : 'hover:shadow-sm'}`}
                   onClick={(e) => handleLineClick(index, e)}
                 >
-                  {activeEntry?.index === index ? (
+                  {item.isEditing ? (
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <div className="text-xs font-medium text-gray-500">
-                          {entry.isSaved ? 'Editing note' : 'New note'}
+                          {item.isSaved ? 'Editing note' : 'New note'}
                         </div>
                       </div>
                       
                       <Input
                         autoFocus
-                        value={activeEntry.content}
+                        value={editingState?.content || item.content}
                         onChange={(e) => handleInputChange(e.target.value)}
                         onBlur={handleBlur}
                         className="border border-gray-200 bg-white font-medium text-gray-700 placeholder:text-gray-400 rounded-md"
@@ -122,22 +122,20 @@ export function NotesSection() {
                         disabled={isLoading}
                       />
                       
-                      {activeEntry.isDirty && activeEntry.content.trim().length > 0 && (
-                        <div className="flex items-center mt-1 text-xs text-indigo-600">
-                          <PenLine className="h-3 w-3 mr-1" />
-                          Saving automatically when you click away
-                        </div>
-                      )}
+                      <div className="flex items-center mt-1 text-xs text-indigo-600">
+                        <PenLine className="h-3 w-3 mr-1" />
+                        Saving automatically when you click away
+                      </div>
                     </div>
                   ) : (
                     <div>
-                      {entry.isSaved ? (
+                      {item.isSaved ? (
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <FileText className="h-4 w-4 text-indigo-500" />
                               <span className="text-xs text-gray-500">
-                                {format(new Date(entry.timestamp), 'MMM d, h:mm a')}
+                                {format(new Date(item.timestamp), 'MMM d, h:mm a')}
                               </span>
                             </div>
                             <Button
@@ -146,7 +144,7 @@ export function NotesSection() {
                               className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 hover:bg-white hover:bg-opacity-60 h-6 w-6"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                deleteEntry.mutate(entry.id);
+                                removeItem(item.id);
                               }}
                               disabled={isLoading}
                             >
@@ -154,7 +152,7 @@ export function NotesSection() {
                             </Button>
                           </div>
                           <p className="text-gray-700 font-medium text-sm">
-                            {entry.content}
+                            {item.content}
                           </p>
                         </div>
                       ) : (
@@ -175,7 +173,7 @@ export function NotesSection() {
           variant="outline"
           size="lg"
           className="w-full mt-6 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border border-indigo-200 text-indigo-600 font-medium rounded-lg"
-          onClick={addMoreEntries}
+          onClick={addNewItem}
           disabled={isLoading}
         >
           <Plus className="mr-2 h-4 w-4" />

@@ -1,17 +1,22 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import React from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { trackEvent } from '@/lib/amplitude';
-import debounce from 'lodash/debounce';
 
-interface LineItem {
-  id: number;
+// Simple line item structure
+type LineItem = {
+  id: number; // Positive for saved items, negative for temporary
   content: string;
-  isEditing: boolean;
   timestamp: Date;
   isSaved: boolean;
-}
+  isEditing: boolean;
+};
+
+// Current editing state
+type EditingState = {
+  index: number;
+  content: string;
+} | null;
 
 interface UseLineItemsOptions {
   queryKey: string[];
@@ -19,362 +24,343 @@ interface UseLineItemsOptions {
   defaultLines?: number;
 }
 
+/**
+ * A completely rewritten hook for managing line items (notes, gratitude entries, etc.)
+ * with proper edge case handling and simpler logic
+ */
 export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLineItemsOptions) {
-  const [entries, setEntries] = useState<LineItem[]>([]);
-  const [activeEntry, setActiveEntry] = useState<{
-    index: number;
-    content: string;
-    isDirty: boolean;
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Core state
+  const [items, setItems] = useState<LineItem[]>([]);
+  const [editingState, setEditingState] = useState<EditingState>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const queryClient = useQueryClient();
-  const lastSavedContentRef = useRef<string>("");
-  const processingRef = useRef(false);
-
-  // Create mutation for saving entries
-  const createEntry = useMutation({
-    mutationFn: async (content: string) => {
-      setIsLoading(true);
-      try {
-        const response = await apiRequest("POST", queryKey[0], { content });
-        // Get the actual entry data from the response
-        const data = await response.json();
-        console.log("Successfully saved entry:", data);
-        return data;
-      } catch (error) {
-        console.error("Error creating entry:", error);
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onMutate: async (content) => {
-      // Prevent duplicate saves
-      if (processingRef.current) return { previousEntries: [] };
-      processingRef.current = true;
-      
-      // Get the active entry index
-      const activeIdx = activeEntry?.index ?? -1;
-      if (activeIdx === -1) {
-        console.warn("No active entry found for optimistic update");
-        processingRef.current = false;
-        return { previousEntries: [] };
-      }
-      
-      // Generate a temporary ID for this new entry
-      const tempId = -Math.abs(Date.now() + Math.floor(Math.random() * 1000));
-      
-      // Only update local state, leave cache alone until we have the real data
-      setEntries(prev => {
-        const updatedEntries = [...prev];
-        if (activeIdx >= 0 && activeIdx < updatedEntries.length) {
-          // Mark the entry as being saved
-          updatedEntries[activeIdx] = { 
-            ...updatedEntries[activeIdx], 
-            content,
-            id: tempId,
-            isSaved: false // Will be true after server confirms
-          };
-        }
-        return updatedEntries;
-      });
-      
-      return { tempId, activeIdx };
-    },
-    onSuccess: (data, _, context) => {
-      if (!context) return;
-      
-      const { tempId, activeIdx } = context;
-      
-      // Update the entry with the actual data from the server
-      setEntries(prev => {
-        // First create a copy of the current entries
-        const updated = [...prev];
-        
-        // Find the entry with the tempId
-        const idx = updated.findIndex(entry => entry.id === tempId);
-        
-        if (idx >= 0) {
-          // Update the temporary entry with real data
-          updated[idx] = {
-            id: data.id,
-            content: data.content,
-            isEditing: false,
-            timestamp: new Date(data.timestamp),
-            isSaved: true
-          };
-        } else if (activeIdx >= 0 && activeIdx < updated.length) {
-          // Fallback: update by index if tempId not found
-          updated[activeIdx] = {
-            id: data.id,
-            content: data.content,
-            isEditing: false,
-            timestamp: new Date(data.timestamp),
-            isSaved: true
-          };
-        }
-        
-        // Make sure we don't have any other entries with the same content (duplicates)
-        const deduplicated = updated.filter((entry, i) => {
-          if (entry.id === data.id) return true; // Keep the updated entry
-          
-          // Check if this is a duplicate (same content, recently created)
-          const isDuplicate = entry.content === data.content && 
-            (Math.abs(new Date(entry.timestamp).getTime() - new Date(data.timestamp).getTime()) < 5000);
-          
-          return !isDuplicate;
-        });
-        
-        // Add empty line if needed
-        const hasEmptyLine = deduplicated.some(e => !e.content.trim());
-        if (!hasEmptyLine) {
-          deduplicated.push({
-            id: -(Date.now()), // Negative ID for unsaved entries
-            content: "",
-            isEditing: false,
-            timestamp: new Date(),
-            isSaved: false
-          });
-        }
-        
-        return deduplicated;
-      });
-      
-      // Update lastSavedContent
-      lastSavedContentRef.current = data.content;
-      processingRef.current = false;
-    },
-    onError: (_, __, context) => {
-      if (!context) return;
-      
-      const { tempId } = context;
-      
-      // Revert the entry back to unsaved state
-      setEntries(prev => {
-        return prev.map(entry => {
-          if (entry.id === tempId) {
-            return {
-              ...entry,
-              isSaved: false,
-              id: -(Date.now()) // Generate a new negative ID
-            };
-          }
-          return entry;
-        });
-      });
-      
-      setError("Failed to save entry. Please try again.");
-      processingRef.current = false;
-    },
-    onSettled: () => {
-      // For safety, ensure the processing flag is reset
-      processingRef.current = false;
-      
-      // We don't invalidate the query here to avoid fetching data that might cause duplication
-      // Instead we rely on our local state management
-    }
-  });
-
-  // Delete mutation
-  const deleteEntry = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `${queryKey[0]}/${id}`);
-    },
-    onMutate: async (deletedId) => {
-      // Prevent duplicate deletes
-      if (processingRef.current) return { previousEntries: [] };
-      processingRef.current = true;
-      
-      // Delete optimistically from local state
-      setEntries(prev => prev.filter(entry => entry.id !== deletedId));
-      
-      return { deletedId };
-    },
-    onSettled: () => {
-      processingRef.current = false;
-    },
-    onError: () => {
-      setError("Failed to delete entry. Please try again.");
-      processingRef.current = false;
-    }
-  });
-
-  // Debounced save to limit API calls
-  const debouncedSave = useRef(
-    debounce(async (content: string) => {
-      if (!content.trim() || processingRef.current) return;
-      
-      try {
-        await createEntry.mutateAsync(content);
-      } catch (error) {
-        console.error("Error in debouncedSave:", error);
-        setError("Failed to save. Please try again.");
-      }
-    }, 500)
-  ).current;
-
-  // Initialize entries from source data
-  const initializeEntries = useCallback((savedEntries: any[]) => {
+  const [error, setError] = useState<string | null>(null);
+  
+  /**
+   * Initialize the items from saved data
+   */
+  const initializeItems = useCallback((savedItems: any[]) => {
     try {
-      // Sanitize input
-      const entries = Array.isArray(savedEntries) ? savedEntries : [];
+      // Ensure we have an array to work with
+      const validItems = Array.isArray(savedItems) ? savedItems : [];
       
-      // Deduplicate entries by content before working with them
-      const uniqueEntries = new Map();
-      entries.forEach(entry => {
-        // If multiple entries with same content, use the most recent one
-        const existing = uniqueEntries.get(entry.content);
-        if (!existing || new Date(entry.timestamp) > new Date(existing.timestamp)) {
-          uniqueEntries.set(entry.content, entry);
+      // Create a map for deduplication by content
+      const uniqueMap = new Map();
+      validItems.forEach(item => {
+        // Keep the most recent item when there are duplicates
+        const existingItem = uniqueMap.get(item.content);
+        if (!existingItem || new Date(item.timestamp) > new Date(existingItem.timestamp)) {
+          uniqueMap.set(item.content, item);
         }
       });
       
-      // Convert to array and sort by timestamp (newest first)
-      const deduplicatedEntries = Array.from(uniqueEntries.values())
+      // Convert map to array and sort newest first
+      const uniqueItems = Array.from(uniqueMap.values())
+        .filter(item => item.content?.trim()) // Ignore empty items
         .sort((a, b) => {
-          const dateA = new Date(a.timestamp || 0);
-          const dateB = new Date(b.timestamp || 0);
-          return dateB.getTime() - dateA.getTime();
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
         });
       
-      // Create our line items
-      const savedLines = deduplicatedEntries.map(entry => ({
-        id: entry.id,
-        content: entry.content,
-        isEditing: false,
-        timestamp: new Date(entry.timestamp || Date.now()),
-        isSaved: true
+      // Create formatted items for our internal state
+      const savedLines = uniqueItems.map(item => ({
+        id: item.id,
+        content: item.content,
+        timestamp: new Date(item.timestamp),
+        isSaved: true,
+        isEditing: false
       }));
-
-      // Add empty lines
-      const emptyLinesCount = Math.max(defaultLines - savedLines.length, 1);
-      const emptyLines = Array(emptyLinesCount).fill(null).map((_, i) => ({
-        id: -(Date.now() + i), // Negative IDs for unsaved items
-        content: "",
-        isEditing: false,
+      
+      // Always add empty input lines
+      const emptyCount = Math.max(defaultLines - savedLines.length, 1);
+      const emptyLines = Array(emptyCount).fill(null).map((_, i) => ({
+        id: -(Date.now() + i), // Use negative IDs for unsaved items
+        content: '',
         timestamp: new Date(),
-        isSaved: false
+        isSaved: false,
+        isEditing: false
       }));
-
-      // Set the entries
-      setEntries([...savedLines, ...emptyLines]);
-      console.log(`Initialized ${savedLines.length} saved entries and ${emptyLines.length} empty lines`);
+      
+      // Set our items state
+      setItems([...savedLines, ...emptyLines]);
+      console.log(`Initialized ${savedLines.length} saved items and ${emptyCount} empty lines`);
     } catch (error) {
-      console.error("Error initializing entries:", error);
-      setError("Failed to initialize entries. Please refresh the page.");
+      console.error("Error initializing items:", error);
+      setError("Failed to load items. Please refresh the page.");
     }
   }, [defaultLines]);
-
-  // Handle clicking on a line to edit
-  const handleLineClick = useCallback((index: number, e: React.MouseEvent) => {
+  
+  /**
+   * Save an item to the server
+   */
+  const saveItem = useCallback(async (content: string) => {
+    if (!content.trim()) return null;
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      e.stopPropagation();
+      const startTime = performance.now();
       
-      // Validate index
-      if (index < 0 || index >= entries.length) {
-        console.warn(`Attempted to click invalid line index: ${index}, entries length: ${entries.length}`);
-        return;
-      }
+      // Send to server
+      const response = await apiRequest("POST", queryKey[0], { content });
+      const savedItem = await response.json();
       
-      const entry = entries[index];
-      
-      // Set as active entry
-      setActiveEntry({
-        index,
-        content: entry.content || "",
-        isDirty: false
+      // Track for analytics
+      const endTime = performance.now();
+      trackEvent(`${eventPrefix}.Save`, {
+        durationMs: endTime - startTime,
+        contentLength: content.length
       });
       
-      // Store current content for comparison
-      lastSavedContentRef.current = entry.content || "";
-      setError(null);
-      
-      console.log(`Activated line ${index} for editing`);
+      console.log("Item saved successfully:", savedItem);
+      return savedItem;
     } catch (error) {
-      console.error("Error in handleLineClick:", error);
-      setError("Failed to activate line. Please try again.");
+      console.error("Error saving item:", error);
+      setError("Failed to save. Please try again.");
+      return null;
+    } finally {
+      setIsLoading(false);
     }
-  }, [entries]);
-
-  // Handle input change within the active entry
-  const handleInputChange = useCallback((value: string) => {
-    if (!activeEntry) return;
-
+  }, [queryKey, eventPrefix]);
+  
+  /**
+   * Delete an item from the server
+   */
+  const deleteItem = useCallback(async (id: number) => {
+    if (id < 0) return true; // Item was never saved
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      // Update the entry in our local list
-      setEntries(prev => 
-        prev.map((entry, i) => 
-          i === activeEntry.index 
-            ? { ...entry, content: value }
-            : entry
+      await apiRequest("DELETE", `${queryKey[0]}/${id}`);
+      console.log(`Item ${id} deleted successfully`);
+      return true;
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      setError("Failed to delete. Please try again.");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [queryKey]);
+  
+  /**
+   * Handle clicking on a line to edit it
+   */
+  const handleLineClick = useCallback((index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Validate index
+    if (index < 0 || index >= items.length) {
+      console.warn(`Invalid line index: ${index}, total items: ${items.length}`);
+      return;
+    }
+    
+    const item = items[index];
+    
+    // Update item state to show it's being edited
+    setItems(current => 
+      current.map((i, idx) => ({
+        ...i,
+        isEditing: idx === index
+      }))
+    );
+    
+    // Set editing state
+    setEditingState({
+      index, 
+      content: item.content
+    });
+    
+    console.log(`Now editing line ${index}`);
+  }, [items]);
+  
+  /**
+   * Handle input changes while editing
+   */
+  const handleInputChange = useCallback((value: string) => {
+    if (!editingState) return;
+    
+    // Update the editing state
+    setEditingState({
+      ...editingState,
+      content: value
+    });
+    
+    // Update the item in the list
+    setItems(current => 
+      current.map((item, index) => 
+        index === editingState.index 
+          ? { ...item, content: value }
+          : item
+      )
+    );
+  }, [editingState]);
+  
+  /**
+   * Handle when the user finishes editing (blur event)
+   */
+  const handleBlur = useCallback(async () => {
+    if (!editingState) return;
+    
+    const { index, content } = editingState;
+    const currentItem = items[index];
+    
+    // Reset editing state first to prevent UI jumps
+    setEditingState(null);
+    
+    // Update all items to remove editing flag
+    setItems(current => 
+      current.map(item => ({
+        ...item,
+        isEditing: false
+      }))
+    );
+    
+    // Check if content changed and if it's not empty
+    if (content.trim() && content !== currentItem.content) {
+      // Optimistically update this item
+      const tempId = -Date.now();
+      setItems(current => 
+        current.map((item, idx) => 
+          idx === index
+            ? { 
+                ...item, 
+                id: tempId, 
+                content, 
+                timestamp: new Date(),
+                isSaved: false 
+              }
+            : item
         )
       );
-
-      // Update the active entry state
-      setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
-    } catch (error) {
-      console.error("Error in handleInputChange:", error);
-      setError("Failed to update entry. Please try again.");
-    }
-  }, [activeEntry]);
-
-  // Handle blur event (leaving the input)
-  const handleBlur = useCallback(() => {
-    if (!activeEntry) return;
-
-    try {
-      // Save if content has changed and is not empty
-      if (activeEntry.isDirty && activeEntry.content.trim()) {
-        // Content changed and not empty, save it
-        debouncedSave(activeEntry.content);
-      }
       
-      // Clear the active entry
-      setActiveEntry(null);
-      console.log("Handling blur - entries now:", entries.length);
-    } catch (error) {
-      console.error("Error in handleBlur:", error);
-      setError("Failed to save entry. Please try again.");
-    }
-  }, [activeEntry, debouncedSave, entries.length]);
-
-  // Add a new blank entry
-  const addMoreEntries = useCallback(() => {
-    try {
-      setEntries(prev => {
-        const newId = -(Date.now() + Math.floor(Math.random() * 1000));
-        const newEntries = [
-          ...prev,
-          {
-            id: newId,
-            content: "",
-            isEditing: false,
-            timestamp: new Date(),
-            isSaved: false
+      // Save to server
+      const savedItem = await saveItem(content);
+      
+      if (savedItem) {
+        // Update with real data from server
+        setItems(current => {
+          // Create a copy of our current items
+          const updated = [...current];
+          
+          // Find and update the item we just saved
+          const itemIndex = updated.findIndex(item => 
+            item.id === tempId || 
+            (item.id === currentItem.id && index === updated.indexOf(item))
+          );
+          
+          if (itemIndex >= 0) {
+            updated[itemIndex] = {
+              id: savedItem.id,
+              content: savedItem.content,
+              timestamp: new Date(savedItem.timestamp),
+              isSaved: true,
+              isEditing: false
+            };
           }
-        ];
-        return newEntries;
-      });
+          
+          // Check for any duplicates and remove them
+          const deduplicated = updated.filter((item, idx) => {
+            // Keep the item we just saved
+            if (idx === itemIndex) return true;
+            
+            // Remove any items with the same content
+            const isDuplicate = item.content === savedItem.content && 
+              Math.abs(new Date(item.timestamp).getTime() - new Date(savedItem.timestamp).getTime()) < 5000;
+            
+            return !isDuplicate;
+          });
+          
+          // Make sure we always have an empty line at the end
+          const hasEmptyLine = deduplicated.some(item => !item.content.trim());
+          
+          if (!hasEmptyLine) {
+            deduplicated.push({
+              id: -Date.now(),
+              content: '',
+              timestamp: new Date(),
+              isSaved: false,
+              isEditing: false
+            });
+          }
+          
+          return deduplicated;
+        });
+      }
+    } else if (!content.trim() && currentItem.isSaved) {
+      // If user cleared a saved item, delete it
+      const deleted = await deleteItem(currentItem.id);
       
-      console.log(`Added new entry - entries now: ${entries.length + 1}`);
-    } catch (error) {
-      console.error("Error in addMoreEntries:", error);
-      setError("Failed to add new entry. Please try again.");
+      if (deleted) {
+        // Remove from our list
+        setItems(current => 
+          current.filter((_, idx) => idx !== index)
+        );
+      }
     }
-  }, [entries.length]);
-
+    
+    console.log("Finished editing, items count:", items.length);
+  }, [editingState, items, saveItem, deleteItem]);
+  
+  /**
+   * Add a new empty entry
+   */
+  const addNewItem = useCallback(() => {
+    const newId = -Date.now();
+    
+    setItems(current => [
+      ...current,
+      {
+        id: newId,
+        content: '',
+        timestamp: new Date(),
+        isSaved: false,
+        isEditing: false
+      }
+    ]);
+    
+    // Automatically focus the new item
+    setTimeout(() => {
+      const newIndex = items.length; // The index of the item we just added
+      const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
+      handleLineClick(newIndex, syntheticEvent);
+    }, 50);
+    
+    console.log("Added new empty item");
+  }, [items.length, handleLineClick]);
+  
+  /**
+   * Remove an item
+   */
+  const removeItem = useCallback(async (id: number) => {
+    // Find the item
+    const itemIndex = items.findIndex(item => item.id === id);
+    if (itemIndex === -1) return;
+    
+    const item = items[itemIndex];
+    
+    // If it's saved, delete from server
+    if (item.isSaved) {
+      const success = await deleteItem(id);
+      if (!success) return;
+    }
+    
+    // Remove from our list
+    setItems(current => current.filter(item => item.id !== id));
+    console.log(`Removed item ${id}`);
+  }, [items, deleteItem]);
+  
   return {
-    entries,
-    activeEntry,
-    error,
+    items,
+    editingState,
     isLoading,
-    initializeEntries,
+    error,
+    initializeItems,
     handleLineClick,
     handleInputChange,
     handleBlur,
-    addMoreEntries,
-    deleteEntry
+    addNewItem,
+    removeItem
   };
 }
