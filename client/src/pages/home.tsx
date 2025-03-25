@@ -8,7 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
-import { NotesSection } from "@/components/notes-section";
+import { NotesSection } from "@/components/notes-section"; // Import the new component
+
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -31,9 +32,13 @@ export default function Home() {
 
   // Clear all data on every refresh and clear database data
   useEffect(() => {
+    // Clear all data from the cache
     queryClient.clear();
+
+    // Invalidate all queries to force fresh data fetch
     queryClient.invalidateQueries();
 
+    // Clear database data
     const clearData = async () => {
       try {
         await apiRequest("DELETE", "/api/data");
@@ -86,27 +91,6 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
-          <h1 className="text-4xl font-black uppercase tracking-wider
-            bg-gradient-to-r from-blue-500 to-purple-500 
-            bg-clip-text text-transparent 
-            relative
-            after:content-[attr(data-text)]
-            after:absolute
-            after:left-0
-            after:top-0
-            after:w-full
-            after:h-full
-            after:z-[-1]
-            after:transform
-            after:translate-x-[2px]
-            after:translate-y-[2px]
-            after:text-black/20
-            drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]
-            hover:drop-shadow-[0_6px_6px_rgba(0,0,0,0.4)]
-            transition-all duration-300"
-            data-text="Flo Tasks">
-            Flo Tasks
-          </h1>
         </div>
       </div>
 
@@ -123,7 +107,7 @@ export default function Home() {
 
           {/* Middle Column - Goals and Other Tasks */}
           <div className="lg:col-span-4 space-y-6">
-            <GoalsSection goal={{ text: "SUPER IITLRA", className: "text-sm font-normal text-gray-600" }} />
+            <GoalsSection />
             <TaskList
               title="Other Tasks"
               tasks={otherTasks || []}
@@ -136,7 +120,7 @@ export default function Home() {
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
-            <NotesSection />
+            <NotesSection /> {/* Added NotesSection */}
           </div>
         </div>
       </div>
