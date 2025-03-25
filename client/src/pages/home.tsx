@@ -11,6 +11,7 @@ import { GoalsSection } from "@/components/goals-section";
 import { NotesSection } from "@/components/notes-section";
 import { useAuth } from "@/contexts/auth-context";
 import { NavBar } from "@/components/nav-bar";
+import { startTimer, endTimer } from "@/lib/performance";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());

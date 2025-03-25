@@ -87,47 +87,7 @@ export function NavBar() {
               </motion.div>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <div className="flex items-center space-x-2">
-            <GoogleLogin
-              onSuccess={async (credentialResponse) => {
-                try {
-                  const response = await apiRequest("POST", "/api/auth/google", {
-                    credential: credentialResponse.credential,
-                  });
-                  const data = await response.json();
-                  
-                  // Update the user data in the auth context
-                  queryClient.setQueryData(["/api/auth/user"], data.user);
-                  
-                  toast({
-                    title: "Login successful",
-                    description: "Welcome to your journal!",
-                  });
-                  
-                  trackEvent(Events.UI.GoogleLogin, { success: true });
-                  setLocation("/");
-                } catch (error: any) {
-                  toast({
-                    title: "Google login failed",
-                    description: error.message || "There was an issue with Google authentication",
-                    variant: "destructive",
-                  });
-                  trackEvent(Events.UI.GoogleLogin, { success: false, error: error.message });
-                }
-              }}
-              onError={() => {
-                toast({
-                  title: "Google login failed",
-                  description: "There was an issue with Google authentication",
-                  variant: "destructive",
-                });
-                trackEvent(Events.UI.GoogleLogin, { success: false, error: "Google login error" });
-              }}
-              useOneTap
-            />
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
