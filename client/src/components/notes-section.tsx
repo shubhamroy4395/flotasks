@@ -93,16 +93,25 @@ export function NotesSection() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className={`group flex items-center gap-4 py-3 border-b border-dashed border-gray-200 cursor-pointer relative hover:bg-white hover:bg-opacity-60 transition-all duration-300 ${
-                  entry.isSaved ? 'bg-gray-50' : ''
-                } ${isLoading ? 'opacity-50' : ''}`}
+                  entry.isSaved ? 'bg-green-50/40' : ''
+                } ${isLoading ? 'opacity-50' : ''} ${activeEntry?.index === index ? 'bg-green-50/60' : ''}`}
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
                 layout
                 onClick={(e) => handleLineClick(index, e)}
               >
-                <span className="text-sm text-gray-400 w-6 font-mono font-bold">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
+                {/* Entry number and status indicator */}
+                <div className="flex items-center w-6">
+                  {entry.isSaved ? (
+                    <span className="text-sm text-green-600 w-6 font-mono font-bold">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-400 w-6 font-mono font-bold">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
 
                 {activeEntry?.index === index ? (
                   <motion.div
@@ -120,6 +129,12 @@ export function NotesSection() {
                       placeholder="Write a quick note..."
                       disabled={isLoading}
                     />
+                    {/* Show hint during editing */}
+                    {activeEntry.isDirty && activeEntry.content.trim().length > 0 && (
+                      <div className="text-xs text-green-600 mt-1 ml-1">
+                        Will be saved automatically when you click away
+                      </div>
+                    )}
                   </motion.div>
                 ) : (
                   <motion.div
@@ -127,14 +142,21 @@ export function NotesSection() {
                     layout
                   >
                     <div className="flex-1">
-                      <span className="text-gray-700 font-medium">
-                        {entry.content || " "}
-                      </span>
-                      {entry.content && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {format(new Date(entry.timestamp), 'MMM d, h:mm a')}
-                        </p>
+                      {entry.isSaved && (
+                        <div className="flex items-center mb-1">
+                          <span className="text-xs text-green-600 mr-2 bg-green-100 rounded-full px-2 py-0.5">
+                            Saved
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {format(new Date(entry.timestamp), 'MMM d, h:mm a')}
+                          </span>
+                        </div>
                       )}
+                      <span className={`${entry.isSaved ? 'text-gray-700' : 'text-gray-500'} font-medium`}>
+                        {entry.content || (
+                          <span className="text-gray-400 italic">Click to add a note...</span>
+                        )}
+                      </span>
                     </div>
                     {entry.isSaved && (
                       <Button

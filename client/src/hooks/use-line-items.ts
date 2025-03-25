@@ -47,7 +47,9 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
           contentLength: content.length
         });
 
-        return response;
+        // Get the actual entry data from the response
+        const data = await response.json();
+        return data;
       } catch (error) {
         console.error("Error creating entry:", error);
         throw error;
@@ -60,33 +62,56 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         await queryClient.cancelQueries({ queryKey });
         const previousEntries = queryClient.getQueryData(queryKey);
 
+        // Create an optimistic entry with a temporary ID
+        const tempId = Date.now();
         const optimisticEntry = {
-          id: Date.now(),
+          id: tempId,
           content,
-          timestamp: new Date().toISOString()
+          timestamp: new Date(),
+          isSaved: true
         };
 
-        // Update local state immediately
+        // Find the active entry index
+        const activeIdx = activeEntry?.index ?? -1;
+        
+        // Update local state immediately to show the entry as saved
         setEntries(prev => {
-          const activeIdx = activeEntry?.index ?? -1;
           return prev.map((entry, idx) => 
-            idx === activeIdx ? { ...entry, content, isSaved: true } : entry
+            idx === activeIdx ? { ...entry, content, isSaved: true, id: tempId } : entry
           );
         });
 
         // Update cache optimistically
         queryClient.setQueryData(queryKey, (old: any[] = []) => [...old, optimisticEntry]);
 
-        return { previousEntries };
+        return { previousEntries, tempId, activeIdx };
       } catch (error) {
         console.error("Error in mutation setup:", error);
         return { previousEntries: [] };
+      }
+    },
+    onSuccess: (data, variables, context) => {
+      if (context?.tempId && context.activeIdx !== undefined) {
+        // Update the entry with the real server-assigned ID
+        setEntries(prev => {
+          return prev.map(entry => 
+            entry.id === context.tempId ? { ...entry, id: data.id } : entry
+          );
+        });
       }
     },
     onError: (err, variables, context) => {
       if (context?.previousEntries) {
         queryClient.setQueryData(queryKey, context.previousEntries);
       }
+      
+      // Also revert the local state
+      if (context?.tempId) {
+        setEntries(prev => prev.map(entry => 
+          entry.id === context.tempId ? { ...entry, isSaved: false } : entry
+        ));
+      }
+      
       setError("Failed to save entry. Please try again.");
     },
     onSettled: () => {
@@ -197,12 +222,9 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       
       const entry = entries[index];
 
-      // Only activate empty lines or non-saved lines
-      if (entry.isSaved) {
-        console.log(`Line ${index} is already saved, not activating for edit`);
-        return;
-      }
-
+      // Allow editing all lines, including saved ones
+      // This makes the UI more intuitive as users can click any line to edit
+      
       // Set this line as the active one
       setActiveEntry({
         index,
@@ -247,56 +269,37 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
     if (!activeEntry) return;
 
     try {
+      // Only save if content has changed and it's not empty
       if (activeEntry.isDirty && activeEntry.content.trim()) {
+        // Save the content
         debouncedSave(activeEntry.content);
-
-        // Auto-focus behavior: find next empty line
-        const nextEmptyIndex = entries.findIndex(
-          (entry, idx) => idx > activeEntry.index && !entry.content.trim() && !entry.isSaved
-        );
-
-        if (nextEmptyIndex !== -1) {
-          // Small delay to ensure the current blur completes first
-          setTimeout(() => {
-            // Create a synthetic event object with the minimum properties needed
-            const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
-            handleLineClick(nextEmptyIndex, syntheticEvent);
-          }, 50);
-          return;
-        }
-
-        // If we've filled all available lines, automatically add a new one
-        if (entries.filter(e => !e.content.trim() && !e.isSaved).length === 0) {
-          setTimeout(() => {
-            const newEntries = [
-              ...entries,
-              {
-                id: Date.now(),
-                content: "",
-                isEditing: false,
-                timestamp: new Date(),
-                isSaved: false
-              }
-            ];
-            
-            setEntries(newEntries);
-            
-            // Focus the newly added entry
-            setTimeout(() => {
-              const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
-              handleLineClick(newEntries.length - 1, syntheticEvent);
-            }, 50);
-          }, 100);
-          return;
+        
+        // Make sure we always have at least one empty line for new entries
+        const hasEmptyLine = entries.some(e => !e.content.trim());
+        
+        if (!hasEmptyLine) {
+          // Add a new empty line if there are none
+          setEntries(prev => [
+            ...prev,
+            {
+              id: Date.now(),
+              content: "",
+              isEditing: false,
+              timestamp: new Date(),
+              isSaved: false
+            }
+          ]);
         }
       }
 
+      // Simply clear the active entry without automatic focus changes
+      // This makes the UX more predictable and less jumpy
       setActiveEntry(null);
     } catch (error) {
       console.error("Error in handleBlur:", error);
       setError("Failed to save entry. Please try again.");
     }
-  }, [activeEntry, entries, handleLineClick, debouncedSave]);
+  }, [activeEntry, entries, debouncedSave]);
 
   const addMoreEntries = useCallback(() => {
     try {
