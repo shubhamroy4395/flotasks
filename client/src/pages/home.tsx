@@ -136,23 +136,35 @@ export default function Home() {
   // Delete task mutation for authenticated users
   const deleteAuthTask = useMutation({
     mutationFn: async (taskId: number) => {
-      await apiRequest("DELETE", `/api/tasks/${taskId}`);
+      console.log(`Deleting authenticated task with ID: ${taskId}`);
+      const response = await apiRequest("DELETE", `/api/tasks/${taskId}`);
+      return taskId;
     },
-    onSuccess: () => {
+    onSuccess: (taskId) => {
+      console.log(`Successfully deleted authenticated task: ${taskId}`);
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
     },
+    onError: (error) => {
+      console.error("Error deleting authenticated task:", error);
+    }
   });
 
   // Delete task mutation for non-authenticated users
   const deletePublicTask = useMutation({
     mutationFn: async (taskId: number) => {
-      await apiRequest("DELETE", `/api/public/tasks/${taskId}`);
+      console.log(`Deleting public task with ID: ${taskId}`);
+      const response = await apiRequest("DELETE", `/api/public/tasks/${taskId}`);
+      return taskId;
     },
-    onSuccess: () => {
+    onSuccess: (taskId) => {
+      console.log(`Successfully deleted public task: ${taskId}`);
       queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/public/tasks/other"] });
     },
+    onError: (error) => {
+      console.error("Error deleting public task:", error);
+    }
   });
 
   // Choose the appropriate mutations based on authentication status
