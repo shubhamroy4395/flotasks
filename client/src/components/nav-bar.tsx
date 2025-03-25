@@ -1,8 +1,7 @@
 import React from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +10,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { User, LogIn, UserPlus } from "lucide-react";
 
 export function NavBar() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [location] = useLocation();
+  const [, setLocation] = useLocation();
 
   const getInitials = (name: string) => {
     return name
@@ -28,14 +28,16 @@ export function NavBar() {
     <nav className="border-b bg-background">
       <div className="container mx-auto px-4 py-2 flex items-center justify-between">
         <div className="flex items-center">
-          <Link href="/">
-            <span className="text-xl font-bold flex items-center text-primary cursor-pointer">My Journal</span>
-          </Link>
+          <Button 
+            variant="ghost" 
+            className="p-0 h-auto font-bold text-xl"
+            onClick={() => window.location.href = "/"}
+          >
+            My Journal
+          </Button>
         </div>
 
         <div className="flex items-center space-x-4">
-          <ThemeToggle />
-
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -51,10 +53,6 @@ export function NavBar() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => window.location.href = "/profile"}>
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className="cursor-pointer text-destructive focus:text-destructive"
                   onClick={() => logout()}
@@ -63,20 +61,29 @@ export function NavBar() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : location !== "/login" && location !== "/register" ? (
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/login">
-                  <span>Log in</span>
-                </Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/register">
-                  <span>Sign up</span>
-                </Link>
-              </Button>
-            </div>
-          ) : null}
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar>
+                    <AvatarFallback>
+                      <User size={20} />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setLocation("/login")}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  <span>Login</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/register")}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  <span>Create account</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </nav>

@@ -8,12 +8,15 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
-import { NotesSection } from "@/components/notes-section"; // Import the new component
-
+import { NotesSection } from "@/components/notes-section";
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
+import { LogIn, UserPlus } from "lucide-react";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const queryClient = useQueryClient();
+  const { isAuthenticated, isLoading } = useAuth();
 
   // Handle page refresh/exit confirmation
   useEffect(() => {
@@ -32,6 +35,8 @@ export default function Home() {
 
   // Clear all data on every refresh and clear database data
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     // Clear all data from the cache
     queryClient.clear();
 
@@ -48,7 +53,7 @@ export default function Home() {
     };
 
     clearData();
-  }, [queryClient]);
+  }, [queryClient, isAuthenticated]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -57,10 +62,12 @@ export default function Home() {
 
   const { data: todayTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/today"],
+    enabled: isAuthenticated,
   });
 
   const { data: otherTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks/other"],
+    enabled: isAuthenticated,
   });
 
   const createTask = useMutation({
@@ -72,6 +79,47 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
     },
   });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center justify-center px-4">
+        <div className="text-center max-w-md mx-auto">
+          <h1 className="text-3xl font-bold mb-6">Welcome to My Journal</h1>
+          <p className="text-gray-600 mb-8">
+            Your personal space for tracking tasks, mood, and gratitude. 
+            Login or create an account to get started.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              className="flex items-center gap-2"
+              onClick={() => window.location.href = "/login"}
+            >
+              <LogIn size={18} />
+              <span>Login</span>
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => window.location.href = "/register"}
+            >
+              <UserPlus size={18} />
+              <span>Create Account</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -120,7 +168,7 @@ export default function Home() {
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
-            <NotesSection /> {/* Added NotesSection */}
+            <NotesSection />
           </div>
         </div>
       </div>
