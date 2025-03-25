@@ -11,6 +11,7 @@ import { trackEvent, Events } from "@/lib/amplitude";
 import debounce from 'lodash/debounce';
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/auth-context";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -387,11 +388,18 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     },
     delete: () => {
       if (activeEntry) {
-        deleteEntry.mutate(activeEntry.id);
-        setActiveTask(null);
+        // Find the actual entry from entries array by index
+        const actualEntry = entries[activeEntry.index];
+        if (actualEntry && actualEntry.id) {
+          deleteEntry.mutate(actualEntry.id);
+          setActiveTask(null);
+        }
       }
     }
   };
+
+  // Get authentication state
+  const { isAuthenticated } = useAuth();
 
   const deleteEntry = useMutation({
     mutationFn: async (id: number) => {
@@ -402,11 +410,18 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
         return Promise.resolve(); // No need to call API for local-only entries
       }
       
-      await apiRequest("DELETE", `/api/tasks/${id}`);
+      // Use the correct API endpoint based on authentication state
+      const apiEndpoint = isAuthenticated ? `/api/tasks/${id}` : `/api/public/tasks/${id}`;
+      const response = await fetch(apiEndpoint, { method: 'DELETE' });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete task: ${response.statusText}`);
+      }
+      
       const endTime = performance.now();
 
       trackEvent(Events.Performance.ApiCall, {
-        endpoint: `/api/tasks/${id}`,
+        endpoint: apiEndpoint,
         method: 'DELETE',
         durationMs: endTime - startTime
       });
