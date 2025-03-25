@@ -154,16 +154,19 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
 
   const initializeEntries = useCallback((savedEntries: any[]) => {
     try {
-      const savedLines = savedEntries.map(entry => ({
+      // Make sure savedEntries is an array before mapping
+      const entries = Array.isArray(savedEntries) ? savedEntries : [];
+      
+      const savedLines = entries.map(entry => ({
         id: entry.id,
         content: entry.content,
         isEditing: false,
-        timestamp: new Date(entry.timestamp),
+        timestamp: new Date(entry.timestamp || Date.now()),
         isSaved: true
       }));
 
       // Always ensure we have exactly defaultLines empty lines for input
-      const emptyLines = Array(defaultLines).fill(null).map((_, i) => ({
+      const emptyLines = Array(Math.max(defaultLines - savedLines.length, 1)).fill(null).map((_, i) => ({
         id: Date.now() + i,
         content: "",
         isEditing: false,
@@ -173,6 +176,9 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
 
       // Combine saved and empty lines
       setEntries([...savedLines, ...emptyLines]);
+      
+      // Log for debugging
+      console.log(`Initialized ${savedLines.length} saved entries and ${emptyLines.length} empty lines`);
     } catch (error) {
       console.error("Error initializing entries:", error);
       setError("Failed to initialize entries. Please refresh the page.");
@@ -182,17 +188,32 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
   const handleLineClick = useCallback((index: number, e: React.MouseEvent) => {
     try {
       e.stopPropagation();
+      
+      // Guard against invalid index
+      if (index < 0 || index >= entries.length) {
+        console.warn(`Attempted to click invalid line index: ${index}, entries length: ${entries.length}`);
+        return;
+      }
+      
       const entry = entries[index];
 
-      if (entry.isSaved) return;
+      // Only activate empty lines or non-saved lines
+      if (entry.isSaved) {
+        console.log(`Line ${index} is already saved, not activating for edit`);
+        return;
+      }
 
+      // Set this line as the active one
       setActiveEntry({
         index,
         content: entry.content || "",
         isDirty: false
       });
+      
       lastSavedContentRef.current = entry.content || "";
       setError(null);
+      
+      console.log(`Activated line ${index} for editing`);
     } catch (error) {
       console.error("Error in handleLineClick:", error);
       setError("Failed to activate line. Please try again.");

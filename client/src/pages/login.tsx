@@ -72,11 +72,67 @@ export default function Login() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access your account
+              Access your account to save your tasks and progress
             </CardDescription>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="w-full flex justify-center">
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg w-full">
+                <h3 className="text-center font-medium mb-3 text-gray-700">Recommended</h3>
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
+                    try {
+                      // Send the token to the backend
+                      const response = await apiRequest("POST", "/api/auth/google", { 
+                        credential: credentialResponse.credential 
+                      });
+                      
+                      const userData = await response.json();
+                      
+                      // Update the local user state
+                      queryClient.setQueryData(["/api/auth/user"], userData.user);
+                      
+                      toast({
+                        title: "Login successful",
+                        description: "Welcome to your journal!",
+                      });
+                      
+                      trackEvent(Events.UI.GoogleLogin, { success: true });
+                      setLocation("/");
+                    } catch (error: any) {
+                      toast({
+                        title: "Google login failed",
+                        description: error.message || "There was an issue with Google authentication",
+                        variant: "destructive",
+                      });
+                      trackEvent(Events.UI.GoogleLogin, { success: false, error: error.message });
+                    }
+                  }}
+                  onError={() => {
+                    toast({
+                      title: "Google login failed",
+                      description: "Unable to authenticate with Google",
+                      variant: "destructive",
+                    });
+                    trackEvent(Events.UI.GoogleLogin, { success: false, error: "Google OAuth error" });
+                  }}
+                  theme="outline"
+                  size="large"
+                  shape="pill"
+                  text="signin_with"
+                  logo_alignment="center"
+                  width="300"
+                />
+              </div>
+            </div>
+            
+            <div className="relative flex items-center">
+              <Separator className="flex-1" />
+              <span className="mx-4 text-sm text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
+            </div>
+            
             <Form {...form}>
               <form 
                 onSubmit={form.handleSubmit(onSubmit)} 
@@ -126,65 +182,13 @@ export default function Login() {
                   className="w-full" 
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Signing in..." : "Sign in"}
+                  {isSubmitting ? "Signing in..." : "Sign in with Email"}
                 </Button>
               </form>
             </Form>
           </CardContent>
           
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="relative flex items-center">
-              <Separator className="flex-1" />
-              <span className="mx-4 text-sm text-muted-foreground">OR</span>
-              <Separator className="flex-1" />
-            </div>
-            
-            <div className="w-full flex justify-center">
-              <GoogleLogin
-                onSuccess={async (credentialResponse) => {
-                  try {
-                    // Send the token to the backend
-                    const response = await apiRequest("POST", "/api/auth/google", { 
-                      credential: credentialResponse.credential 
-                    });
-                    
-                    const userData = await response.json();
-                    
-                    // Update the local user state
-                    queryClient.setQueryData(["/api/auth/user"], userData.user);
-                    
-                    toast({
-                      title: "Login successful",
-                      description: "Welcome to your journal!",
-                    });
-                    
-                    trackEvent(Events.UI.GoogleLogin, { success: true });
-                    setLocation("/");
-                  } catch (error: any) {
-                    toast({
-                      title: "Google login failed",
-                      description: error.message || "There was an issue with Google authentication",
-                      variant: "destructive",
-                    });
-                    trackEvent(Events.UI.GoogleLogin, { success: false, error: error.message });
-                  }
-                }}
-                onError={() => {
-                  toast({
-                    title: "Google login failed",
-                    description: "Unable to authenticate with Google",
-                    variant: "destructive",
-                  });
-                  trackEvent(Events.UI.GoogleLogin, { success: false, error: "Google OAuth error" });
-                }}
-                theme="outline"
-                size="large"
-                shape="rectangular"
-                text="continue_with"
-                logo_alignment="center"
-              />
-            </div>
-            
+          <CardFooter className="flex flex-col space-y-4">            
             <div className="text-sm text-center text-muted-foreground">
               Don't have an account?{" "}
               <Button

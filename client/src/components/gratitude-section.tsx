@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 export function GratitudeSection() {
   const startTimeRef = useRef(performance.now());
   const { isAuthenticated } = useAuth();
+  const firstEmptyInputRef = useRef<HTMLDivElement | null>(null);
 
   // Authenticated query
   const { data: authEntries = [] } = useQuery<GratitudeEntry[]>({
@@ -70,6 +71,22 @@ export function GratitudeSection() {
       isAuthenticated
     });
   }, [savedEntries.length, isAuthenticated]);
+  
+  // Find the first empty line after mount to assist users
+  useEffect(() => {
+    if (entries.length > 0 && !isLoading) {
+      // Find the first empty, non-saved entry index
+      const firstEmptyIndex = entries.findIndex(entry => !entry.content && !entry.isSaved);
+      
+      if (firstEmptyIndex !== -1 && firstEmptyInputRef.current) {
+        // Focus on the first empty input with a slight delay for better UX
+        setTimeout(() => {
+          const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
+          handleLineClick(firstEmptyIndex, syntheticEvent);
+        }, 100);
+      }
+    }
+  }, [entries, isLoading, handleLineClick]);
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -109,6 +126,7 @@ export function GratitudeSection() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     layout
+                    ref={!entry.isSaved && !entry.content ? firstEmptyInputRef : null}
                   >
                     <Input
                       autoFocus
