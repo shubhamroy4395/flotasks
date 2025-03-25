@@ -9,6 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
 import debounce from 'lodash/debounce';
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -64,9 +66,11 @@ interface TaskListProps {
   title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
+  onDelete?: (taskId: number) => void;
 }
 
-export function TaskList({ title, tasks, onSave }: TaskListProps) {
+export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
+  const queryClient = useQueryClient();
   // State management
   const [entries, setEntries] = useState(() => {
     const initialLines = title === "Other Tasks" ? 8 : 10;
@@ -343,6 +347,93 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     ]);
   };
 
+  // Keyboard shortcut handlers
+  const nextEmptyIndex = useCallback(() => {
+    return entries.findIndex(entry => !entry.content.trim());
+  }, [entries]);
+
+  const activeEntry = activeTask; //for convenience
+
+  const keyboardHandlers = {
+    addNewItem: () => {
+      const index = nextEmptyIndex();
+      if (index >= 0) {
+        handleLineClick(index, new MouseEvent('click'));
+      } else {
+        addMoreTasks();
+      }
+    },
+    togglePriority: () => {
+      if (!activeEntry) return;
+      const currentPriority = activeEntry.priority;
+      const nextPriority = (currentPriority % 3) + 1;
+      handlePriorityChange(nextPriority);
+    },
+    focusNext: () => {
+      if (activeEntry && activeEntry.index < entries.length - 1) {
+        handleLineClick(activeEntry.index + 1, new MouseEvent('click'));
+      }
+    },
+    focusPrev: () => {
+      if (activeEntry && activeEntry.index > 0) {
+        handleLineClick(activeEntry.index - 1, new MouseEvent('click'));
+      }
+    },
+    complete: () => {
+      if (activeEntry) {
+        toggleComplete(activeEntry.index);
+        setActiveTask(null);
+      }
+    },
+    delete: () => {
+      if (activeEntry) {
+        deleteEntry.mutate(activeEntry.id);
+        setActiveTask(null);
+      }
+    }
+  };
+
+  const deleteEntry = useMutation({
+    mutationFn: async (id: number) => {
+      const startTime = performance.now();
+      await apiRequest("DELETE", `/api/tasks/${id}`);
+      const endTime = performance.now();
+
+      trackEvent(Events.Performance.ApiCall, {
+        endpoint: `/api/tasks/${id}`,
+        method: 'DELETE',
+        durationMs: endTime - startTime
+      });
+    },
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/tasks"] });
+      const previousTasks = queryClient.getQueryData<Task[]>(["/api/tasks"]);
+
+      // Optimistically update the UI
+      setEntries(prev => prev.filter(entry => entry.id !== deletedId));
+
+      queryClient.setQueryData<Task[]>(["/api/tasks"], old =>
+        old?.filter(task => task.id !== deletedId) || []
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["/api/tasks"], context.previousTasks);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    }
+  });
+
+  useKeyboardShortcuts(keyboardHandlers, {
+    enabled: true,
+    trackingPrefix: title === "Today's Tasks" ? 'today_tasks.' : 'other_tasks.'
+  });
+
+
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4 bg-white bg-opacity-80">
@@ -556,4 +647,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
       </CardContent>
     </Card>
   );
+}
+
+async function apiRequest(method: string, url: string) {
+  const response = await fetch(url, { method });
+  if (!response.ok) {
+    const message = `An error has occured: ${response.statusText}`;
+    throw new Error(message);
+  }
+  return response.json();
 }
