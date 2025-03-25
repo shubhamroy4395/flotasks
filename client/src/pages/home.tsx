@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { NavBar } from "@/components/nav-bar";
 import { startTimer, endTimer } from "@/lib/performance";
 import { PerformanceMonitor } from "@/components/performance-monitor";
+import { useToast, toast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -136,17 +137,31 @@ export default function Home() {
   // Delete task mutation for authenticated users
   const deleteAuthTask = useMutation({
     mutationFn: async (taskId: number) => {
-      console.log(`Deleting authenticated task with ID: ${taskId}`);
+      console.log(`[DELETE_AUTH_TASK] Deleting authenticated task with ID: ${taskId}`);
       const response = await apiRequest("DELETE", `/api/tasks/${taskId}`);
       return taskId;
     },
     onSuccess: (taskId) => {
-      console.log(`Successfully deleted authenticated task: ${taskId}`);
+      console.log(`[DELETE_AUTH_TASK] Successfully deleted authenticated task: ${taskId}`);
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
+      
+      // Show a success toast notification
+      toast({
+        title: "Task deleted",
+        description: "Your task has been successfully removed.",
+        variant: "default"
+      });
     },
     onError: (error) => {
-      console.error("Error deleting authenticated task:", error);
+      console.error(`[DELETE_AUTH_TASK] Error deleting authenticated task:`, error);
+      
+      // Show an error toast notification
+      toast({
+        title: "Could not delete task",
+        description: "There was a problem deleting your task. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
