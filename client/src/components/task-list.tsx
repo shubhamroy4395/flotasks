@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
@@ -8,6 +8,8 @@ import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
+import { useToast } from "@/hooks/use-toast";
+import debounce from 'lodash/debounce';
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -104,6 +106,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   const [showCelebration, setShowCelebration] = useState<number | null>(null);
   const [sortState, setSortState] = useState<'lno' | 'onl' | 'default'>('default');
   const [initialEntries, setInitialEntries] = useState(entries);
+  const { toast } = useToast();
 
   // Store initial entries when they're first created
   useEffect(() => {
@@ -156,48 +159,13 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
     }
   };
 
-  const handleAutoSave = (newContent: string, newPriority: number, newEta: string) => {
-    if (!activeTask) return;
-    
-    const updatedEntries = [...entries];
-    updatedEntries[activeTask.index] = {
-      ...updatedEntries[activeTask.index],
-      content: newContent,
-      priority: newPriority,
-      eta: newEta
-    };
-    setEntries(updatedEntries);
+  // Debounced auto-save function
+  const debouncedSave = useCallback(
+    debounce((content: string, priority: number, eta: string) => {
+      if (!content.trim()) return;
 
-    if (newContent.trim()) {
       onSave({
-        content: newContent,
-        priority: newPriority,
-        category: title === "Today's Tasks" ? "today" : "other"
-      });
-    }
-  };
-
-  const handleInputChange = (value: string) => {
-    if (!activeTask) return;
-    handleAutoSave(value, activeTask.priority, activeTask.eta);
-    setActiveTask({ ...activeTask, content: value });
-  };
-
-  const handlePriorityChange = (value: number) => {
-    if (!activeTask) return;
-    handleAutoSave(activeTask.content, value, activeTask.eta);
-    setActiveTask({ ...activeTask, priority: value });
-  };
-
-  const handleEtaChange = (value: string) => {
-    if (!activeTask) return;
-    handleAutoSave(activeTask.content, activeTask.priority, value);
-    setActiveTask({ ...activeTask, eta: value });
-  };tiveTask;
-
-    if (content.trim()) {
-      onSave({
-        content,
+        content: content.trim(),
         priority,
         category: title === "Today's Tasks" ? "today" : "other"
       });
@@ -207,24 +175,19 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
       // Track task creation with filterable properties
       trackEvent(eventName, {
-        // Top-level properties for easy filtering in Amplitude
         category: title === "Today's Tasks" ? "today" : "other",
-        priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N', // L, N, O
-        priority_value: priority, // 3, 2, 1
+        priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N',
+        priority_value: priority,
         has_time: Boolean(eta),
         estimated_minutes: convertTimeToMinutes(eta),
-
-        // Detailed task properties
         task: {
-          id: activeTask.index + 1,
+          id: activeTask?.index + 1,
           content: content.trim(),
           time: eta,
-          position: activeTask.index,
+          position: activeTask?.index,
           word_count: content.trim().split(/\s+/).length,
           length: content.length
         },
-
-        // Context for analysis
         task_context: {
           total_tasks: entries.filter(e => e.content).length,
           completed_tasks: entries.filter(e => e.completed).length,
@@ -234,22 +197,31 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           }, {} as Record<string, number>)
         }
       });
-    }
 
-    setEntries(prev =>
-      prev.map((entry, i) =>
-        i === activeTask.index
-          ? {
-              ...entry,
-              content: content.trim(),
-              priority,
-              eta,
-              isEditing: false
-            }
-          : entry
-      )
-    );
-    setActiveTask(null);
+      toast({
+        title: "Task saved!",
+        duration: 1000,
+      });
+    }, 500),
+    [title, onSave, entries]
+  );
+
+  const handleInputChange = (value: string) => {
+    if (!activeTask) return;
+    setActiveTask({ ...activeTask, content: value });
+    debouncedSave(value, activeTask.priority, activeTask.eta);
+  };
+
+  const handlePriorityChange = (value: number) => {
+    if (!activeTask) return;
+    setActiveTask({ ...activeTask, priority: value });
+    debouncedSave(activeTask.content, value, activeTask.eta);
+  };
+
+  const handleEtaChange = (value: string) => {
+    if (!activeTask) return;
+    setActiveTask({ ...activeTask, eta: value });
+    debouncedSave(activeTask.content, activeTask.priority, value);
   };
 
   const toggleComplete = (index: number) => {
@@ -261,36 +233,36 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
             setShowCelebration(index);
             setTimeout(() => setShowCelebration(null), 2000);
 
-          // Determine event name based on task category
-          const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
+            // Determine event name based on task category
+            const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
 
-          // Track completion with filterable properties
-          trackEvent(eventName, {
-            // Top-level properties for easy filtering
-            category: title === "Today's Tasks" ? "today" : "other",
-            priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
-            priority_value: entry.priority,
-            has_time: Boolean(entry.eta),
-            estimated_minutes: convertTimeToMinutes(entry.eta),
-            completion_time: Date.now(),
+            // Track completion with filterable properties
+            trackEvent(eventName, {
+              // Top-level properties for easy filtering
+              category: title === "Today's Tasks" ? "today" : "other",
+              priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
+              priority_value: entry.priority,
+              has_time: Boolean(entry.eta),
+              estimated_minutes: convertTimeToMinutes(entry.eta),
+              completion_time: Date.now(),
 
-            // Task details
-            task: {
-              id: entry.id,
-              content: entry.content,
-              position: index,
-              age_ms: Date.now() - new Date(entry.timestamp).getTime()
-            },
+              // Task details
+              task: {
+                id: entry.id,
+                content: entry.content,
+                position: index,
+                age_ms: Date.now() - new Date(entry.timestamp).getTime()
+              },
 
-            // Context
-            task_context: {
-              total_tasks: entries.filter(e => e.content).length,
-              completed_tasks: entries.filter(e => e.completed).length + 1,
-              completion_rate: ((entries.filter(e => e.completed).length + 1) / 
-                              entries.filter(e => e.content).length) * 100
-            }
-          });
-        }
+              // Context
+              task_context: {
+                total_tasks: entries.filter(e => e.content).length,
+                completed_tasks: entries.filter(e => e.completed).length + 1,
+                completion_rate: ((entries.filter(e => e.completed).length + 1) /
+                                  entries.filter(e => e.content).length) * 100
+              }
+            });
+          }
           return { ...entry, completed: newCompleted };
         }
         return entry;
@@ -319,12 +291,12 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
           completed_tasks: entries.filter(e => e.completed).length,
           priority_distribution: entries.reduce((acc, entry) => {
             if (entry.priority) {
-              acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] = 
+              acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] =
                 (acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] || 0) + 1;
             }
             return acc;
           }, {} as Record<string, number>),
-          averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) / 
+          averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) /
                            entries.filter(e => e.content).length || 0
         }
       });
@@ -464,7 +436,12 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                         autoFocus
                         value={activeTask.content}
                         onChange={(e) => handleInputChange(e.target.value)}
-                        onBlur={() => setActiveTask(null)}
+                        onBlur={() => {
+                          // Only close if there's no content
+                          if (!activeTask.content.trim()) {
+                            setActiveTask(null);
+                          }
+                        }}
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-gray-700 placeholder:text-gray-400"
                         placeholder="What needs to be done?"
                       />
@@ -487,11 +464,10 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                               key={label}
                               size="sm"
                               variant="ghost"
-                              className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveTask({ ...activeTask, priority: value });
-                              }}
+                              className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${
+                                activeTask.priority === value ? 'ring-2 ring-offset-2' : ''
+                              }`}
+                              onClick={() => handlePriorityChange(value)}
                             >
                               {label}
                             </Button>
@@ -528,7 +504,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
 
                       <select
                         value={activeTask.eta}
-                        onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
+                        onChange={(e) => handleEtaChange(e.target.value)}
                         className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -537,15 +513,6 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                           <option key={slot} value={slot}>{slot}</option>
                         ))}
                       </select>
-
-                      <Button
-                        onClick={handleSave}
-                        size="sm"
-                        variant="outline"
-                        className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border-blue-200 hover:border-blue-300 font-bold transform transition-all duration-200 hover:scale-105"
-                      >
-                        Save
-                      </Button>
                     </div>
                   </motion.div>
                 ) : (
