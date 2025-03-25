@@ -123,7 +123,7 @@ export default function Home() {
 
           {/* Middle Column - Goals and Other Tasks */}
           <div className="lg:col-span-4 space-y-6">
-            <GoalsSection />
+            <GoalsSection goal={{ text: "SUPER IITLRA", className: "text-lg font-medium text-yellow-500" }} />
             <TaskList
               title="Other Tasks"
               tasks={otherTasks || []}
