@@ -1,8 +1,7 @@
 import React from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +26,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const [, setLocation] = useLocation();
+  const { register } = useAuth();
   const { toast } = useToast();
 
   // Form setup
@@ -40,31 +40,17 @@ export default function Register() {
     },
   });
 
-  // Registration mutation
-  const registerMutation = useMutation({
-    mutationFn: async (data: RegisterFormValues) => {
-      return apiRequest("POST", "/api/auth/register", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created! Please sign in.",
-        variant: "default",
-      });
-      setLocation("/login");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Registration failed",
-        description: error.message || "There was a problem with registration",
-        variant: "destructive",
-      });
-    },
-  });
+  const isSubmitting = form.formState.isSubmitting;
 
   // Form submit handler
-  function onSubmit(data: RegisterFormValues) {
-    registerMutation.mutate(data);
+  async function onSubmit(data: RegisterFormValues) {
+    try {
+      await register(data.username, data.email, data.password, data.confirmPassword);
+      // No need to show toast or redirect here as it's handled in the auth context
+    } catch (error) {
+      // Error handling is done in the auth context
+      console.error("Registration error:", error);
+    }
   }
 
   return (
@@ -92,7 +78,11 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="johndoe" {...field} />
+                        <Input 
+                          placeholder="johndoe" 
+                          {...field} 
+                          autoComplete="username"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -110,6 +100,7 @@ export default function Register() {
                           placeholder="your.email@example.com" 
                           type="email" 
                           {...field} 
+                          autoComplete="email"
                         />
                       </FormControl>
                       <FormMessage />
@@ -128,6 +119,7 @@ export default function Register() {
                           placeholder="••••••••" 
                           type="password" 
                           {...field} 
+                          autoComplete="new-password"
                         />
                       </FormControl>
                       <FormMessage />
@@ -146,6 +138,7 @@ export default function Register() {
                           placeholder="••••••••" 
                           type="password" 
                           {...field} 
+                          autoComplete="new-password"
                         />
                       </FormControl>
                       <FormMessage />
@@ -156,9 +149,9 @@ export default function Register() {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={registerMutation.isPending}
+                  disabled={isSubmitting}
                 >
-                  {registerMutation.isPending ? "Creating account..." : "Create account"}
+                  {isSubmitting ? "Creating account..." : "Create account"}
                 </Button>
               </form>
             </Form>
@@ -167,13 +160,12 @@ export default function Register() {
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center text-muted-foreground">
               Already have an account?{" "}
-              <Button 
-                variant="link" 
-                className="p-0 h-auto font-normal" 
-                onClick={() => setLocation("/login")}
+              <button
+                onClick={() => window.location.href = "/login"}
+                className="text-primary underline underline-offset-4 hover:text-primary/90 cursor-pointer bg-transparent border-none p-0 font-normal"
               >
                 Sign in
-              </Button>
+              </button>
             </div>
           </CardFooter>
         </Card>

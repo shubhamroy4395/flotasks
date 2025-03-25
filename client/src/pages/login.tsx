@@ -1,12 +1,10 @@
-import React, { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import React from "react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,15 +14,14 @@ import { ThemeToggle } from "@/components/theme-toggle";
 // Login validation schema
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const [, setLocation] = useLocation();
+  const { login } = useAuth();
   const { toast } = useToast();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Form setup
   const form = useForm<LoginFormValues>({
@@ -35,32 +32,17 @@ export default function Login() {
     },
   });
 
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (data: LoginFormValues) => {
-      return apiRequest("POST", "/api/auth/login", data);
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-        variant: "default",
-      });
-      setLocation("/");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
-        variant: "destructive",
-      });
-    },
-  });
+  const isSubmitting = form.formState.isSubmitting;
 
   // Form submit handler
-  function onSubmit(data: LoginFormValues) {
-    setIsLoggingIn(true);
-    loginMutation.mutate(data);
+  async function onSubmit(data: LoginFormValues) {
+    try {
+      await login(data.email, data.password);
+      // No need to show toast or redirect here as it's handled in the auth context
+    } catch (error) {
+      // Error handling is done in the auth context
+      console.error("Login error:", error);
+    }
   }
 
   return (
@@ -72,9 +54,9 @@ export default function Login() {
       <div className="w-full max-w-md px-4">
         <Card className="w-full">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to sign in to your account
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           
@@ -92,6 +74,7 @@ export default function Login() {
                           placeholder="your.email@example.com" 
                           type="email" 
                           {...field} 
+                          autoComplete="email"
                         />
                       </FormControl>
                       <FormMessage />
@@ -110,6 +93,7 @@ export default function Login() {
                           placeholder="••••••••" 
                           type="password" 
                           {...field} 
+                          autoComplete="current-password"
                         />
                       </FormControl>
                       <FormMessage />
@@ -120,9 +104,9 @@ export default function Login() {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={loginMutation.isPending}
+                  disabled={isSubmitting}
                 >
-                  {loginMutation.isPending ? "Signing in..." : "Sign in"}
+                  {isSubmitting ? "Signing in..." : "Sign in"}
                 </Button>
               </form>
             </Form>
@@ -130,14 +114,13 @@ export default function Login() {
           
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center text-muted-foreground">
-              Don't have an account yet?{" "}
-              <Button 
-                variant="link" 
-                className="p-0 h-auto font-normal" 
-                onClick={() => setLocation("/register")}
+              Don't have an account?{" "}
+              <button
+                onClick={() => window.location.href = "/register"}
+                className="text-primary underline underline-offset-4 hover:text-primary/90 cursor-pointer bg-transparent border-none p-0 font-normal"
               >
                 Create an account
-              </Button>
+              </button>
             </div>
           </CardFooter>
         </Card>
