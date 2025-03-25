@@ -30,26 +30,7 @@ export default function Home() {
     };
   }, []);
 
-  // Clear all data on every refresh and clear database data
-  useEffect(() => {
-    // Clear all data from the cache
-    queryClient.clear();
-
-    // Invalidate all queries to force fresh data fetch
-    queryClient.invalidateQueries();
-
-    // Clear database data
-    const clearData = async () => {
-      try {
-        await apiRequest("DELETE", "/api/data");
-      } catch (error) {
-        console.error("Failed to clear data:", error);
-      }
-    };
-
-    clearData();
-  }, [queryClient]);
-
+  // Update time every second
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -59,17 +40,12 @@ export default function Home() {
     queryKey: ["/api/tasks/today"],
   });
 
-  const { data: otherTasks } = useQuery<Task[]>({
-    queryKey: ["/api/tasks/other"],
-  });
-
   const createTask = useMutation({
     mutationFn: async (task: { content: string; priority: number; category: string }) => {
       await apiRequest("POST", "/api/tasks", task);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
     },
   });
 
@@ -96,7 +72,7 @@ export default function Home() {
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column - Today's Tasks (wider) */}
+          {/* Left Column - Today's Tasks */}
           <div className="lg:col-span-5">
             <TaskList
               title="Today's Tasks"
@@ -105,22 +81,17 @@ export default function Home() {
             />
           </div>
 
-          {/* Middle Column - Goals and Other Tasks */}
+          {/* Middle Column - Goals and Mood */}
           <div className="lg:col-span-4 space-y-6">
             <GoalsSection />
-            <TaskList
-              title="Other Tasks"
-              tasks={otherTasks || []}
-              onSave={(task) => createTask.mutate({ ...task, category: "other" })}
-            />
+            <MoodTracker />
           </div>
 
-          {/* Right Column - Mood, Gratitude, Reminders */}
+          {/* Right Column - Gratitude and Reminders */}
           <div className="lg:col-span-3 space-y-6">
-            <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
-            <NotesSection /> {/* Added NotesSection */}
+            <NotesSection />
           </div>
         </div>
       </div>
