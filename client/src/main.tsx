@@ -5,7 +5,8 @@ import "./index.css";
 
 // Get the Google Client ID from the environment variables
 // In Vite, environment variables must be accessed with import.meta.env and prefixed with VITE_
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+// If not available in env, use the hardcoded value from .env
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "930481351011-kt5hkoihks2a60lvnac6mgkujg2e21ei.apps.googleusercontent.com";
 
 // Log the client ID for debugging (without revealing the full ID)
 if (googleClientId) {
