@@ -147,6 +147,7 @@ export function NotesSection() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
+                  </div>
                   >
                     Add Note
                   </Button>
