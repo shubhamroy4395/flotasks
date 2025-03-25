@@ -636,6 +636,17 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                             {entry.eta}
                           </span>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete && onDelete(entry.id);
+                          }}
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-transparent transition-opacity ml-1"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
                       </motion.div>
                     )}
                   </motion.div>

@@ -202,7 +202,9 @@ export function NotesSection() {
   }, [editingIndex, inputValue, saveNote]);
 
   // Add multiple new empty notes (3 by default)
-  const addNewNote = useCallback((count = 3) => {
+  const addNewNote = useCallback((_e?: React.MouseEvent) => {
+    const count = 3; // Default is to add 3 notes at once
+    
     // Create multiple new note entries
     setNotes(current => {
       const newNotes = [];
@@ -344,7 +346,7 @@ export function NotesSection() {
           variant="outline"
           size="lg"
           className="w-full mt-6 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border border-indigo-200 text-indigo-600 font-medium rounded-lg"
-          onClick={addNewNote}
+          onClick={() => addNewNote()}
           disabled={isLoading}
         >
           <Plus className="mr-2 h-4 w-4" />
