@@ -69,10 +69,7 @@ export function MoodTracker() {
 
   return (
     <Card>
-      <CardHeader className="border-b relative">
-        <div className="absolute right-4 top-2">
-          <h1 className="logo-text text-3xl">Flo Tasks</h1>
-        </div>
+      <CardHeader className="border-b">
         <CardTitle>How are you feeling?</CardTitle>
       </CardHeader>
       <CardContent>
