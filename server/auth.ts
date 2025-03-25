@@ -6,6 +6,7 @@ import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import { User } from "@shared/schema";
 
 // Setup Passport
 passport.use(
@@ -33,6 +34,7 @@ passport.use(
         // Successful login
         return done(null, user);
       } catch (err) {
+        console.error("Login error:", err);
         return done(err);
       }
     }
@@ -41,15 +43,26 @@ passport.use(
 
 // User serialization/deserialization for session
 passport.serializeUser((user: any, done) => {
+  // Only serialize the user id
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id: number, done) => {
   try {
+    // Fetch user from database
     const user = await storage.getUserById(id);
-    done(null, user);
+    
+    if (!user) {
+      return done(new Error("User not found"), null);
+    }
+    
+    // Create a sanitized user object without password
+    const { password, ...userWithoutPassword } = user;
+    
+    done(null, userWithoutPassword as User);
   } catch (err) {
-    done(err);
+    console.error("Deserialization error:", err);
+    done(err, null);
   }
 });
 
@@ -70,6 +83,7 @@ export function setupAuth(app: Express) {
       store: new PgSession({
         pool,
         tableName: 'session',
+        createTableIfMissing: true, // Create session table if it doesn't exist
       }),
       secret: process.env.SESSION_SECRET || "my-journal-app-secret",
       resave: false,
@@ -77,6 +91,7 @@ export function setupAuth(app: Express) {
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
       },
     })
   );
