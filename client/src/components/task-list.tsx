@@ -413,13 +413,22 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       
       // Handle temporary IDs differently (they don't exist on the server)
       if (id < 0) {
-        return Promise.resolve(); // No need to call API for local-only entries
+        // Just remove it locally
+        setEntries(prev => prev.filter(entry => entry.id !== id));
+        return id;
       }
       
       try {
         // Use the correct API endpoint based on authentication state
         const apiEndpoint = isAuthenticated ? `/api/tasks/${id}` : `/api/public/tasks/${id}`;
-        const response = await fetch(apiEndpoint, { method: 'DELETE' });
+        console.log(`Deleting task with ID ${id} using endpoint ${apiEndpoint}`);
+        
+        const response = await fetch(apiEndpoint, { 
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`Failed to delete task: ${response.statusText}`);
@@ -456,30 +465,40 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData<Task[]>(authQueryKey);
+      const previousEntries = [...entries];
 
-      // Optimistically update the UI
+      // Optimistically update the UI immediately
       setEntries(prev => prev.filter(entry => entry.id !== deletedId));
 
       // For server-stored tasks, update the cache
-      if (deletedId > 0) {
-        queryClient.setQueryData<Task[]>(authQueryKey, old =>
-          old?.filter(task => task.id !== deletedId) || []
-        );
-      }
+      queryClient.setQueryData<Task[]>(authQueryKey, old => 
+        old?.filter(task => task.id !== deletedId) || []
+      );
 
-      return { previousTasks, authQueryKey };
+      return { previousTasks, previousEntries, authQueryKey };
     },
     onError: (err, variables, context) => {
+      // Restore previous state from context
+      if (context?.previousEntries) {
+        setEntries(context.previousEntries);
+      }
+      
       if (context?.previousTasks && context.authQueryKey) {
         queryClient.setQueryData(context.authQueryKey, context.previousTasks);
       }
       
       console.error("Failed to delete task:", err);
     },
-    onSettled: (result, error, variables, context) => {
-      if (context?.authQueryKey) {
-        queryClient.invalidateQueries({ queryKey: context.authQueryKey });
-      }
+    onSuccess: (id) => {
+      console.log(`Successfully deleted task with ID ${id}`);
+      
+      // Also trigger a refresh for complete accuracy
+      const categoryKey = title === "Today's Tasks" ? "today" : "other";
+      const authQueryKey = isAuthenticated 
+        ? [`/api/tasks/${categoryKey}`] 
+        : [`/api/public/tasks/${categoryKey}`];
+        
+      queryClient.invalidateQueries({ queryKey: authQueryKey });
     }
   });
 
