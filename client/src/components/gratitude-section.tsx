@@ -6,19 +6,37 @@ import { useQuery } from "@tanstack/react-query";
 import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
-import { Events, trackEvent } from "@/lib/amplitude";
+import { trackEvent } from "@/lib/amplitude";
 import { useLineItems } from "@/hooks/use-line-items";
+import { useAuth } from "@/contexts/auth-context";
 
 export function GratitudeSection() {
   const startTimeRef = useRef(performance.now());
+  const { isAuthenticated } = useAuth();
 
-  // Enhanced query with proper error handling and loading states
-  const { data: savedEntries = [], isError: isQueryError } = useQuery<GratitudeEntry[]>({
+  // Authenticated query
+  const { data: authEntries = [] } = useQuery<GratitudeEntry[]>({
     queryKey: ["/api/gratitude"],
     staleTime: 30000,
     gcTime: 5 * 60 * 1000,
-    retry: 3
+    retry: 3,
+    enabled: isAuthenticated
   });
+
+  // Public query
+  const { data: publicEntries = [] } = useQuery<GratitudeEntry[]>({
+    queryKey: ["/api/public/gratitude"],
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
+    retry: 3,
+    enabled: !isAuthenticated
+  });
+
+  // Use the appropriate data source based on authentication status
+  const savedEntries = isAuthenticated ? authEntries : publicEntries;
+
+  // Choose the appropriate endpoint for line items
+  const queryEndpoint = isAuthenticated ? "/api/gratitude" : "/api/public/gratitude";
 
   const {
     entries,
@@ -32,7 +50,7 @@ export function GratitudeSection() {
     addMoreEntries,
     deleteEntry
   } = useLineItems({
-    queryKey: ["/api/gratitude"],
+    queryKey: [queryEndpoint],
     eventPrefix: "Gratitude",
     defaultLines: 3
   });
@@ -45,12 +63,13 @@ export function GratitudeSection() {
   // Track component performance
   useEffect(() => {
     const loadTime = performance.now() - startTimeRef.current;
-    trackEvent(Events.Performance.ComponentMount, {
+    trackEvent("component_mount", {
       component: 'GratitudeSection',
       loadTimeMs: loadTime,
-      savedEntriesCount: savedEntries.length
+      savedEntriesCount: savedEntries.length,
+      isAuthenticated
     });
-  }, [savedEntries.length]);
+  }, [savedEntries.length, isAuthenticated]);
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">

@@ -6,20 +6,38 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import type { Note } from "@shared/schema";
-import { Events, trackEvent } from "@/lib/amplitude";
+import { trackEvent } from "@/lib/amplitude";
 import { format } from "date-fns";
 import { useLineItems } from "@/hooks/use-line-items";
+import { useAuth } from "@/contexts/auth-context";
 
 export function NotesSection() {
   const startTimeRef = useRef(performance.now());
+  const { isAuthenticated } = useAuth();
 
-  // Enhanced query with proper error handling and loading states
-  const { data: savedNotes = [], isError: isQueryError } = useQuery<Note[]>({
+  // Authenticated query
+  const { data: authNotes = [] } = useQuery<Note[]>({
     queryKey: ["/api/notes"],
     staleTime: 30000,
     gcTime: 5 * 60 * 1000,
-    retry: 3
+    retry: 3,
+    enabled: isAuthenticated
   });
+
+  // Public query
+  const { data: publicNotes = [] } = useQuery<Note[]>({
+    queryKey: ["/api/public/notes"],
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
+    retry: 3,
+    enabled: !isAuthenticated
+  });
+
+  // Use the appropriate data source based on authentication status
+  const savedNotes = isAuthenticated ? authNotes : publicNotes;
+
+  // Choose the appropriate endpoint for line items
+  const queryEndpoint = isAuthenticated ? "/api/notes" : "/api/public/notes";
 
   const {
     entries,
@@ -33,7 +51,7 @@ export function NotesSection() {
     addMoreEntries,
     deleteEntry
   } = useLineItems({
-    queryKey: ["/api/notes"],
+    queryKey: [queryEndpoint],
     eventPrefix: "Notes",
     defaultLines: 3
   });
@@ -41,17 +59,18 @@ export function NotesSection() {
   // Initialize entries
   useEffect(() => {
     initializeEntries(savedNotes);
-  }, [savedNotes]);
+  }, [savedNotes, initializeEntries]);
 
   // Track component performance
   useEffect(() => {
     const loadTime = performance.now() - startTimeRef.current;
-    trackEvent(Events.Performance.ComponentMount, {
+    trackEvent("component_mount", {
       component: 'NotesSection',
       loadTimeMs: loadTime,
-      savedNotesCount: savedNotes.length
+      savedNotesCount: savedNotes.length,
+      isAuthenticated
     });
-  }, [savedNotes.length]);
+  }, [savedNotes.length, isAuthenticated]);
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
