@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TaskListV2 } from "@/components/task-list-v2";
+import { TaskList } from "@/components/task-list";
 import { MoodTracker } from "@/components/mood-tracker";
 import { GratitudeSection } from "@/components/gratitude-section";
 import { ReminderSection } from "@/components/reminder-section";
@@ -11,13 +11,14 @@ import { NavBar } from "@/components/nav-bar";
 import { startTimer, endTimer } from "@/lib/performance";
 import { PerformanceMonitor } from "@/components/performance-monitor";
 import { useTaskStore } from "@/stores/taskStore";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   
   // Get the task store
-  const { fetchTasks, isLoading: tasksLoading } = useTaskStore();
+  const { fetchTasks, tasks, isLoading: tasksLoading, addTask, deleteTask } = useTaskStore();
   
   // Start measuring page load time
   useEffect(() => {
@@ -99,9 +100,16 @@ export default function Home() {
           {/* Left Column - Today's Tasks (wider) */}
           <div className="lg:col-span-5">
             <PerformanceMonitor componentName="TodayTaskList">
-              <TaskListV2
+              <TaskList
                 title="Today's Tasks"
-                category="today"
+                tasks={tasks.today}
+                onSave={(task) => addTask({
+                  ...task,
+                  completed: false,
+                  category: 'today',
+                  timestamp: new Date()
+                })}
+                onDelete={(id) => deleteTask(id, 'today')}
               />
             </PerformanceMonitor>
           </div>
@@ -113,9 +121,16 @@ export default function Home() {
             </PerformanceMonitor>
             
             <PerformanceMonitor componentName="OtherTaskList">
-              <TaskListV2
+              <TaskList
                 title="Other Tasks"
-                category="other"
+                tasks={tasks.other}
+                onSave={(task) => addTask({
+                  ...task,
+                  completed: false,
+                  category: 'other',
+                  timestamp: new Date()
+                })}
+                onDelete={(id) => deleteTask(id, 'other')}
               />
             </PerformanceMonitor>
           </div>
