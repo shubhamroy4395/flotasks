@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Google login mutation
   const googleLoginMutation = useMutation({
-    mutationFn: async (tokenResponse: { access_token: string }) => {
+    mutationFn: async (tokenResponse: { credential: string }) => {
       try {
         const response = await apiRequest("POST", "/api/auth/google", tokenResponse);
         return await response.json() as GoogleLoginResponse;
