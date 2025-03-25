@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { trackEvent } from '@/lib/amplitude';
@@ -234,7 +235,9 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         );
 
         if (nextEmptyIndex !== -1) {
-          handleLineClick(nextEmptyIndex, new MouseEvent('click'));
+          // Create a synthetic event object with the minimum properties needed
+          const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
+          handleLineClick(nextEmptyIndex, syntheticEvent);
           return;
         }
       }

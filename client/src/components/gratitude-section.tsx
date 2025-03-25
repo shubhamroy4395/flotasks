@@ -40,7 +40,7 @@ export function GratitudeSection() {
   // Initialize entries
   useEffect(() => {
     initializeEntries(savedEntries);
-  }, [savedEntries]);
+  }, [savedEntries, initializeEntries]);
 
   // Track component performance
   useEffect(() => {
