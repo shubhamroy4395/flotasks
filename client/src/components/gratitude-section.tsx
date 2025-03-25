@@ -7,9 +7,8 @@ import { apiRequest } from "@/lib/queryClient";
 import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Trash2 } from "lucide-react";
-import { Events } from "@/lib/amplitude";
+import { Events, trackEvent } from "@/lib/amplitude";
 import debounce from 'lodash/debounce';
-import { trackEvent } from "@/lib/amplitude";
 
 interface EntryLine {
   id: number;
@@ -31,11 +30,11 @@ export function GratitudeSection() {
   const savingRef = useRef(false);
   const startTimeRef = useRef(performance.now());
 
-  // Query for gratitude entries
+  // Query for gratitude entries with caching
   const { data: savedEntries = [] } = useQuery<GratitudeEntry[]>({
     queryKey: ["/api/gratitude"],
     staleTime: 30000, // Consider data fresh for 30 seconds
-    cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
 
   // Initialize entries with saved data and empty lines
@@ -57,7 +56,7 @@ export function GratitudeSection() {
     setEntries([...savedLines, ...emptyLines]);
   }, [savedEntries]);
 
-  // Track component mount performance
+  // Track initial load performance
   useEffect(() => {
     const loadTime = performance.now() - startTimeRef.current;
     trackEvent(Events.Performance.ComponentMount, {
@@ -83,13 +82,9 @@ export function GratitudeSection() {
       return response;
     },
     onMutate: async (content) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["/api/gratitude"] });
-
-      // Snapshot the previous value
       const previousEntries = queryClient.getQueryData<GratitudeEntry[]>(["/api/gratitude"]);
 
-      // Optimistically update the cache
       const optimisticEntry = {
         id: Date.now(),
         content,
@@ -104,14 +99,13 @@ export function GratitudeSection() {
       return { previousEntries };
     },
     onError: (err, variables, context) => {
-      // Revert the optimistic update
       if (context?.previousEntries) {
         queryClient.setQueryData(["/api/gratitude"], context.previousEntries);
       }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
-    },
+    }
   });
 
   // Delete entry mutation with optimistic updates
@@ -121,7 +115,7 @@ export function GratitudeSection() {
       await apiRequest("DELETE", `/api/gratitude/${id}`);
       const endTime = performance.now();
 
-      trackEvent(Events.Performance.ApiCall, {
+      trackEvent(Events.Performance.DeleteOperation, {
         endpoint: `/api/gratitude/${id}`,
         method: 'DELETE',
         durationMs: endTime - startTime
@@ -129,8 +123,10 @@ export function GratitudeSection() {
     },
     onMutate: async (deletedId) => {
       await queryClient.cancelQueries({ queryKey: ["/api/gratitude"] });
-
       const previousEntries = queryClient.getQueryData<GratitudeEntry[]>(["/api/gratitude"]);
+
+      // Optimistically update UI
+      setEntries(prev => prev.filter(entry => entry.id !== deletedId));
 
       queryClient.setQueryData<GratitudeEntry[]>(["/api/gratitude"], old => 
         old?.filter(entry => entry.id !== deletedId) || []
@@ -145,7 +141,7 @@ export function GratitudeSection() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
-    },
+    }
   });
 
   const debouncedSave = useRef(
@@ -165,7 +161,7 @@ export function GratitudeSection() {
       } finally {
         savingRef.current = false;
       }
-    }, 800) // Reduced debounce time for better responsiveness
+    }, 800)
   ).current;
 
   const handleLineClick = (index: number, e: React.MouseEvent) => {

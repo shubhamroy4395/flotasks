@@ -40,32 +40,27 @@ export const Events = {
   Gratitude: {
     SectionOpen: 'Gratitude.SectionOpen',
     Added: 'Gratitude.Added',
-    Deleted: 'Gratitude.Deleted'
+    Deleted: 'Gratitude.Deleted',
+    Created: 'Gratitude.Created' // For consistency with Notes
   },
   Notes: {
     SectionOpen: 'Notes.SectionOpen',
     Created: 'Notes.Created',
     Deleted: 'Notes.Deleted'
   },
-  Reminder: {
-    SectionOpen: 'Reminder.SectionOpen',
-    Set: 'Reminder.Set',
-    Completed: 'Reminder.Completed',
-    Deleted: 'Reminder.Deleted'
-  },
-  Goals: {
-    SectionOpen: 'Goals.SectionOpen',
-    Created: 'Goals.Created',
-    Updated: 'Goals.Updated',
-    Completed: 'Goals.Completed',
-    Deleted: 'Goals.Deleted'
+  Performance: {
+    ComponentMount: 'Performance.ComponentMount',
+    ApiCall: 'Performance.ApiCall',
+    SaveOperation: 'Performance.SaveOperation',
+    DeleteOperation: 'Performance.DeleteOperation'
   },
   UI: {
     ModalOpened: 'UI.ModalOpened',
     ModalClosed: 'UI.ModalClosed',
     ThemeChanged: 'UI.ThemeChanged',
     FilterApplied: 'UI.FilterApplied',
-    SortChanged: 'UI.SortChanged'
+    SortChanged: 'UI.SortChanged',
+    KeyboardShortcut: 'UI.KeyboardShortcut'
   }
 };
 
