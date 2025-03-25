@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { trackEvent } from '@/lib/amplitude';
@@ -65,6 +65,15 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
           timestamp: new Date().toISOString()
         };
 
+        // Update local state immediately
+        setEntries(prev => {
+          const activeIdx = activeEntry?.index ?? -1;
+          return prev.map((entry, idx) => 
+            idx === activeIdx ? { ...entry, content, isSaved: true } : entry
+          );
+        });
+
+        // Update cache optimistically
         queryClient.setQueryData(queryKey, (old: any[] = []) => [...old, optimisticEntry]);
 
         return { previousEntries };
@@ -120,7 +129,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
   const debouncedSave = useRef(
     debounce(async (content: string) => {
       if (!content.trim() || savingRef.current) return;
-      
+
       savingRef.current = true;
       try {
         const startTime = performance.now();
@@ -142,7 +151,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
     }, 500)
   ).current;
 
-  const initializeEntries = (savedEntries: any[]) => {
+  const initializeEntries = useCallback((savedEntries: any[]) => {
     try {
       const savedLines = savedEntries.map(entry => ({
         id: entry.id,
@@ -152,24 +161,24 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         isSaved: true
       }));
 
-      const emptyLines = Array(Math.max(defaultLines - savedLines.length, 0))
-        .fill(null)
-        .map((_, i) => ({
-          id: Date.now() + i,
-          content: "",
-          isEditing: false,
-          timestamp: new Date(),
-          isSaved: false
-        }));
+      // Always ensure we have exactly defaultLines empty lines for input
+      const emptyLines = Array(defaultLines).fill(null).map((_, i) => ({
+        id: Date.now() + i,
+        content: "",
+        isEditing: false,
+        timestamp: new Date(),
+        isSaved: false
+      }));
 
+      // Combine saved and empty lines
       setEntries([...savedLines, ...emptyLines]);
     } catch (error) {
       console.error("Error initializing entries:", error);
       setError("Failed to initialize entries. Please refresh the page.");
     }
-  };
+  }, [defaultLines]);
 
-  const handleLineClick = (index: number, e: React.MouseEvent) => {
+  const handleLineClick = useCallback((index: number, e: React.MouseEvent) => {
     try {
       e.stopPropagation();
       const entry = entries[index];
@@ -187,9 +196,9 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       console.error("Error in handleLineClick:", error);
       setError("Failed to activate line. Please try again.");
     }
-  };
+  }, [entries]);
 
-  const handleInputChange = (value: string) => {
+  const handleInputChange = useCallback((value: string) => {
     if (!activeEntry) return;
 
     try {
@@ -202,6 +211,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       );
 
       setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
+
       if (value.trim() && value.trim() !== lastSavedContentRef.current) {
         debouncedSave(value);
       }
@@ -209,15 +219,16 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       console.error("Error in handleInputChange:", error);
       setError("Failed to update entry. Please try again.");
     }
-  };
+  }, [activeEntry, debouncedSave]);
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     if (!activeEntry) return;
 
     try {
       if (activeEntry.isDirty && activeEntry.content.trim()) {
         debouncedSave(activeEntry.content);
 
+        // Find next empty line
         const nextEmptyIndex = entries.findIndex(
           (entry, idx) => idx > activeEntry.index && !entry.content.trim() && !entry.isSaved
         );
@@ -233,9 +244,9 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       console.error("Error in handleBlur:", error);
       setError("Failed to save entry. Please try again.");
     }
-  };
+  }, [activeEntry, entries, handleLineClick, debouncedSave]);
 
-  const addMoreEntries = () => {
+  const addMoreEntries = useCallback(() => {
     try {
       setEntries(prev => [
         ...prev,
@@ -251,7 +262,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       console.error("Error in addMoreEntries:", error);
       setError("Failed to add new entry. Please try again.");
     }
-  };
+  }, []);
 
   return {
     entries,
