@@ -86,11 +86,25 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 
+          <h1 className="text-4xl font-black uppercase tracking-wider
+            bg-gradient-to-r from-blue-500 to-purple-500 
             bg-clip-text text-transparent 
-            drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.2)]
-            hover:drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]
-            transition-all duration-300">
+            relative
+            after:content-[attr(data-text)]
+            after:absolute
+            after:left-0
+            after:top-0
+            after:w-full
+            after:h-full
+            after:z-[-1]
+            after:transform
+            after:translate-x-[2px]
+            after:translate-y-[2px]
+            after:text-black/20
+            drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]
+            hover:drop-shadow-[0_6px_6px_rgba(0,0,0,0.4)]
+            transition-all duration-300"
+            data-text="Flo Tasks">
             Flo Tasks
           </h1>
         </div>
