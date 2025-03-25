@@ -38,7 +38,6 @@ export function TaskList({ title, tasks = [], onSave }: TaskListProps) {
               handleSave(newTask);
             }
           }}
-          onBlur={() => handleSave(newTask)}
           className="border-none shadow-none bg-transparent focus:ring-0"
         />
         <div className="space-y-2">
