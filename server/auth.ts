@@ -47,13 +47,23 @@ passport.serializeUser((user: any, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser(async (id: number, done) => {
+passport.deserializeUser(async (id: any, done) => {
   try {
-    // Fetch user from database
-    const user = await storage.getUserById(id);
+    // Validate the ID
+    if (!id || isNaN(Number(id))) {
+      console.warn("Invalid user ID in session:", id);
+      return done(null, null);
+    }
+    
+    // Fetch user from database using numeric ID
+    const userId = Number(id);
+    const user = await storage.getUserById(userId);
     
     if (!user) {
-      return done(new Error("User not found"), null);
+      // Instead of throwing an error, just return null for user
+      // This handles cases where a user was deleted but the session still exists
+      console.warn(`User with ID ${userId} not found during deserialization`);
+      return done(null, null);
     }
     
     // Create a sanitized user object without password
@@ -62,7 +72,8 @@ passport.deserializeUser(async (id: number, done) => {
     done(null, userWithoutPassword as User);
   } catch (err) {
     console.error("Deserialization error:", err);
-    done(err, null);
+    // Return null instead of error to prevent session errors
+    done(null, null);
   }
 });
 

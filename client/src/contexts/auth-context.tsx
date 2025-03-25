@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mutationFn: async (credentials: { email: string; password: string }) => {
       try {
         const response = await apiRequest("POST", "/api/auth/login", credentials);
-        return response as LoginResponse;
+        // Ensure we return the JSON data, not the Response object
+        return await response.json() as LoginResponse;
       } catch (error: any) {
         throw new Error(error.message || "Login failed. Please check your credentials.");
       }
@@ -81,7 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mutationFn: async (userData: { username: string; email: string; password: string; confirmPassword: string }) => {
       try {
         const response = await apiRequest("POST", "/api/auth/register", userData);
-        return response as User;
+        // Ensure we return the JSON data, not the Response object
+        return await response.json() as User;
       } catch (error: any) {
         throw new Error(error.message || "Registration failed. Please try again.");
       }
@@ -107,7 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mutationFn: async () => {
       try {
         const response = await apiRequest("POST", "/api/auth/logout");
-        return response as { message: string };
+        // Ensure we return the JSON data, not the Response object
+        return await response.json() as { message: string };
       } catch (error: any) {
         throw new Error(error.message || "Logout failed. Please try again.");
       }
