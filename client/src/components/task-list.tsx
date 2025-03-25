@@ -76,7 +76,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
   const [entries, setEntries] = useState(() => {
     const initialLines = title === "Other Tasks" ? 8 : 10;
     const lines = Array(initialLines).fill(null).map((_, i) => ({
-      id: i + 1, // This is just for the UI's initial rendering
+      id: Date.now() + i, // Use timestamp-based ID to match server format
       content: "",
       isEditing: false,
       completed: false,
@@ -340,7 +340,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     setEntries(prev => [
       ...prev,
       ...Array(5).fill(null).map((_, i) => ({
-        id: prev.length + i + 1,
+        id: Date.now() + i, // Use timestamp-based ID to match server format
         content: "",
         isEditing: false,
         completed: false,
