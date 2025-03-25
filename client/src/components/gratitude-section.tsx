@@ -192,7 +192,8 @@ export function GratitudeSection() {
     const newEntry = {
       id: -(Date.now()),
       content: "",
-      timestamp: new Date()
+      timestamp: new Date(),
+      isEditing: false
     };
     
     // Add to entries list

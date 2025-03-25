@@ -91,7 +91,8 @@ export function NotesSection() {
           updated[editingIndex] = {
             id: savedNote.id,
             content: savedNote.content,
-            timestamp: new Date(savedNote.timestamp)
+            timestamp: new Date(savedNote.timestamp),
+            isEditing: false
           };
         }
         
@@ -101,7 +102,8 @@ export function NotesSection() {
           updated.push({
             id: -(Date.now()),
             content: "",
-            timestamp: new Date()
+            timestamp: new Date(),
+            isEditing: false
           });
         }
         
@@ -187,7 +189,8 @@ export function NotesSection() {
     const newNote = {
       id: -(Date.now()),
       content: "",
-      timestamp: new Date()
+      timestamp: new Date(),
+      isEditing: false
     };
     
     // Add to notes list
