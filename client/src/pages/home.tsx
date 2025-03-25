@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { TaskList } from "@/components/task-list";
+import { MoodTracker } from "@/components/mood-tracker";
 import { GratitudeSection } from "@/components/gratitude-section";
 import { ReminderSection } from "@/components/reminder-section";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -90,7 +91,6 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
-          <h1 className="logo-text text-3xl">Flo Tasks</h1>
         </div>
       </div>
 
@@ -115,8 +115,9 @@ export default function Home() {
             />
           </div>
 
-          {/* Right Column - Gratitude, Reminders */}
+          {/* Right Column - Mood, Gratitude, Reminders */}
           <div className="lg:col-span-3 space-y-6">
+            <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
             <NotesSection /> {/* Added NotesSection */}
