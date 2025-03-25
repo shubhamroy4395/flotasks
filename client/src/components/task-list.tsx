@@ -374,12 +374,16 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     },
     focusNext: () => {
       if (activeEntry && activeEntry.index < entries.length - 1) {
-        handleLineClick(activeEntry.index + 1, new MouseEvent('click'));
+        // Create a synthetic React mouse event
+        const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent<HTMLElement>;
+        handleLineClick(activeEntry.index + 1, syntheticEvent);
       }
     },
     focusPrev: () => {
       if (activeEntry && activeEntry.index > 0) {
-        handleLineClick(activeEntry.index - 1, new MouseEvent('click'));
+        // Create a synthetic React mouse event
+        const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent<HTMLElement>;
+        handleLineClick(activeEntry.index - 1, syntheticEvent);
       }
     },
     complete: () => {
