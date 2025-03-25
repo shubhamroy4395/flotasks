@@ -1,36 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import { Events, trackEvent } from "@/lib/amplitude";
-import debounce from 'lodash/debounce';
-
-interface EntryLine {
-  id: number;
-  content: string;
-  isEditing: boolean;
-  timestamp: Date;
-  isSaved: boolean;
-}
+import { useLineItems } from "@/hooks/use-line-items";
 
 export function GratitudeSection() {
-  const [entries, setEntries] = useState<EntryLine[]>([]);
-  const [activeEntry, setActiveEntry] = useState<{
-    index: number;
-    content: string;
-    isDirty: boolean;
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const queryClient = useQueryClient();
-  const lastSavedContentRef = useRef<string>("");
-  const savingRef = useRef(false);
   const startTimeRef = useRef(performance.now());
 
   // Enhanced query with proper error handling and loading states
@@ -38,77 +17,32 @@ export function GratitudeSection() {
     queryKey: ["/api/gratitude"],
     staleTime: 30000,
     gcTime: 5 * 60 * 1000,
-    retry: 3,
-    onError: (error) => {
-      setError("Failed to load gratitude entries. Please try again.");
-      console.error("Gratitude query error:", error);
-    }
+    retry: 3
   });
 
-  // Delete entry mutation with optimistic updates and error handling
-  const deleteEntry = useMutation({
-    mutationFn: async (id: number) => {
-      const startTime = performance.now();
-      await apiRequest("DELETE", `/api/gratitude/${id}`);
-      const endTime = performance.now();
-
-      trackEvent(Events.Performance.DeleteOperation, {
-        endpoint: `/api/gratitude/${id}`,
-        method: 'DELETE',
-        durationMs: endTime - startTime
-      });
-    },
-    onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: ["/api/gratitude"] });
-      const previousEntries = queryClient.getQueryData<GratitudeEntry[]>(["/api/gratitude"]);
-
-      // Optimistically update UI
-      setEntries(prev => prev.filter(entry => entry.id !== deletedId));
-
-      queryClient.setQueryData<GratitudeEntry[]>(["/api/gratitude"], old =>
-        old?.filter(entry => entry.id !== deletedId) || []
-      );
-
-      return { previousEntries };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousEntries) {
-        queryClient.setQueryData(["/api/gratitude"], context.previousEntries);
-      }
-      setError("Failed to delete entry. Please try again.");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
-    }
+  const {
+    entries,
+    activeEntry,
+    error,
+    isLoading,
+    initializeEntries,
+    handleLineClick,
+    handleInputChange,
+    handleBlur,
+    addMoreEntries,
+    deleteEntry
+  } = useLineItems({
+    queryKey: ["/api/gratitude"],
+    eventPrefix: "Gratitude",
+    defaultLines: 3
   });
 
-  // Initialize entries with proper error handling
+  // Initialize entries
   useEffect(() => {
-    try {
-      const savedLines = savedEntries.map(entry => ({
-        id: entry.id,
-        content: entry.content,
-        isEditing: false,
-        timestamp: new Date(entry.timestamp),
-        isSaved: true
-      }));
-
-      const emptyLines = Array(Math.max(3 - savedLines.length, 0)).fill(null).map((_, i) => ({
-        id: Date.now() + i,
-        content: "",
-        isEditing: false,
-        timestamp: new Date(),
-        isSaved: false
-      }));
-
-      setEntries([...savedLines, ...emptyLines]);
-    } catch (error) {
-      console.error("Error initializing entries:", error);
-      setError("Failed to initialize entries. Please refresh the page.");
-    }
+    initializeEntries(savedEntries);
   }, [savedEntries]);
 
-  // Performance tracking
+  // Track component performance
   useEffect(() => {
     const loadTime = performance.now() - startTimeRef.current;
     trackEvent(Events.Performance.ComponentMount, {
@@ -117,174 +51,6 @@ export function GratitudeSection() {
       savedEntriesCount: savedEntries.length
     });
   }, [savedEntries.length]);
-
-  // Optimized save mutation with proper error handling
-  const createEntry = useMutation({
-    mutationFn: async (content: string) => {
-      setIsLoading(true);
-      const startTime = performance.now();
-      try {
-        const response = await apiRequest("POST", "/api/gratitude", { content });
-        const endTime = performance.now();
-
-        trackEvent(Events.Performance.ApiCall, {
-          endpoint: '/api/gratitude',
-          method: 'POST',
-          durationMs: endTime - startTime
-        });
-
-        return response;
-      } catch (error) {
-        console.error("Error creating entry:", error);
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onMutate: async (content) => {
-      try {
-        await queryClient.cancelQueries({ queryKey: ["/api/gratitude"] });
-        const previousEntries = queryClient.getQueryData<GratitudeEntry[]>(["/api/gratitude"]);
-
-        const optimisticEntry = {
-          id: Date.now(),
-          content,
-          timestamp: new Date().toISOString()
-        };
-
-        queryClient.setQueryData<GratitudeEntry[]>(["/api/gratitude"], old => 
-          [...(old || []), optimisticEntry]
-        );
-
-        return { previousEntries };
-      } catch (error) {
-        console.error("Error in mutation setup:", error);
-        return { previousEntries: [] };
-      }
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousEntries) {
-        queryClient.setQueryData(["/api/gratitude"], context.previousEntries);
-      }
-      setError("Failed to save entry. Please try again.");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/gratitude"] });
-    }
-  });
-
-  // Debounced save with improved error handling
-  const debouncedSave = useRef(
-    debounce(async (content: string) => {
-      if (!content.trim() || savingRef.current) return;
-
-      savingRef.current = true;
-      try {
-        const startTime = performance.now();
-        await createEntry.mutateAsync(content);
-        const endTime = performance.now();
-
-        trackEvent(Events.Performance.SaveOperation, {
-          component: 'GratitudeSection',
-          durationMs: endTime - startTime,
-          contentLength: content.length
-        });
-
-        lastSavedContentRef.current = content.trim();
-      } catch (error) {
-        console.error("Error in debouncedSave:", error);
-        setError("Failed to save. Please try again.");
-      } finally {
-        savingRef.current = false;
-      }
-    }, 500) // Reduced debounce time for better responsiveness
-  ).current;
-
-  const handleLineClick = (index: number, e: React.MouseEvent) => {
-    try {
-      e.stopPropagation();
-      const entry = entries[index];
-
-      // Don't allow editing saved entries
-      if (entry.isSaved) return;
-
-      setActiveEntry({
-        index,
-        content: entry.content || "",
-        isDirty: false
-      });
-      lastSavedContentRef.current = entry.content || "";
-      setError(null);
-    } catch (error) {
-      console.error("Error in handleLineClick:", error);
-      setError("Failed to activate line. Please try again.");
-    }
-  };
-
-  const handleInputChange = (value: string) => {
-    if (!activeEntry) return;
-
-    try {
-      setEntries(prev => 
-        prev.map((entry, i) => 
-          i === activeEntry.index 
-            ? { ...entry, content: value }
-            : entry
-        )
-      );
-
-      setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
-
-      if (value.trim() && value.trim() !== lastSavedContentRef.current) {
-        debouncedSave(value);
-      }
-    } catch (error) {
-      console.error("Error in handleInputChange:", error);
-      setError("Failed to update entry. Please try again.");
-    }
-  };
-
-  const handleBlur = () => {
-    if (!activeEntry) return;
-
-    try {
-      if (activeEntry.isDirty && activeEntry.content.trim()) {
-        debouncedSave(activeEntry.content);
-
-        const nextEmptyIndex = entries.findIndex(
-          (entry, idx) => idx > activeEntry.index && !entry.content.trim() && !entry.isSaved
-        );
-
-        if (nextEmptyIndex !== -1) {
-          handleLineClick(nextEmptyIndex, new MouseEvent('click'));
-          return;
-        }
-      }
-
-      setActiveEntry(null);
-    } catch (error) {
-      console.error("Error in handleBlur:", error);
-      setError("Failed to save entry. Please try again.");
-    }
-  };
-
-  const addMoreEntries = () => {
-    try {
-      setEntries(prev => [
-        ...prev,
-        {
-          id: Date.now(),
-          content: "",
-          isEditing: false,
-          timestamp: new Date(),
-          isSaved: false
-        }
-      ]);
-    } catch (error) {
-      console.error("Error in addMoreEntries:", error);
-      setError("Failed to add new entry. Please try again.");
-    }
-  };
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
