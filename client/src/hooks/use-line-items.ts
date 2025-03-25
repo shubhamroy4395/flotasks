@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -31,22 +31,14 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
 
   const queryClient = useQueryClient();
   const lastSavedContentRef = useRef<string>("");
-  const savingRef = useRef(false);
+  const processingRef = useRef(false);
 
-  // Create mutation with optimistic updates
+  // Create mutation for saving entries
   const createEntry = useMutation({
     mutationFn: async (content: string) => {
       setIsLoading(true);
-      const startTime = performance.now();
       try {
         const response = await apiRequest("POST", queryKey[0], { content });
-        const endTime = performance.now();
-
-        trackEvent(`${eventPrefix}.SaveOperation`, {
-          durationMs: endTime - startTime,
-          contentLength: content.length
-        });
-
         // Get the actual entry data from the response
         const data = await response.json();
         console.log("Successfully saved entry:", data);
@@ -59,186 +51,196 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       }
     },
     onMutate: async (content) => {
-      try {
-        await queryClient.cancelQueries({ queryKey });
-        const previousEntries = queryClient.getQueryData(queryKey);
-
-        // Create an optimistic entry with a temporary ID
-        const tempId = Date.now();
-        const optimisticEntry = {
-          id: tempId,
-          content,
-          timestamp: new Date().toISOString(), // Ensure timestamp is a string like in the API
-          isSaved: true
-        };
-
-        // Find the active entry index
-        const activeIdx = activeEntry?.index ?? -1;
-        if (activeIdx === -1) {
-          console.warn("No active entry found for optimistic update");
-          return { previousEntries };
-        }
-        
-        // Update local state immediately to show the entry as saved
-        setEntries(prev => {
-          // Deep clone to avoid reference issues
-          const updatedEntries = [...prev];
-          // Only update if the index is valid
-          if (activeIdx >= 0 && activeIdx < updatedEntries.length) {
-            updatedEntries[activeIdx] = { 
-              ...updatedEntries[activeIdx], 
-              content, 
-              isSaved: true,
-              id: tempId
-            };
-          }
-          return updatedEntries;
-        });
-
-        // Update cache optimistically
-        queryClient.setQueryData(queryKey, (old: any[] = []) => {
-          // Add to cache if not already there
-          const exists = Array.isArray(old) && old.some(entry => 
-            entry.content === content && Math.abs(new Date(entry.timestamp).getTime() - Date.now()) < 5000
-          );
-          
-          return exists ? old : [...old, optimisticEntry];
-        });
-
-        return { previousEntries, tempId, activeIdx };
-      } catch (error) {
-        console.error("Error in mutation setup:", error);
+      // Prevent duplicate saves
+      if (processingRef.current) return { previousEntries: [] };
+      processingRef.current = true;
+      
+      // Get the active entry index
+      const activeIdx = activeEntry?.index ?? -1;
+      if (activeIdx === -1) {
+        console.warn("No active entry found for optimistic update");
+        processingRef.current = false;
         return { previousEntries: [] };
       }
-    },
-    onSuccess: (data, variables, context) => {
-      console.log("Save success, updating ID from temp to real:", context?.tempId, "→", data.id);
       
-      if (context?.tempId && context.activeIdx !== undefined) {
-        // Update the entry with the real server-assigned ID
-        setEntries(prev => {
-          return prev.map(entry => 
-            entry.id === context.tempId ? { 
-              ...entry,
-              id: data.id,
-              timestamp: new Date(data.timestamp)
-            } : entry
-          );
+      // Generate a temporary ID for this new entry
+      const tempId = -Math.abs(Date.now() + Math.floor(Math.random() * 1000));
+      
+      // Only update local state, leave cache alone until we have the real data
+      setEntries(prev => {
+        const updatedEntries = [...prev];
+        if (activeIdx >= 0 && activeIdx < updatedEntries.length) {
+          // Mark the entry as being saved
+          updatedEntries[activeIdx] = { 
+            ...updatedEntries[activeIdx], 
+            content,
+            id: tempId,
+            isSaved: false // Will be true after server confirms
+          };
+        }
+        return updatedEntries;
+      });
+      
+      return { tempId, activeIdx };
+    },
+    onSuccess: (data, _, context) => {
+      if (!context) return;
+      
+      const { tempId, activeIdx } = context;
+      
+      // Update the entry with the actual data from the server
+      setEntries(prev => {
+        // First create a copy of the current entries
+        const updated = [...prev];
+        
+        // Find the entry with the tempId
+        const idx = updated.findIndex(entry => entry.id === tempId);
+        
+        if (idx >= 0) {
+          // Update the temporary entry with real data
+          updated[idx] = {
+            id: data.id,
+            content: data.content,
+            isEditing: false,
+            timestamp: new Date(data.timestamp),
+            isSaved: true
+          };
+        } else if (activeIdx >= 0 && activeIdx < updated.length) {
+          // Fallback: update by index if tempId not found
+          updated[activeIdx] = {
+            id: data.id,
+            content: data.content,
+            isEditing: false,
+            timestamp: new Date(data.timestamp),
+            isSaved: true
+          };
+        }
+        
+        // Make sure we don't have any other entries with the same content (duplicates)
+        const deduplicated = updated.filter((entry, i) => {
+          if (entry.id === data.id) return true; // Keep the updated entry
+          
+          // Check if this is a duplicate (same content, recently created)
+          const isDuplicate = entry.content === data.content && 
+            (Math.abs(new Date(entry.timestamp).getTime() - new Date(data.timestamp).getTime()) < 5000);
+          
+          return !isDuplicate;
         });
         
-        // Update the cached entry in query cache
-        queryClient.setQueryData(queryKey, (old: any[] = []) => {
-          if (!Array.isArray(old)) return [data];
-          
-          // Replace the temporary entry with the real one
-          return old.map(entry => 
-            entry.id === context.tempId ? data : entry
-          );
-        });
-      }
+        // Add empty line if needed
+        const hasEmptyLine = deduplicated.some(e => !e.content.trim());
+        if (!hasEmptyLine) {
+          deduplicated.push({
+            id: -(Date.now()), // Negative ID for unsaved entries
+            content: "",
+            isEditing: false,
+            timestamp: new Date(),
+            isSaved: false
+          });
+        }
+        
+        return deduplicated;
+      });
+      
+      // Update lastSavedContent
+      lastSavedContentRef.current = data.content;
+      processingRef.current = false;
     },
-    onError: (err, variables, context) => {
-      console.error("Save error:", err);
+    onError: (_, __, context) => {
+      if (!context) return;
       
-      if (context?.previousEntries) {
-        queryClient.setQueryData(queryKey, context.previousEntries);
-      }
+      const { tempId } = context;
       
-      // Also revert the local state
-      if (context?.tempId && context.activeIdx !== undefined) {
-        setEntries(prev => {
-          // Create a new array to trigger re-render
-          const updatedEntries = [...prev];
-          if (context.activeIdx >= 0 && context.activeIdx < updatedEntries.length) {
-            updatedEntries[context.activeIdx] = {
-              ...updatedEntries[context.activeIdx],
-              isSaved: false
+      // Revert the entry back to unsaved state
+      setEntries(prev => {
+        return prev.map(entry => {
+          if (entry.id === tempId) {
+            return {
+              ...entry,
+              isSaved: false,
+              id: -(Date.now()) // Generate a new negative ID
             };
           }
-          return updatedEntries.filter(entry => entry.id !== context.tempId || !entry.isSaved);
+          return entry;
         });
-      }
+      });
       
       setError("Failed to save entry. Please try again.");
+      processingRef.current = false;
     },
     onSettled: () => {
-      // Refresh the data from the server
-      queryClient.invalidateQueries({ queryKey });
+      // For safety, ensure the processing flag is reset
+      processingRef.current = false;
+      
+      // We don't invalidate the query here to avoid fetching data that might cause duplication
+      // Instead we rely on our local state management
     }
   });
 
-  // Delete mutation with optimistic updates
+  // Delete mutation
   const deleteEntry = useMutation({
     mutationFn: async (id: number) => {
-      const startTime = performance.now();
       await apiRequest("DELETE", `${queryKey[0]}/${id}`);
-      const endTime = performance.now();
-
-      trackEvent(`${eventPrefix}.DeleteOperation`, {
-        durationMs: endTime - startTime
-      });
     },
     onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey });
-      const previousEntries = queryClient.getQueryData(queryKey);
-
+      // Prevent duplicate deletes
+      if (processingRef.current) return { previousEntries: [] };
+      processingRef.current = true;
+      
+      // Delete optimistically from local state
       setEntries(prev => prev.filter(entry => entry.id !== deletedId));
-      queryClient.setQueryData(queryKey, (old: any[] = []) => 
-        old.filter(entry => entry.id !== deletedId)
-      );
-
-      return { previousEntries };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousEntries) {
-        queryClient.setQueryData(queryKey, context.previousEntries);
-      }
-      setError("Failed to delete entry. Please try again.");
+      
+      return { deletedId };
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      processingRef.current = false;
+    },
+    onError: () => {
+      setError("Failed to delete entry. Please try again.");
+      processingRef.current = false;
     }
   });
 
+  // Debounced save to limit API calls
   const debouncedSave = useRef(
     debounce(async (content: string) => {
-      if (!content.trim() || savingRef.current) return;
-
-      savingRef.current = true;
+      if (!content.trim() || processingRef.current) return;
+      
       try {
-        const startTime = performance.now();
         await createEntry.mutateAsync(content);
-        const endTime = performance.now();
-
-        trackEvent(`${eventPrefix}.SaveOperation`, {
-          durationMs: endTime - startTime,
-          contentLength: content.length
-        });
-
-        lastSavedContentRef.current = content.trim();
       } catch (error) {
         console.error("Error in debouncedSave:", error);
         setError("Failed to save. Please try again.");
-      } finally {
-        savingRef.current = false;
       }
     }, 500)
   ).current;
 
+  // Initialize entries from source data
   const initializeEntries = useCallback((savedEntries: any[]) => {
     try {
-      // Make sure savedEntries is an array before mapping
+      // Sanitize input
       const entries = Array.isArray(savedEntries) ? savedEntries : [];
       
-      // Sort entries by timestamp to ensure consistent ordering
-      const sortedEntries = [...entries].sort((a, b) => {
-        // Convert timestamps to Date objects for comparison
-        const dateA = new Date(a.timestamp || 0);
-        const dateB = new Date(b.timestamp || 0);
-        return dateB.getTime() - dateA.getTime(); // Sort newest first
+      // Deduplicate entries by content before working with them
+      const uniqueEntries = new Map();
+      entries.forEach(entry => {
+        // If multiple entries with same content, use the most recent one
+        const existing = uniqueEntries.get(entry.content);
+        if (!existing || new Date(entry.timestamp) > new Date(existing.timestamp)) {
+          uniqueEntries.set(entry.content, entry);
+        }
       });
       
-      const savedLines = sortedEntries.map(entry => ({
+      // Convert to array and sort by timestamp (newest first)
+      const deduplicatedEntries = Array.from(uniqueEntries.values())
+        .sort((a, b) => {
+          const dateA = new Date(a.timestamp || 0);
+          const dateB = new Date(b.timestamp || 0);
+          return dateB.getTime() - dateA.getTime();
+        });
+      
+      // Create our line items
+      const savedLines = deduplicatedEntries.map(entry => ({
         id: entry.id,
         content: entry.content,
         isEditing: false,
@@ -246,31 +248,18 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         isSaved: true
       }));
 
-      // Always ensure we have at least one empty line for input
+      // Add empty lines
       const emptyLinesCount = Math.max(defaultLines - savedLines.length, 1);
       const emptyLines = Array(emptyLinesCount).fill(null).map((_, i) => ({
-        id: -(Date.now() + i), // Use negative IDs for empty lines to avoid conflicts
+        id: -(Date.now() + i), // Negative IDs for unsaved items
         content: "",
         isEditing: false,
         timestamp: new Date(),
         isSaved: false
       }));
 
-      // Combine saved and empty lines, make sure each entry has a unique ID
-      const combinedEntries = [...savedLines, ...emptyLines];
-      
-      // Create a Map to deduplicate entries based on id
-      const uniqueEntriesMap = new Map();
-      combinedEntries.forEach(entry => {
-        uniqueEntriesMap.set(entry.id, entry);
-      });
-      
-      // Convert Map back to array
-      const uniqueEntries = Array.from(uniqueEntriesMap.values());
-      
-      setEntries(uniqueEntries);
-      
-      // Log for debugging
+      // Set the entries
+      setEntries([...savedLines, ...emptyLines]);
       console.log(`Initialized ${savedLines.length} saved entries and ${emptyLines.length} empty lines`);
     } catch (error) {
       console.error("Error initializing entries:", error);
@@ -278,28 +267,27 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
     }
   }, [defaultLines]);
 
+  // Handle clicking on a line to edit
   const handleLineClick = useCallback((index: number, e: React.MouseEvent) => {
     try {
       e.stopPropagation();
       
-      // Guard against invalid index
+      // Validate index
       if (index < 0 || index >= entries.length) {
         console.warn(`Attempted to click invalid line index: ${index}, entries length: ${entries.length}`);
         return;
       }
       
       const entry = entries[index];
-
-      // Allow editing all lines, including saved ones
-      // This makes the UI more intuitive as users can click any line to edit
       
-      // Set this line as the active one
+      // Set as active entry
       setActiveEntry({
         index,
         content: entry.content || "",
         isDirty: false
       });
       
+      // Store current content for comparison
       lastSavedContentRef.current = entry.content || "";
       setError(null);
       
@@ -310,10 +298,12 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
     }
   }, [entries]);
 
+  // Handle input change within the active entry
   const handleInputChange = useCallback((value: string) => {
     if (!activeEntry) return;
 
     try {
+      // Update the entry in our local list
       setEntries(prev => 
         prev.map((entry, i) => 
           i === activeEntry.index 
@@ -322,60 +312,38 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
         )
       );
 
+      // Update the active entry state
       setActiveEntry(prev => ({ ...prev!, content: value, isDirty: true }));
-
-      if (value.trim() && value.trim() !== lastSavedContentRef.current) {
-        debouncedSave(value);
-      }
     } catch (error) {
       console.error("Error in handleInputChange:", error);
       setError("Failed to update entry. Please try again.");
     }
-  }, [activeEntry, debouncedSave]);
+  }, [activeEntry]);
 
+  // Handle blur event (leaving the input)
   const handleBlur = useCallback(() => {
     if (!activeEntry) return;
 
     try {
-      // Only save if content has changed and it's not empty
+      // Save if content has changed and is not empty
       if (activeEntry.isDirty && activeEntry.content.trim()) {
-        // Save the content
+        // Content changed and not empty, save it
         debouncedSave(activeEntry.content);
-        
-        // Make sure we always have at least one empty line for new entries
-        const hasEmptyLine = entries.some(e => !e.content.trim());
-        
-        if (!hasEmptyLine) {
-          // Add a new empty line if there are none
-          setEntries(prev => [
-            ...prev,
-            {
-              id: -(Date.now()), // Use negative IDs for empty lines to avoid conflicts
-              content: "",
-              isEditing: false,
-              timestamp: new Date(),
-              isSaved: false
-            }
-          ]);
-        }
       }
-
-      // Simply clear the active entry without automatic focus changes
-      // This makes the UX more predictable and less jumpy
-      setActiveEntry(null);
       
-      // Log for debugging
+      // Clear the active entry
+      setActiveEntry(null);
       console.log("Handling blur - entries now:", entries.length);
     } catch (error) {
       console.error("Error in handleBlur:", error);
       setError("Failed to save entry. Please try again.");
     }
-  }, [activeEntry, entries, debouncedSave]);
+  }, [activeEntry, debouncedSave, entries.length]);
 
+  // Add a new blank entry
   const addMoreEntries = useCallback(() => {
     try {
       setEntries(prev => {
-        // Create a negative ID for the new empty entry to avoid conflicts
         const newId = -(Date.now() + Math.floor(Math.random() * 1000));
         const newEntries = [
           ...prev,
@@ -387,20 +355,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
             isSaved: false
           }
         ];
-        
-        // Automatically focus the new entry after a short delay
-        setTimeout(() => {
-          const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
-          handleLineClick(newEntries.length - 1, syntheticEvent);
-        }, 50);
-        
         return newEntries;
-      });
-      
-      // Track the action
-      trackEvent(`${eventPrefix}.AddNewLine`, {
-        currentLineCount: entries.length,
-        savedLineCount: entries.filter(e => e.isSaved).length
       });
       
       console.log(`Added new entry - entries now: ${entries.length + 1}`);
@@ -408,7 +363,7 @@ export function useLineItems({ queryKey, eventPrefix, defaultLines = 3 }: UseLin
       console.error("Error in addMoreEntries:", error);
       setError("Failed to add new entry. Please try again.");
     }
-  }, [entries, handleLineClick, eventPrefix]);
+  }, [entries.length]);
 
   return {
     entries,
