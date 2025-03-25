@@ -8,8 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
-import { NotesSection } from "@/components/notes-section"; // Import the new component
-
+import { NotesSection } from "@/components/notes-section";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -32,13 +31,9 @@ export default function Home() {
 
   // Clear all data on every refresh and clear database data
   useEffect(() => {
-    // Clear all data from the cache
     queryClient.clear();
-
-    // Invalidate all queries to force fresh data fetch
     queryClient.invalidateQueries();
 
-    // Clear database data
     const clearData = async () => {
       try {
         await apiRequest("DELETE", "/api/data");
@@ -91,6 +86,13 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 
+            bg-clip-text text-transparent 
+            drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.2)]
+            hover:drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]
+            transition-all duration-300">
+            Flo Tasks
+          </h1>
         </div>
       </div>
 
@@ -120,7 +122,7 @@ export default function Home() {
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
-            <NotesSection /> {/* Added NotesSection */}
+            <NotesSection />
           </div>
         </div>
       </div>
