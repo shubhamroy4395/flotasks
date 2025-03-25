@@ -696,7 +696,13 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onDelete && onDelete(entry.id);
+                            if (entry.id && entry.content) {
+                              if (onDelete) {
+                                onDelete(entry.id);
+                              } else {
+                                deleteEntry.mutate(entry.id);
+                              }
+                            }
                           }}
                           className="h-6 w-6 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-transparent transition-opacity ml-1"
                         >
