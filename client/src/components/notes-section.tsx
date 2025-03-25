@@ -124,17 +124,12 @@ export function NotesSection() {
               exit={{ opacity: 0, y: -20 }}
             >
               <Card className="p-4 mb-4">
-                <div className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="Write a quick note..."
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newNote.trim()) {
-                          handleSubmit(e);
-                        }
-                      }}
                       className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
                       autoFocus
                     />
@@ -147,10 +142,14 @@ export function NotesSection() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <form onSubmit={handleSubmit}>
-                    <Button type="submit">Add Note</Button>
-                  </form>
-                </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full font-medium"
+                    disabled={!newNote.trim()}
+                  >
+                    Add Note
+                  </Button>
+                </form>
               </Card>
             </motion.div>
           )}

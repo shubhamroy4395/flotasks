@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Bell, Trash2 } from "lucide-react";
 import { format, addMinutes, addHours, isAfter } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { track as trackEvent, Events } from "@/lib/amplitude";
+import { trackEvent, Events } from "@/lib/amplitude";
 
 const TIME_OPTIONS = [
   { label: "5 minutes", value: 5, unit: "minutes" },

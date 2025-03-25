@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Tangerine:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lavishly+Yours&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
 
 @tailwind base;
@@ -16,8 +16,10 @@
 }
 
 .logo-text {
-  font-family: 'Tangerine', cursive;
-  font-weight: 700;
-  color: black;
+  font-family: 'Lavishly Yours', cursive;
+  font-weight: 400;
+  background: linear-gradient(135deg, #9333EA 0%, #C084FC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
