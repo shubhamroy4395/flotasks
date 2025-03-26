@@ -72,6 +72,16 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
     },
   });
+  
+  const deleteTask = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest("DELETE", `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -102,6 +112,7 @@ export default function Home() {
               title="Today's Tasks"
               tasks={todayTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "today" })}
+              onDelete={(id) => deleteTask.mutate(id)}
             />
           </div>
 
@@ -112,6 +123,7 @@ export default function Home() {
               title="Other Tasks"
               tasks={otherTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "other" })}
+              onDelete={(id) => deleteTask.mutate(id)}
             />
           </div>
 

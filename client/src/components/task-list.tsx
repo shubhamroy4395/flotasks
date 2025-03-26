@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
@@ -66,7 +66,7 @@ interface TaskListProps {
   onDelete?: (id: number) => void;
 }
 
-export function TaskList({ title, tasks, onSave }: TaskListProps) {
+export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
     const lines = Array(initialLines).fill(null).map((_, i) => ({
@@ -125,7 +125,7 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
   // Track component mount
   useEffect(() => {
     trackEvent(
-      title === "Today's Tasks" ? Events.TASK_LIST_TODAY_OPEN : Events.TASK_LIST_OTHER_OPEN,
+      title === "Today's Tasks" ? Events.TaskToday.View : Events.TaskOther.View,
       {
         taskCount: tasks.length,
         completedCount: tasks.filter(t => t.completed).length,
@@ -328,6 +328,27 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
         timestamp: new Date()
       }))
     ]);
+  };
+
+  const handleDelete = (taskId: number, index: number) => {
+    // Only call the API if we have a real task ID and onDelete function
+    if (onDelete && tasks[index] && tasks[index].id === taskId) {
+      onDelete(taskId);
+      
+      // Track the deletion event
+      const eventName = title === "Today's Tasks" ? Events.TaskToday.Deleted : Events.TaskOther.Deleted;
+      trackEvent(eventName, {
+        taskId,
+        category: title === "Today's Tasks" ? "today" : "other"
+      });
+    }
+    
+    // Update local state to immediately reflect deletion
+    setEntries(prev => 
+      prev.map((entry, i) => 
+        i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "" } : entry
+      )
+    );
   };
 
   return (
@@ -541,6 +562,20 @@ export function TaskList({ title, tasks, onSave }: TaskListProps) {
                             <Clock className="h-3 w-3 mr-1" />
                             {entry.eta}
                           </span>
+                        )}
+                        {/* Delete button */}
+                        {tasks[index]?.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(tasks[index].id, index);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         )}
                       </motion.div>
                     )}
