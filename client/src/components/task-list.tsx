@@ -225,9 +225,16 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
         if (i === index) {
           const newCompleted = !entry.completed;
           
+          // Find the corresponding task in the tasks array
+          const taskToUpdate = tasks.find(t => t.content === entry.content && t.priority === entry.priority);
+          
           // Update the task in the database if we have the onUpdate handler and a valid task
-          if (onUpdate && tasks[index]) {
-            onUpdate(tasks[index].id, { completed: newCompleted });
+          if (onUpdate && taskToUpdate) {
+            onUpdate(taskToUpdate.id, { 
+              completed: newCompleted,
+              // Ensure we explicitly pass the priority to maintain it during update
+              priority: entry.priority 
+            });
           }
           
           if (newCompleted) {
@@ -338,14 +345,18 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
   };
 
   const handleDelete = (taskId: number, index: number) => {
+    const entry = entries[index];
+    // Find the corresponding task in the tasks array
+    const taskToDelete = tasks.find(t => t.content === entry.content && t.priority === entry.priority);
+    
     // Only call the API if we have a real task ID and onDelete function
-    if (onDelete && tasks[index] && tasks[index].id === taskId) {
-      onDelete(taskId);
+    if (onDelete && taskToDelete) {
+      onDelete(taskToDelete.id);
       
       // Track the deletion event
       const eventName = title === "Today's Tasks" ? Events.TaskToday.Deleted : Events.TaskOther.Deleted;
       trackEvent(eventName, {
-        taskId,
+        taskId: taskToDelete.id,
         category: title === "Today's Tasks" ? "today" : "other"
       });
     }
