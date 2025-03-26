@@ -101,7 +101,7 @@ export function GratitudeSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Card className="p-4 mb-4">
+              <Card className="p-4 mb-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input

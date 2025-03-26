@@ -173,7 +173,7 @@ export function ReminderSection() {
   };
 
   return (
-    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="bg-white shadow-card hover:shadow-bold transition-all duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
         <CardTitle className="font-semibold">Reminders</CardTitle>
       </CardHeader>
@@ -185,7 +185,7 @@ export function ReminderSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Card className="p-4 mb-4">
+              <Card className="p-4 mb-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input
