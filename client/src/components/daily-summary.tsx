@@ -14,19 +14,26 @@ interface DailySummaryProps {
 
 export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProps) {
   // Calculate completion statistics
-  const totalTodayTasks = todayTasks.length;
-  const completedTodayTasks = todayTasks.filter(task => task.completed).length;
+  // Only count tasks that have actual content (non-empty tasks)
+  const visibleTodayTasks = todayTasks.filter(task => task.content);
+  const visibleOtherTasks = otherTasks.filter(task => task.content);
   
-  const totalTasksWithPriority = todayTasks.filter(task => task.priority > 0).length;
-  const totalHighPriorityCompleted = todayTasks
+  const totalTodayTasks = visibleTodayTasks.length;
+  const completedTodayTasks = visibleTodayTasks.filter(task => task.completed).length;
+  const completedOtherTasks = visibleOtherTasks.filter(task => task.completed).length;
+  
+  const totalTasksWithPriority = visibleTodayTasks.filter(task => task.priority > 0).length;
+  const totalHighPriorityCompleted = visibleTodayTasks
     .filter(task => task.priority === 3 && task.completed).length;
   
   const totalGoals = goals.length;
   const completedGoals = goals.filter(goal => goal.completed).length;
   
-  // Calculate percentages
-  const taskCompletionPercentage = totalTodayTasks > 0 
-    ? Math.round((completedTodayTasks / totalTodayTasks) * 100) 
+  // Calculate percentages - include both today's and other tasks
+  const totalAllTasks = totalTodayTasks + visibleOtherTasks.length;
+  const totalCompletedTasks = completedTodayTasks + completedOtherTasks;
+  const taskCompletionPercentage = totalAllTasks > 0 
+    ? Math.round((totalCompletedTasks / totalAllTasks) * 100) 
     : 0;
   
   const goalCompletionPercentage = totalGoals > 0 
@@ -38,8 +45,8 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
     : 0;
   
   const totalCompletionPercentage = Math.round(
-    (completedTodayTasks + completedGoals) / 
-    Math.max(1, (totalTodayTasks + totalGoals)) * 100
+    (completedTodayTasks + completedGoals + completedOtherTasks) / 
+    Math.max(1, (totalTodayTasks + totalGoals + visibleOtherTasks.length)) * 100
   );
   
   return (
@@ -53,7 +60,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
             </div>
             <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
               <span className="text-xl font-bold">
-                {completedTodayTasks}/{totalTodayTasks}
+                {completedTodayTasks + completedOtherTasks}/{totalTodayTasks + visibleOtherTasks.length}
               </span>
             </div>
           </div>
