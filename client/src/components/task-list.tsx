@@ -63,6 +63,7 @@ interface TaskListProps {
   title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
+  onDelete?: (id: number) => void;
 }
 
 export function TaskList({ title, tasks, onSave }: TaskListProps) {
