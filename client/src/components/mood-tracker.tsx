@@ -3,9 +3,10 @@ import { EmojiPicker } from "./ui/emoji-picker";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
-import type { MoodEntry } from "@shared/schema";
+import type { MoodEntry, Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
 import { useEffect } from "react";
+import { ProductivityInsights } from "./productivity-insights";
 
 const MOOD_LABELS: Record<string, { label: string, color: string }> = {
   "😊": { label: "Happy", color: "from-green-50 to-emerald-50" },
@@ -25,7 +26,7 @@ export function MoodTracker() {
 
   // Track when the mood section is opened
   useEffect(() => {
-    trackEvent(Events.MOOD_SECTION_OPEN, {
+    trackEvent(Events.Mood.SectionOpen, {
       componentName: 'MoodTracker',
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -36,8 +37,19 @@ export function MoodTracker() {
     });
   }, []);
 
-  const { data: moodEntries } = useQuery<MoodEntry[]>({
+  // Get mood entries
+  const { data: moodEntries = [] } = useQuery<MoodEntry[]>({
     queryKey: ["/api/mood"],
+  });
+
+  // Get today's tasks
+  const { data: todayTasks = [] } = useQuery<Task[]>({
+    queryKey: ["/api/tasks/today"],
+  });
+
+  // Get other tasks
+  const { data: otherTasks = [] } = useQuery<Task[]>({
+    queryKey: ["/api/tasks/other"],
   });
 
   const createMood = useMutation({
@@ -48,7 +60,7 @@ export function MoodTracker() {
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
 
       // Track mood selection with detailed properties
-      trackEvent(Events.MOOD_SELECTED, {
+      trackEvent(Events.Mood.Selected, {
         mood,
         moodLabel: MOOD_LABELS[mood].label,
         previousMood: moodEntries?.[0]?.mood || null,
@@ -67,45 +79,57 @@ export function MoodTracker() {
 
   const currentMood = moodEntries?.[0]?.mood;
   const moodInfo = currentMood ? MOOD_LABELS[currentMood] : undefined;
+  const showInsights = moodEntries.length > 0;
 
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="border-b">
-        <CardTitle>How are you feeling?</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <motion.div 
-          className="flex flex-col gap-3"
-          initial={false}
-        >
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <AnimatePresence mode="wait">
-              {moodInfo && (
-                <motion.div
-                  key={currentMood}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform min-h-[80px] flex items-center justify-center`}
-                >
-                  <div className="flex items-center justify-center gap-3">
-                    <span className="text-4xl">{currentMood}</span>
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {moodInfo.label}
-                    </h3>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+    <>
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader className="border-b">
+          <CardTitle>How are you feeling?</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <motion.div 
+            className="flex flex-col gap-3"
+            initial={false}
+          >
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <AnimatePresence mode="wait">
+                {moodInfo && (
+                  <motion.div
+                    key={currentMood}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform min-h-[80px] flex items-center justify-center`}
+                  >
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-4xl">{currentMood}</span>
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {moodInfo.label}
+                      </h3>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-            <EmojiPicker
-              selected={currentMood}
-              onSelect={(emoji) => createMood.mutate(emoji)}
-              moods={Object.keys(MOOD_LABELS)}
-            />
-          </div>
-        </motion.div>
-      </CardContent>
-    </Card>
+              <EmojiPicker
+                selected={currentMood}
+                onSelect={(emoji) => createMood.mutate(emoji)}
+                moods={Object.keys(MOOD_LABELS)}
+              />
+            </div>
+          </motion.div>
+        </CardContent>
+      </Card>
+
+      {/* Productivity Insights based on mood data */}
+      {showInsights && (
+        <ProductivityInsights 
+          moodEntries={moodEntries} 
+          todayTasks={todayTasks} 
+          otherTasks={otherTasks} 
+        />
+      )}
+    </>
   );
 }

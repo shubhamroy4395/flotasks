@@ -16,7 +16,7 @@ export function GratitudeSection() {
 
   // Track section opening
   useEffect(() => {
-    trackEvent(Events.GRATITUDE_SECTION_OPEN, {
+    trackEvent(Events.Gratitude.SectionOpen, {
       componentName: 'GratitudeSection',
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
