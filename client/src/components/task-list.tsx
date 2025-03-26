@@ -359,7 +359,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
   };
 
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
+    <Card className="shadow-card hover:shadow-bold transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4 bg-white bg-opacity-80">
         <div>
           <div className="flex items-center gap-3">
