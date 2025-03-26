@@ -40,7 +40,7 @@ export function GratitudeSection() {
       setIsOpen(false);
 
       // Track gratitude entry creation
-      trackEvent(Events.GRATITUDE_ADDED, {
+      trackEvent(Events.Gratitude.Added, {
         contentLength: newEntry.length,
         wordCount: newEntry.split(/\s+/).length,
         timeOfDay: new Date().getHours(),
@@ -61,7 +61,7 @@ export function GratitudeSection() {
 
       // Track gratitude entry deletion
       const deletedEntry = entries?.find(entry => entry.id === id);
-      trackEvent(Events.GRATITUDE_DELETED, {
+      trackEvent(Events.Gratitude.Deleted, {
         entryAge: deletedEntry ? Date.now() - new Date(deletedEntry.timestamp).getTime() : null,
         remainingEntries: (entries?.length || 1) - 1,
         timeOfDay: new Date().getHours(),
