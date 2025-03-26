@@ -30,10 +30,18 @@ export const notes = pgTable("notes", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
+export const goals = pgTable("goals", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(),
+  completed: boolean("completed").notNull().default(false),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true });
 export const insertMoodSchema = createInsertSchema(moodEntries).omit({ id: true });
 export const insertGratitudeSchema = createInsertSchema(gratitudeEntries).omit({ id: true });
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true });
+export const insertGoalSchema = createInsertSchema(goals).omit({ id: true });
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
@@ -43,3 +51,5 @@ export type GratitudeEntry = typeof gratitudeEntries.$inferSelect;
 export type InsertGratitudeEntry = z.infer<typeof insertGratitudeSchema>;
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = z.infer<typeof insertNoteSchema>;
+export type Goal = typeof goals.$inferSelect;
+export type InsertGoal = z.infer<typeof insertGoalSchema>;
