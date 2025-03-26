@@ -113,6 +113,11 @@ export default function Home() {
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
+          <div className="flex items-center">
+            <h1 className="text-xl font-black text-blue-600 tracking-tight">
+              Flo Tasks
+            </h1>
+          </div>
         </div>
       </div>
 
