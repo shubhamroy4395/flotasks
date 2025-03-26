@@ -107,7 +107,7 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Daily Summary - Top Full Width */}
+        {/* Daily Summary - Top Full Width Card Row */}
         <div className="mb-6">
           <DailySummary 
             todayTasks={todayTasks || []} 
