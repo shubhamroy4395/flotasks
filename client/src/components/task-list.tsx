@@ -147,7 +147,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
 
     // Track task editing interaction
     if (entry.content) {
-      trackEvent(Events.TASK_EDIT_STARTED, {
+      trackEvent(title === "Today's Tasks" ? Events.TaskToday.Edited : Events.TaskOther.Edited, {
         taskId: entry.id,
         currentPriority: entry.priority,
         currentEta: entry.eta,
