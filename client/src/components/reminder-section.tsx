@@ -173,7 +173,7 @@ export function ReminderSection() {
   };
 
   return (
-    <Card className="bg-white shadow-card hover:shadow-hover transition-all duration-300">
+    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
         <CardTitle className="font-semibold">Reminders</CardTitle>
       </CardHeader>
