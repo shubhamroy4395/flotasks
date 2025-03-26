@@ -40,38 +40,32 @@ export const Events = {
   Gratitude: {
     SectionOpen: 'Gratitude.SectionOpen',
     Added: 'Gratitude.Added',
-    Deleted: 'Gratitude.Deleted',
-    Created: 'Gratitude.Created' // For consistency with Notes
+    Deleted: 'Gratitude.Deleted'
   },
   Notes: {
     SectionOpen: 'Notes.SectionOpen',
     Created: 'Notes.Created',
     Deleted: 'Notes.Deleted'
   },
-  Performance: {
-    ComponentMount: 'Performance.ComponentMount',
-    ApiCall: 'Performance.ApiCall',
-    SaveOperation: 'Performance.SaveOperation',
-    DeleteOperation: 'Performance.DeleteOperation'
+  Reminder: {
+    SectionOpen: 'Reminder.SectionOpen',
+    Set: 'Reminder.Set',
+    Completed: 'Reminder.Completed',
+    Deleted: 'Reminder.Deleted'
+  },
+  Goals: {
+    SectionOpen: 'Goals.SectionOpen',
+    Created: 'Goals.Created',
+    Updated: 'Goals.Updated',
+    Completed: 'Goals.Completed',
+    Deleted: 'Goals.Deleted'
   },
   UI: {
     ModalOpened: 'UI.ModalOpened',
     ModalClosed: 'UI.ModalClosed',
     ThemeChanged: 'UI.ThemeChanged',
     FilterApplied: 'UI.FilterApplied',
-    SortChanged: 'UI.SortChanged',
-    KeyboardShortcut: 'UI.KeyboardShortcut',
-    Login: 'UI.Login',
-    Logout: 'UI.Logout',
-    Register: 'UI.Register',
-    GoogleLogin: 'UI.GoogleLogin',
-    AuthError: 'UI.AuthError'
-  },
-  Reminder: {
-    SectionOpen: 'Reminder.SectionOpen',
-    Set: 'Reminder.Set',
-    Completed: 'Reminder.Completed',
-    Deleted: 'Reminder.Deleted'
+    SortChanged: 'UI.SortChanged'
   }
 };
 

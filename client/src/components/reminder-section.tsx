@@ -47,7 +47,7 @@ export function ReminderSection() {
 
   // Track section open
   useEffect(() => {
-    trackEvent(Events.Reminder.SectionOpen, {
+    trackEvent(Events.REMINDER_SECTION_OPEN, {
       componentName: 'ReminderSection',
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -79,7 +79,7 @@ export function ReminderSection() {
             });
 
             // Track reminder completion
-            trackEvent(Events.Reminder.Completed, {
+            trackEvent(Events.REMINDER_COMPLETED, {
               content: reminder.content,
               scheduledTime: reminder.time.toISOString(),
               actualCompletionTime: now.toISOString(),
@@ -110,7 +110,7 @@ export function ReminderSection() {
   const handleFormOpen = () => {
     setIsOpen(true);
     formOpenTime.current = Date.now();
-    trackEvent(Events.UI.ModalOpened, {
+    trackEvent(Events.UI_MODAL_OPENED, {
       modalType: 'reminder-form',
       timeOfDay: new Date().getHours(),
       existingReminders: reminders.length
@@ -133,7 +133,7 @@ export function ReminderSection() {
     }]);
 
     // Track reminder creation
-    trackEvent(Events.Reminder.Set, {
+    trackEvent(Events.REMINDER_SET, {
       content: newReminder,
       timeValue: selectedTime.value,
       timeUnit: selectedTime.unit,
@@ -162,7 +162,7 @@ export function ReminderSection() {
 
     // Track reminder deletion
     if (reminderToDelete) {
-      trackEvent(Events.Reminder.Deleted, {
+      trackEvent(Events.REMINDER_DELETED, {
         content: reminderToDelete.content,
         timeUntilDue: reminderToDelete.time.getTime() - Date.now(),
         remainingReminders: reminders.length - 1,

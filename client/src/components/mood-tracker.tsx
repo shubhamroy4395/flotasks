@@ -4,9 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MoodEntry } from "@shared/schema";
-import { trackEvent } from "@/lib/amplitude";
+import { trackEvent, Events } from "@/lib/amplitude";
 import { useEffect } from "react";
-import { useAuth } from "@/contexts/auth-context";
 
 const MOOD_LABELS: Record<string, { label: string, color: string }> = {
   "😊": { label: "Happy", color: "from-green-50 to-emerald-50" },
@@ -23,11 +22,10 @@ const MOOD_LABELS: Record<string, { label: string, color: string }> = {
 
 export function MoodTracker() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
 
   // Track when the mood section is opened
   useEffect(() => {
-    trackEvent("mood_section_open", {
+    trackEvent(Events.MOOD_SECTION_OPEN, {
       componentName: 'MoodTracker',
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -38,64 +36,34 @@ export function MoodTracker() {
     });
   }, []);
 
-  // Queries for mood entries when authenticated
-  const { data: authMoodEntries } = useQuery<MoodEntry[]>({
+  const { data: moodEntries } = useQuery<MoodEntry[]>({
     queryKey: ["/api/mood"],
-    enabled: isAuthenticated,
   });
 
-  // Queries for mood entries when not authenticated
-  const { data: publicMoodEntries } = useQuery<MoodEntry[]>({
-    queryKey: ["/api/public/mood"],
-    enabled: !isAuthenticated,
-  });
-
-  // Get the appropriate mood entries based on authentication status
-  const moodEntries = isAuthenticated ? authMoodEntries : publicMoodEntries;
-
-  // Create mood mutation for authenticated users
-  const createAuthMood = useMutation({
+  const createMood = useMutation({
     mutationFn: async (mood: string) => {
       await apiRequest("POST", "/api/mood", { mood });
     },
-    onSuccess: () => {
+    onSuccess: (_, mood) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
+
+      // Track mood selection with detailed properties
+      trackEvent(Events.MOOD_SELECTED, {
+        mood,
+        moodLabel: MOOD_LABELS[mood].label,
+        previousMood: moodEntries?.[0]?.mood || null,
+        moodChangeTime: moodEntries?.[0] ? new Date().getTime() - new Date(moodEntries[0].timestamp).getTime() : null,
+        timeOfDay: new Date().getHours(),
+        dayOfWeek: new Date().getDay(),
+        isWeekend: [0, 6].includes(new Date().getDay()),
+        moodHistory: moodEntries?.slice(0, 5).map(entry => entry.mood) || [],
+        moodFrequency: moodEntries?.reduce((acc, entry) => {
+          acc[entry.mood] = (acc[entry.mood] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      });
     },
   });
-
-  // Create mood mutation for non-authenticated users
-  const createPublicMood = useMutation({
-    mutationFn: async (mood: string) => {
-      await apiRequest("POST", "/api/public/mood", { mood });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/public/mood"] });
-    },
-  });
-
-  // Choose the appropriate mutation based on authentication status
-  const createMood = isAuthenticated ? createAuthMood : createPublicMood;
-
-  // Track mood selection
-  const handleMoodSelect = (mood: string) => {
-    createMood.mutate(mood);
-    
-    // Track mood selection with detailed properties
-    trackEvent("mood_selected", {
-      mood,
-      moodLabel: MOOD_LABELS[mood].label,
-      previousMood: moodEntries?.[0]?.mood || null,
-      moodChangeTime: moodEntries?.[0] ? new Date().getTime() - new Date(moodEntries[0].timestamp).getTime() : null,
-      timeOfDay: new Date().getHours(),
-      dayOfWeek: new Date().getDay(),
-      isWeekend: [0, 6].includes(new Date().getDay()),
-      moodHistory: moodEntries?.slice(0, 5).map(entry => entry.mood) || [],
-      moodFrequency: moodEntries?.reduce((acc, entry) => {
-        acc[entry.mood] = (acc[entry.mood] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>)
-    });
-  };
 
   const currentMood = moodEntries?.[0]?.mood;
   const moodInfo = currentMood ? MOOD_LABELS[currentMood] : undefined;
@@ -130,12 +98,11 @@ export function MoodTracker() {
               )}
             </AnimatePresence>
 
-            <div className="emoji-picker-container">
-              <EmojiPicker
-                selected={currentMood}
-                onSelect={handleMoodSelect}
-              />
-            </div>
+            <EmojiPicker
+              selected={currentMood}
+              onSelect={(emoji) => createMood.mutate(emoji)}
+              moods={Object.keys(MOOD_LABELS)}
+            />
           </div>
         </motion.div>
       </CardContent>

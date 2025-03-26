@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
@@ -8,10 +8,6 @@ import { ArrowUpDown, Clock, Plus, X, Sparkles, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
-import debounce from 'lodash/debounce';
-import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/auth-context";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -67,16 +63,13 @@ interface TaskListProps {
   title: string;
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
-  onDelete?: (taskId: number) => void;
 }
 
-export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
-  const queryClient = useQueryClient();
-  // State management
+export function TaskList({ title, tasks, onSave }: TaskListProps) {
+  const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
-    const initialLines = title === "Other Tasks" ? 8 : 10;
     const lines = Array(initialLines).fill(null).map((_, i) => ({
-      id: Date.now() + i, // Use timestamp-based ID to match server format
+      id: i + 1,
       content: "",
       isEditing: false,
       completed: false,
@@ -85,17 +78,14 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       timestamp: new Date()
     }));
 
-    // Map actual task data onto our UI entries, preserving the server IDs
     tasks.forEach((task, index) => {
       if (index < lines.length) {
         lines[index] = {
           ...lines[index],
-          id: task.id, // Use the actual ID from the server
           content: task.content,
           completed: task.completed,
           priority: task.priority,
-          eta: task.eta || "",
-          timestamp: task.timestamp || new Date()
+          eta: task.eta || ""
         };
       }
     });
@@ -108,7 +98,6 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     content: string;
     priority: number;
     eta: string;
-    isDirty: boolean;
   } | null>(null);
 
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -116,15 +105,12 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
   const [sortState, setSortState] = useState<'lno' | 'onl' | 'default'>('default');
   const [initialEntries, setInitialEntries] = useState(entries);
 
-  // Refs for tracking state
-  const lastSavedContentRef = useRef<string>("");
-  const savingRef = useRef(false);
-
-  // Effect hooks
+  // Store initial entries when they're first created
   useEffect(() => {
     setInitialEntries([...entries]);
   }, [tasks]);
 
+  // Calculate total time whenever entries change
   useEffect(() => {
     const newTotal = entries.reduce((total, entry) => {
       if (!entry.completed && entry.content && entry.eta) {
@@ -135,13 +121,86 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     setTotalTime(newTotal);
   }, [entries]);
 
-  // Core save functionality
-  const saveTask = useCallback((content: string, priority: number, eta: string) => {
-    if (!content.trim() || !activeTask || savingRef.current) return;
+  // Track component mount
+  useEffect(() => {
+    trackEvent(
+      title === "Today's Tasks" ? Events.TASK_LIST_TODAY_OPEN : Events.TASK_LIST_OTHER_OPEN,
+      {
+        taskCount: tasks.length,
+        completedCount: tasks.filter(t => t.completed).length,
+        averagePriority: tasks.reduce((acc, t) => acc + t.priority, 0) / tasks.length || 0,
+        timeOfDay: new Date().getHours(),
+      }
+    );
+  }, []);
 
-    savingRef.current = true;
+  const handleLineClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const entry = entries[index];
+    setActiveTask({
+      index,
+      content: entry.content || "",
+      priority: entry.priority || 0,
+      eta: entry.eta || ""
+    });
 
-    // Update entries silently
+    // Track task editing interaction
+    if (entry.content) {
+      trackEvent(Events.TASK_EDIT_STARTED, {
+        taskId: entry.id,
+        currentPriority: entry.priority,
+        currentEta: entry.eta,
+        position: index,
+        category: title === "Today's Tasks" ? "today" : "other"
+      });
+    }
+  };
+
+  const handleSave = () => {
+    if (!activeTask) return;
+    const { content, priority, eta } = activeTask;
+
+    if (content.trim()) {
+      onSave({
+        content,
+        priority,
+        category: title === "Today's Tasks" ? "today" : "other"
+      });
+
+      // Determine event name based on task category
+      const eventName = title === "Today's Tasks" ? Events.TaskToday.Created : Events.TaskOther.Created;
+
+      // Track task creation with filterable properties
+      trackEvent(eventName, {
+        // Top-level properties for easy filtering in Amplitude
+        category: title === "Today's Tasks" ? "today" : "other",
+        priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N', // L, N, O
+        priority_value: priority, // 3, 2, 1
+        has_time: Boolean(eta),
+        estimated_minutes: convertTimeToMinutes(eta),
+
+        // Detailed task properties
+        task: {
+          id: activeTask.index + 1,
+          content: content.trim(),
+          time: eta,
+          position: activeTask.index,
+          word_count: content.trim().split(/\s+/).length,
+          length: content.length
+        },
+
+        // Context for analysis
+        task_context: {
+          total_tasks: entries.filter(e => e.content).length,
+          completed_tasks: entries.filter(e => e.completed).length,
+          priority_distribution: PRIORITIES.reduce((acc, p) => {
+            acc[p.label] = entries.filter(e => e.priority === p.value).length;
+            return acc;
+          }, {} as Record<string, number>)
+        }
+      });
+    }
+
     setEntries(prev =>
       prev.map((entry, i) =>
         i === activeTask.index
@@ -150,93 +209,12 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
               content: content.trim(),
               priority,
               eta,
-              timestamp: new Date()
+              isEditing: false
             }
           : entry
       )
     );
-
-    // Save to backend
-    onSave({
-      content: content.trim(),
-      priority,
-      category: title === "Today's Tasks" ? "today" : "other"
-    });
-
-    // Track event only for new tasks or significant changes
-    if (content.trim() !== lastSavedContentRef.current) {
-      const eventName = title === "Today's Tasks" ? Events.TaskToday.Created : Events.TaskOther.Created;
-      trackEvent(eventName, {
-        category: title === "Today's Tasks" ? "today" : "other",
-        priority_level: PRIORITIES.find(p => p.value === priority)?.label || 'N',
-        priority_value: priority,
-        has_time: Boolean(eta),
-        estimated_minutes: convertTimeToMinutes(eta),
-        task: {
-          id: activeTask.index + 1,
-          content: content.trim(),
-          time: eta,
-          position: activeTask.index,
-          word_count: content.trim().split(/\s+/).length,
-          length: content.length
-        }
-      });
-      lastSavedContentRef.current = content.trim();
-    }
-
-    savingRef.current = false;
-  }, [title, onSave, activeTask]);
-
-  // Debounced save for content changes
-  const debouncedSave = useCallback(
-    debounce((content: string, priority: number, eta: string) => {
-      saveTask(content, priority, eta);
-    }, 1000),
-    [saveTask]
-  );
-
-  // Event handlers
-  const handleLineClick = (index: number, e: React.MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
-    const entry = entries[index];
-    setActiveTask({
-      index,
-      content: entry.content || "",
-      priority: entry.priority || 0,
-      eta: entry.eta || "",
-      isDirty: false
-    });
-    lastSavedContentRef.current = entry.content || "";
-  };
-
-  const handleInputChange = (value: string) => {
-    if (!activeTask) return;
-    setActiveTask(prev => ({ ...prev!, content: value, isDirty: true }));
-    debouncedSave(value, activeTask.priority, activeTask.eta);
-  };
-
-  const handlePriorityChange = (value: number) => {
-    if (!activeTask) return;
-    setActiveTask(prev => ({ ...prev!, priority: value, isDirty: true }));
-    saveTask(activeTask.content, value, activeTask.eta);
-  };
-
-  const handleEtaChange = (value: string) => {
-    if (!activeTask) return;
-    setActiveTask(prev => ({ ...prev!, eta: value, isDirty: true }));
-    saveTask(activeTask.content, activeTask.priority, value);
-  };
-
-  const handleBlur = () => {
-    if (!activeTask) return;
-
-    if (activeTask.isDirty) {
-      saveTask(activeTask.content, activeTask.priority, activeTask.eta);
-    }
-
-    if (!activeTask.content.trim()) {
-      setActiveTask(null);
-    }
+    setActiveTask(null);
   };
 
   const toggleComplete = (index: number) => {
@@ -248,41 +226,41 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
             setShowCelebration(index);
             setTimeout(() => setShowCelebration(null), 2000);
 
-            // Determine event name based on task category
-            const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
+          // Determine event name based on task category
+          const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
 
-            // Track completion with filterable properties
-            trackEvent(eventName, {
-              // Top-level properties for easy filtering
-              category: title === "Today's Tasks" ? "today" : "other",
-              priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
-              priority_value: entry.priority,
-              has_time: Boolean(entry.eta),
-              estimated_minutes: convertTimeToMinutes(entry.eta),
-              completion_time: Date.now(),
+          // Track completion with filterable properties
+          trackEvent(eventName, {
+            // Top-level properties for easy filtering
+            category: title === "Today's Tasks" ? "today" : "other",
+            priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
+            priority_value: entry.priority,
+            has_time: Boolean(entry.eta),
+            estimated_minutes: convertTimeToMinutes(entry.eta),
+            completion_time: Date.now(),
 
-              // Task details
-              task: {
-                id: entry.id,
-                content: entry.content,
-                position: index,
-                age_ms: Date.now() - new Date(entry.timestamp).getTime()
-              },
+            // Task details
+            task: {
+              id: entry.id,
+              content: entry.content,
+              position: index,
+              age_ms: Date.now() - new Date(entry.timestamp).getTime()
+            },
 
-              // Context
-              task_context: {
-                total_tasks: entries.filter(e => e.content).length,
-                completed_tasks: entries.filter(e => e.completed).length + 1,
-                completion_rate: ((entries.filter(e => e.completed).length + 1) /
-                                  entries.filter(e => e.content).length) * 100
-              }
-            });
-          }
-          return { ...entry, completed: newCompleted };
+            // Context
+            task_context: {
+              total_tasks: entries.filter(e => e.content).length,
+              completed_tasks: entries.filter(e => e.completed).length + 1,
+              completion_rate: ((entries.filter(e => e.completed).length + 1) / 
+                              entries.filter(e => e.content).length) * 100
+            }
+          });
         }
-        return entry;
-      })
-    );
+        return { ...entry, completed: newCompleted };
+      }
+      return entry;
+    })
+  );
   };
 
   const toggleSort = () => {
@@ -306,12 +284,12 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
           completed_tasks: entries.filter(e => e.completed).length,
           priority_distribution: entries.reduce((acc, entry) => {
             if (entry.priority) {
-              acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] =
+              acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] = 
                 (acc[PRIORITIES.find(p => p.value === entry.priority)?.label || ''] || 0) + 1;
             }
             return acc;
           }, {} as Record<string, number>),
-          averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) /
+          averagePriority: entries.reduce((acc, entry) => acc + (entry.priority || 0), 0) / 
                            entries.filter(e => e.content).length || 0
         }
       });
@@ -340,7 +318,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
     setEntries(prev => [
       ...prev,
       ...Array(5).fill(null).map((_, i) => ({
-        id: Date.now() + i, // Use timestamp-based ID to match server format
+        id: prev.length + i + 1,
         content: "",
         isEditing: false,
         completed: false,
@@ -350,166 +328,6 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       }))
     ]);
   };
-
-  // Keyboard shortcut handlers
-  const nextEmptyIndex = useCallback(() => {
-    return entries.findIndex(entry => !entry.content.trim());
-  }, [entries]);
-
-  const activeEntry = activeTask; //for convenience
-
-  const keyboardHandlers = {
-    addNewItem: () => {
-      const index = nextEmptyIndex();
-      if (index >= 0) {
-        // Create a synthetic React mouse event instead of a native MouseEvent
-        const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent<HTMLElement>;
-        handleLineClick(index, syntheticEvent);
-      } else {
-        addMoreTasks();
-      }
-    },
-    togglePriority: () => {
-      if (!activeEntry) return;
-      const currentPriority = activeEntry.priority;
-      const nextPriority = (currentPriority % 3) + 1;
-      handlePriorityChange(nextPriority);
-    },
-    focusNext: () => {
-      if (activeEntry && activeEntry.index < entries.length - 1) {
-        // Create a synthetic React mouse event
-        const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent<HTMLElement>;
-        handleLineClick(activeEntry.index + 1, syntheticEvent);
-      }
-    },
-    focusPrev: () => {
-      if (activeEntry && activeEntry.index > 0) {
-        // Create a synthetic React mouse event
-        const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent<HTMLElement>;
-        handleLineClick(activeEntry.index - 1, syntheticEvent);
-      }
-    },
-    complete: () => {
-      if (activeEntry) {
-        toggleComplete(activeEntry.index);
-        setActiveTask(null);
-      }
-    },
-    delete: () => {
-      if (activeEntry) {
-        // Find the actual entry from entries array by index
-        const actualEntry = entries[activeEntry.index];
-        if (actualEntry && actualEntry.id) {
-          deleteEntry.mutate(actualEntry.id);
-          setActiveTask(null);
-        }
-      }
-    }
-  };
-
-  // Get authentication state
-  const { isAuthenticated } = useAuth();
-
-  const deleteEntry = useMutation({
-    mutationFn: async (id: number) => {
-      const startTime = performance.now();
-      
-      // Handle temporary IDs differently (they don't exist on the server)
-      if (id < 0) {
-        // Just remove it locally
-        setEntries(prev => prev.filter(entry => entry.id !== id));
-        return id;
-      }
-      
-      try {
-        // Use the correct API endpoint based on authentication state
-        const apiEndpoint = isAuthenticated ? `/api/tasks/${id}` : `/api/public/tasks/${id}`;
-        console.log(`Deleting task with ID ${id} using endpoint ${apiEndpoint}`);
-        
-        const response = await fetch(apiEndpoint, { 
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to delete task: ${response.statusText}`);
-        }
-        
-        // If onDelete prop is provided, call it with the ID
-        if (onDelete) {
-          onDelete(id);
-        }
-        
-        const endTime = performance.now();
-  
-        trackEvent(Events.Performance.ApiCall, {
-          endpoint: apiEndpoint,
-          method: 'DELETE',
-          durationMs: endTime - startTime
-        });
-        
-        return id;
-      } catch (error) {
-        console.error("Error deleting task:", error);
-        throw error; // Re-throw to trigger onError
-      }
-    },
-    onMutate: async (deletedId) => {
-      // Category-specific query keys
-      const categoryKey = title === "Today's Tasks" ? "today" : "other";
-      const authQueryKey = isAuthenticated 
-        ? [`/api/tasks/${categoryKey}`] 
-        : [`/api/public/tasks/${categoryKey}`];
-        
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: authQueryKey });
-      
-      // Snapshot the previous value
-      const previousTasks = queryClient.getQueryData<Task[]>(authQueryKey);
-      const previousEntries = [...entries];
-
-      // Optimistically update the UI immediately
-      setEntries(prev => prev.filter(entry => entry.id !== deletedId));
-
-      // For server-stored tasks, update the cache
-      queryClient.setQueryData<Task[]>(authQueryKey, old => 
-        old?.filter(task => task.id !== deletedId) || []
-      );
-
-      return { previousTasks, previousEntries, authQueryKey };
-    },
-    onError: (err, variables, context) => {
-      // Restore previous state from context
-      if (context?.previousEntries) {
-        setEntries(context.previousEntries);
-      }
-      
-      if (context?.previousTasks && context.authQueryKey) {
-        queryClient.setQueryData(context.authQueryKey, context.previousTasks);
-      }
-      
-      console.error("Failed to delete task:", err);
-    },
-    onSuccess: (id) => {
-      console.log(`Successfully deleted task with ID ${id}`);
-      
-      // Also trigger a refresh for complete accuracy
-      const categoryKey = title === "Today's Tasks" ? "today" : "other";
-      const authQueryKey = isAuthenticated 
-        ? [`/api/tasks/${categoryKey}`] 
-        : [`/api/public/tasks/${categoryKey}`];
-        
-      queryClient.invalidateQueries({ queryKey: authQueryKey });
-    }
-  });
-
-  useKeyboardShortcuts(keyboardHandlers, {
-    enabled: true,
-    trackingPrefix: title === "Today's Tasks" ? 'today_tasks.' : 'other_tasks.'
-  });
-
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
@@ -610,8 +428,8 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                       <Input
                         autoFocus
                         value={activeTask.content}
-                        onChange={(e) => handleInputChange(e.target.value)}
-                        onBlur={handleBlur}
+                        onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
+                        onKeyDown={(e) => e.key === "Enter" && handleSave()}
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-gray-700 placeholder:text-gray-400"
                         placeholder="What needs to be done?"
                       />
@@ -634,10 +452,11 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                               key={label}
                               size="sm"
                               variant="ghost"
-                              className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${
-                                activeTask.priority === value ? 'ring-2 ring-offset-2' : ''
-                              }`}
-                              onClick={() => handlePriorityChange(value)}
+                              className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveTask({ ...activeTask, priority: value });
+                              }}
                             >
                               {label}
                             </Button>
@@ -674,7 +493,7 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
 
                       <select
                         value={activeTask.eta}
-                        onChange={(e) => handleEtaChange(e.target.value)}
+                        onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
                         className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -683,6 +502,15 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                           <option key={slot} value={slot}>{slot}</option>
                         ))}
                       </select>
+
+                      <Button
+                        onClick={handleSave}
+                        size="sm"
+                        variant="outline"
+                        className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border-blue-200 hover:border-blue-300 font-bold transform transition-all duration-200 hover:scale-105"
+                      >
+                        Save
+                      </Button>
                     </div>
                   </motion.div>
                 ) : (
@@ -713,43 +541,6 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
                             {entry.eta}
                           </span>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            
-                            // Ensure we have a valid task ID
-                            if (!entry.id) {
-                              console.error('[TASK_DELETE] Cannot delete task without ID');
-                              return;
-                            }
-                            
-                            // Enhanced debugging
-                            console.log(`[TASK_DELETE] Delete button clicked for:`, {
-                              title,
-                              taskId: entry.id,
-                              taskIdType: typeof entry.id,
-                              content: entry.content?.substring(0, 30) + (entry.content?.length > 30 ? '...' : '')
-                            });
-                            
-                            // Convert to number (important for timestamp-based IDs)
-                            const idToDelete = Number(entry.id);
-                            
-                            // Use the appropriate delete handler
-                            if (onDelete) {
-                              console.log(`[TASK_DELETE] Using parent component's onDelete handler`);
-                              onDelete(idToDelete);
-                            } else {
-                              console.log(`[TASK_DELETE] Using local deleteEntry mutation`);
-                              deleteEntry.mutate(idToDelete);
-                            }
-                          }}
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-transparent transition-opacity ml-1"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
                       </motion.div>
                     )}
                   </motion.div>
@@ -761,13 +552,4 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       </CardContent>
     </Card>
   );
-}
-
-async function apiRequest(method: string, url: string) {
-  const response = await fetch(url, { method });
-  if (!response.ok) {
-    const message = `An error has occured: ${response.statusText}`;
-    throw new Error(message);
-  }
-  return response.json();
 }

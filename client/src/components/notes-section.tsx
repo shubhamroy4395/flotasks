@@ -1,357 +1,203 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { FileText, PenLine, Plus, Trash2 } from "lucide-react";
-import type { Note } from "@shared/schema";
-import { trackEvent } from "@/lib/amplitude";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-
-// Simple note interface for local state
-interface NoteItem {
-  id: number;
-  content: string;
-  timestamp: Date;
-  isEditing?: boolean;
-}
+import type { Note } from "@shared/schema";
+import { trackEvent, Events } from "@/lib/amplitude";
 
 export function NotesSection() {
-  const startTimeRef = useRef(performance.now());
-  const { isAuthenticated } = useAuth();
-  
-  // Local state for notes
-  const [notes, setNotes] = useState<NoteItem[]>([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [inputValue, setInputValue] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const formOpenTime = useRef(Date.now());
 
-  // API endpoint based on auth status
-  const apiEndpoint = isAuthenticated ? "/api/notes" : "/api/public/notes";
-
-  // Fetch notes
-  const { data: fetchedNotes = [], refetch } = useQuery<Note[]>({
-    queryKey: [apiEndpoint],
-    staleTime: 30000,
-    retry: 3
-  });
-
-  // Initialize notes when data changes
+  // Track section open
   useEffect(() => {
-    if (fetchedNotes.length > 0) {
-      // Create our local notes from fetched data
-      const savedNotes = fetchedNotes.map(note => ({
-        id: note.id,
-        content: note.content,
-        timestamp: new Date(note.timestamp)
-      }));
-      
-      // Make sure we have at least one empty note for input
-      const emptyNote = {
-        id: -(Date.now()),
-        content: "",
-        timestamp: new Date()
-      };
-      
-      setNotes([...savedNotes, emptyNote]);
-    } else {
-      // If no notes, create empty ones
-      const emptyNotes = Array(3).fill(null).map((_, i) => ({
-        id: -(Date.now() + i),
-        content: "",
-        timestamp: new Date()
-      }));
-      
-      setNotes(emptyNotes);
-    }
-  }, [fetchedNotes]);
-
-  // Save note to server
-  const saveNote = useCallback(async (content: string): Promise<void> => {
-    if (!content.trim()) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await apiRequest("POST", apiEndpoint, { content });
-      const savedNote = await response.json();
-      
-      // Add the new note to our list
-      setNotes(current => {
-        // Create new array with the saved note
-        const updated = current.map(note => ({
-          ...note,
-          isEditing: false
-        }));
-        
-        // Replace the edited note with saved one if editing
-        if (editingIndex !== null) {
-          updated[editingIndex] = {
-            id: savedNote.id,
-            content: savedNote.content,
-            timestamp: new Date(savedNote.timestamp),
-            isEditing: false
-          };
-        }
-        
-        // Make sure we still have an empty note
-        const hasEmpty = updated.some(note => !note.content);
-        if (!hasEmpty) {
-          updated.push({
-            id: -(Date.now()),
-            content: "",
-            timestamp: new Date(),
-            isEditing: false
-          });
-        }
-        
-        return updated;
-      });
-      
-      // Clear editing state
-      setEditingIndex(null);
-      setInputValue("");
-      
-      // Refetch to ensure we have latest data
-      refetch();
-    } catch (error) {
-      console.error("Error saving note:", error);
-      setError("Failed to save. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiEndpoint, editingIndex, refetch]);
-
-  // Delete note
-  const deleteNote = useCallback(async (id: number) => {
-    if (id < 0) {
-      // Simply remove from local state if not saved
-      setNotes(current => current.filter(note => note.id !== id));
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      await apiRequest("DELETE", `${apiEndpoint}/${id}`);
-      setNotes(current => current.filter(note => note.id !== id));
-      refetch();
-    } catch (error) {
-      console.error("Error deleting note:", error);
-      setError("Failed to delete. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiEndpoint, refetch]);
-
-  // Handle clicking on a note
-  const handleNoteClick = useCallback((index: number) => {
-    // Update local state to show this note is being edited
-    setNotes(current => {
-      return current.map((note, i) => ({
-        ...note,
-        isEditing: i === index
-      }));
+    trackEvent(Events.NOTES_SECTION_OPEN, {
+      componentName: 'NotesSection',
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      timeOfDay: new Date().getHours(),
+      dayOfWeek: new Date().getDay(),
+      isWeekend: [0, 6].includes(new Date().getDay())
     });
-    
-    // Set editing index and input value
-    setEditingIndex(index);
-    setInputValue(notes[index]?.content || "");
-  }, [notes]);
-
-  // Handle input changes
-  const handleInputChange = useCallback((value: string) => {
-    setInputValue(value);
   }, []);
 
-  // Handle blur event (save when clicking away)
-  const handleBlur = useCallback(() => {
-    if (editingIndex !== null && inputValue.trim()) {
-      // Save immediately without waiting for API response
-      const noteToSave = inputValue;
-      
-      // Update local state optimistically
-      setNotes(current => {
-        const updated = [...current];
-        if (updated[editingIndex]) {
-          updated[editingIndex] = {
-            ...updated[editingIndex],
-            content: noteToSave,
-            isEditing: false
-          };
-        }
-        return updated;
-      });
-      
-      // Trigger actual save in the background
-      saveNote(noteToSave);
-    }
-    
-    // Clear editing state
-    setEditingIndex(null);
-    setInputValue("");
-    
-    // Remove editing flag from notes
-    setNotes(current => 
-      current.map(note => ({
-        ...note,
-        isEditing: false
-      }))
-    );
-  }, [editingIndex, inputValue, saveNote]);
+  const { data: notes = [] } = useQuery<Note[]>({
+    queryKey: ["/api/notes"],
+  });
 
-  // Add multiple new empty notes (3 by default)
-  const addNewNote = useCallback((_e?: React.MouseEvent) => {
-    const count = 3; // Default is to add 3 notes at once
-    
-    // Create multiple new note entries
-    setNotes(current => {
-      const newNotes = [];
-      const timestamp = new Date();
-      
-      // Create specified number of new notes
-      for (let i = 0; i < count; i++) {
-        newNotes.push({
-          id: -(Date.now() + i), // Ensure unique IDs
-          content: "",
-          timestamp,
-          isEditing: i === 0 // First note will be in edit mode
+  const createNote = useMutation({
+    mutationFn: async (content: string) => {
+      await apiRequest("POST", "/api/notes", { content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
+      toast({
+        title: "Note added!",
+        duration: 2000,
+      });
+
+      // Track note creation
+      trackEvent(Events.NOTE_CREATED, {
+        contentLength: newNote.length,
+        wordCount: newNote.trim().split(/\s+/).length,
+        formDuration: Date.now() - formOpenTime.current,
+        existingNotes: notes.length,
+        timeOfDay: new Date().getHours(),
+        dayOfWeek: new Date().getDay(),
+        isWeekend: [0, 6].includes(new Date().getDay())
+      });
+    },
+  });
+
+  const deleteNote = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/notes/${id}`);
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
+
+      // Track note deletion
+      const deletedNote = notes.find(note => note.id === id);
+      if (deletedNote) {
+        trackEvent(Events.NOTE_DELETED, {
+          noteAge: Date.now() - new Date(deletedNote.timestamp).getTime(),
+          contentLength: deletedNote.content.length,
+          remainingNotes: notes.length - 1,
+          timeOfDay: new Date().getHours(),
+          dayOfWeek: new Date().getDay()
         });
       }
-      
-      return [...current, ...newNotes];
-    });
-    
-    // Focus the first new note (after a brief delay to allow rendering)
-    setTimeout(() => {
-      const newIndex = notes.length;
-      handleNoteClick(newIndex);
-    }, 50);
-  }, [notes.length, handleNoteClick]);
+    },
+  });
 
-  // Track component performance
-  useEffect(() => {
-    const loadTime = performance.now() - startTimeRef.current;
-    trackEvent("component_mount", {
-      component: 'NotesSection',
-      loadTimeMs: loadTime,
-      savedNotesCount: fetchedNotes.length,
-      isAuthenticated
+  const handleFormOpen = () => {
+    setIsAdding(true);
+    formOpenTime.current = Date.now();
+    trackEvent(Events.UI_MODAL_OPENED, {
+      modalType: 'note-form',
+      timeOfDay: new Date().getHours(),
+      existingNotes: notes.length
     });
-  }, [fetchedNotes.length, isAuthenticated]);
+  };
 
-  // Count saved notes
-  const savedNotesCount = notes.filter(note => note.content && note.id > 0).length;
+  const handleFormClose = () => {
+    setIsAdding(false);
+    trackEvent(Events.UI_MODAL_CLOSED, {
+      modalType: 'note-form',
+      formDuration: Date.now() - formOpenTime.current,
+      hadContent: newNote.length > 0
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNote.trim()) return;
+
+    createNote.mutate(newNote.trim(), {
+      onSuccess: () => {
+        setNewNote("");
+        setIsAdding(false);
+      },
+    });
+  };
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-blue-50">
-        <div className="flex items-center space-x-2">
-          <FileText className="h-5 w-5 text-indigo-500" />
-          <CardTitle className="font-semibold">Quick Notes</CardTitle>
-        </div>
-        <div className="hidden sm:block text-xs text-gray-500">
-          {savedNotesCount} Notes Captured
-        </div>
+      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+        <CardTitle className="font-semibold">Quick Notes</CardTitle>
       </CardHeader>
-      
-      <CardContent className="pt-4">
-        {error && (
-          <div className="mb-4 p-2 text-sm text-red-600 bg-red-50 rounded-md">
-            {error}
-          </div>
-        )}
+      <CardContent>
+        <AnimatePresence>
+          {isAdding && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Card className="p-4 mb-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Write a quick note..."
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleFormClose}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full font-medium"
+                    disabled={!newNote.trim()}
+                  >
+                    Add Note
+                  </Button>
+                </form>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <div className="space-y-3 mt-2">
-          <div className="space-y-3">
+        <div className="space-y-2">
+          <AnimatePresence>
             {notes.map((note, index) => (
-              <div
+              <motion.div
                 key={note.id}
-                className="group relative"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors group"
+                transition={{ delay: index * 0.1 }}
               >
-                <div 
-                  className={`rounded-lg p-3 border cursor-pointer
-                    ${note.content && note.id > 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200 hover:border-gray-300'}
-                    ${isLoading ? 'opacity-60' : ''} 
-                    ${editingIndex === index ? 'shadow-md' : 'hover:shadow-sm'}`}
-                  onClick={() => handleNoteClick(index)}
-                >
-                  {editingIndex === index ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs font-medium text-gray-500">
-                          {note.id > 0 ? 'Editing note' : 'New note'}
-                        </div>
-                      </div>
-                      
-                      <Input
-                        autoFocus
-                        value={inputValue}
-                        onChange={(e) => handleInputChange(e.target.value)}
-                        onBlur={handleBlur}
-                        className="border border-gray-200 bg-white font-medium text-gray-700 placeholder:text-gray-400 rounded-md"
-                        placeholder="Write a quick note..."
-                        disabled={isLoading}
-                      />
-                      
-                      <div className="flex items-center mt-1 text-xs text-indigo-600">
-                        <PenLine className="h-3 w-3 mr-1" />
-                        Saving automatically when you click away
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      {note.content ? (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-indigo-500" />
-                              <span className="text-xs text-gray-500">
-                                {format(new Date(note.timestamp), 'MMM d, h:mm a')}
-                              </span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 hover:bg-white hover:bg-opacity-60 h-6 w-6"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNote(note.id);
-                              }}
-                              disabled={isLoading}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          <p className="text-gray-700 font-medium text-sm">
-                            {note.content}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-16 text-gray-400 flex-col gap-1">
-                          <FileText className="h-4 w-4 mb-1" />
-                          <span className="text-center text-sm italic">Click to add a note...</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-gray-700">{note.content}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {format(new Date(note.timestamp), 'MMM d, h:mm a')}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => deleteNote.mutate(note.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </AnimatePresence>
         </div>
 
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full mt-6 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border border-indigo-200 text-indigo-600 font-medium rounded-lg"
-          onClick={() => addNewNote()}
-          disabled={isLoading}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add New Note
-        </Button>
+        {!isAdding && (
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full mt-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-none font-medium"
+            onClick={handleFormOpen}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Note
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

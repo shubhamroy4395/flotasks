@@ -12,24 +12,12 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  console.log(`Making ${method} request to ${url}`);
-  
   const res = await fetch(url, {
     method,
-    headers: {
-      ...(data ? { "Content-Type": "application/json" } : {}),
-      // Always include Accept header
-      "Accept": "application/json"
-    },
+    headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
-
-  // For DELETE operations, 204 No Content is a success but doesn't need to be parsed
-  if (method === 'DELETE' && res.status === 204) {
-    console.log(`Successfully deleted resource at ${url}`);
-    return res;
-  }
 
   await throwIfResNotOk(res);
   return res;
