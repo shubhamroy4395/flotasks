@@ -64,9 +64,10 @@ interface TaskListProps {
   tasks: Task[];
   onSave: (task: { content: string; priority: number; category: string }) => void;
   onDelete?: (id: number) => void;
+  onUpdate?: (id: number, updates: Partial<Task>) => void;
 }
 
-export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
+export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
     const lines = Array(initialLines).fill(null).map((_, i) => ({
@@ -223,45 +224,51 @@ export function TaskList({ title, tasks, onSave, onDelete }: TaskListProps) {
       prev.map((entry, i) => {
         if (i === index) {
           const newCompleted = !entry.completed;
+          
+          // Update the task in the database if we have the onUpdate handler and a valid task
+          if (onUpdate && tasks[index]) {
+            onUpdate(tasks[index].id, { completed: newCompleted });
+          }
+          
           if (newCompleted) {
             setShowCelebration(index);
             setTimeout(() => setShowCelebration(null), 2000);
 
-          // Determine event name based on task category
-          const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
+            // Determine event name based on task category
+            const eventName = title === "Today's Tasks" ? Events.TaskToday.Completed : Events.TaskOther.Completed;
 
-          // Track completion with filterable properties
-          trackEvent(eventName, {
-            // Top-level properties for easy filtering
-            category: title === "Today's Tasks" ? "today" : "other",
-            priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
-            priority_value: entry.priority,
-            has_time: Boolean(entry.eta),
-            estimated_minutes: convertTimeToMinutes(entry.eta),
-            completion_time: Date.now(),
+            // Track completion with filterable properties
+            trackEvent(eventName, {
+              // Top-level properties for easy filtering
+              category: title === "Today's Tasks" ? "today" : "other",
+              priority_level: PRIORITIES.find(p => p.value === entry.priority)?.label || 'N',
+              priority_value: entry.priority,
+              has_time: Boolean(entry.eta),
+              estimated_minutes: convertTimeToMinutes(entry.eta),
+              completion_time: Date.now(),
 
-            // Task details
-            task: {
-              id: entry.id,
-              content: entry.content,
-              position: index,
-              age_ms: Date.now() - new Date(entry.timestamp).getTime()
-            },
+              // Task details
+              task: {
+                id: entry.id,
+                content: entry.content,
+                position: index,
+                age_ms: Date.now() - new Date(entry.timestamp).getTime()
+              },
 
-            // Context
-            task_context: {
-              total_tasks: entries.filter(e => e.content).length,
-              completed_tasks: entries.filter(e => e.completed).length + 1,
-              completion_rate: ((entries.filter(e => e.completed).length + 1) / 
-                              entries.filter(e => e.content).length) * 100
-            }
-          });
+              // Context
+              task_context: {
+                total_tasks: entries.filter(e => e.content).length,
+                completed_tasks: entries.filter(e => e.completed).length + 1,
+                completion_rate: ((entries.filter(e => e.completed).length + 1) / 
+                                entries.filter(e => e.content).length) * 100
+              }
+            });
+          }
+          return { ...entry, completed: newCompleted };
         }
-        return { ...entry, completed: newCompleted };
-      }
-      return entry;
-    })
-  );
+        return entry;
+      })
+    );
   };
 
   const toggleSort = () => {

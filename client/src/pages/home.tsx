@@ -84,6 +84,16 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
     },
   });
+  
+  const updateTask = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Task> }) => {
+      await apiRequest("PATCH", `/api/tasks/${id}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/other"] });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -124,6 +134,7 @@ export default function Home() {
               tasks={todayTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "today" })}
               onDelete={(id) => deleteTask.mutate(id)}
+              onUpdate={(id, updates) => updateTask.mutate({ id, updates })}
             />
           </div>
 
@@ -135,6 +146,7 @@ export default function Home() {
               tasks={otherTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "other" })}
               onDelete={(id) => deleteTask.mutate(id)}
+              onUpdate={(id, updates) => updateTask.mutate({ id, updates })}
             />
           </div>
 
