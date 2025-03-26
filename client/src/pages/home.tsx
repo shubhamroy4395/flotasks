@@ -8,11 +8,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
-import { NotesSection } from "@/components/notes-section"; // Import the new component
+import { NotesSection } from "@/components/notes-section";
+import { DailySummary } from "@/components/daily-summary"; // Import the DailySummary component
 
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [goals, setGoals] = useState<Array<{ id: number; content: string; completed: boolean }>>([]);
   const queryClient = useQueryClient();
 
   // Handle page refresh/exit confirmation
@@ -105,6 +107,15 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Daily Summary - Top Full Width */}
+        <div className="mb-6">
+          <DailySummary 
+            todayTasks={todayTasks || []} 
+            otherTasks={otherTasks || []} 
+            goals={goals || []}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column - Today's Tasks (wider) */}
           <div className="lg:col-span-5">
@@ -118,7 +129,7 @@ export default function Home() {
 
           {/* Middle Column - Goals and Other Tasks */}
           <div className="lg:col-span-4 space-y-6">
-            <GoalsSection />
+            <GoalsSection onGoalsChange={setGoals} />
             <TaskList
               title="Other Tasks"
               tasks={otherTasks || []}
@@ -132,7 +143,7 @@ export default function Home() {
             <MoodTracker />
             <GratitudeSection />
             <ReminderSection />
-            <NotesSection /> {/* Added NotesSection */}
+            <NotesSection />
           </div>
         </div>
       </div>

@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Star } from "lucide-react";
 
-export function GoalsSection() {
+interface GoalsSectionProps {
+  onGoalsChange?: (goals: Array<{ id: number; content: string; completed: boolean }>) => void;
+}
+
+export function GoalsSection({ onGoalsChange }: GoalsSectionProps) {
   const [goals, setGoals] = useState<Array<{ id: number; content: string; completed: boolean }>>([
     { id: 1, content: "", completed: false },
     { id: 2, content: "", completed: false },
     { id: 3, content: "", completed: false }
   ]);
+  
+  useEffect(() => {
+    if (onGoalsChange) {
+      onGoalsChange(goals);
+    }
+  }, [goals, onGoalsChange]);
 
   const toggleGoal = (index: number) => {
     setGoals(prev => 
