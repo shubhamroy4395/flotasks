@@ -114,7 +114,7 @@ export default function Home() {
             </span>
           </div>
           <div className="flex items-center">
-            <h1 className="text-5xl font-bold tracking-tight text-orange-500 font-['Tangerine'] hover:text-orange-600 transition-all duration-300 drop-shadow-sm hover:scale-105">
+            <h1 className="text-4xl font-bold tracking-tight text-black font-['Tangerine'] hover:text-gray-800 transition-all duration-300 drop-shadow-sm hover:scale-105">
               Flo Tasks
             </h1>
           </div>
