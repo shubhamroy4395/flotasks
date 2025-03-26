@@ -54,7 +54,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
       {/* Tasks Progress Card */}
-      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border-none transform hover:scale-[1.02]">
+      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden shadow-card hover:shadow-bold transition-all duration-300 border-none transform hover:scale-[1.02]">
         <CardContent className="pt-4 pb-3 px-4">
           <div className="flex justify-between items-center mb-3">
             <div className="bg-blue-400/30 p-1.5 rounded-lg">
@@ -75,7 +75,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
       </Card>
 
       {/* Goals Progress Card */}
-      <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border-none transform hover:scale-[1.02]">
+      <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden shadow-card hover:shadow-bold transition-all duration-300 border-none transform hover:scale-[1.02]">
         <CardContent className="pt-4 pb-3 px-4">
           <div className="flex justify-between items-center mb-3">
             <div className="bg-emerald-400/30 p-1.5 rounded-lg">
@@ -96,7 +96,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
       </Card>
 
       {/* Priority Tasks Card */}
-      <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border-none transform hover:scale-[1.02]">
+      <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white overflow-hidden shadow-card hover:shadow-bold transition-all duration-300 border-none transform hover:scale-[1.02]">
         <CardContent className="pt-4 pb-3 px-4">
           <div className="flex justify-between items-center mb-3">
             <div className="bg-purple-400/30 p-1.5 rounded-lg">
@@ -117,7 +117,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
       </Card>
 
       {/* Overall Progress Card */}
-      <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border-none transform hover:scale-[1.02]">
+      <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white overflow-hidden shadow-card hover:shadow-bold transition-all duration-300 border-none transform hover:scale-[1.02]">
         <CardContent className="pt-4 pb-3 px-4">
           <div className="flex justify-between items-center mb-3">
             <div className="bg-amber-400/30 p-1.5 rounded-lg">

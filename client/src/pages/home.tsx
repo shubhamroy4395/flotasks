@@ -101,7 +101,7 @@ export default function Home() {
       <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10 shadow-md">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-extrabold text-gray-800">
+            <h2 className="text-2xl font-extrabold text-gray-800 shadow-sm">
               {format(currentTime, 'EEEE')}
             </h2>
             <span className="text-gray-500">•</span>
@@ -109,12 +109,12 @@ export default function Home() {
               {format(currentTime, 'dd-MMM-yyyy')}
             </span>
             <span className="text-gray-500">•</span>
-            <span className="text-xl font-mono font-bold text-gray-700">
+            <span className="text-xl font-bold text-gray-700">
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
           <div className="flex items-center">
-            <h1 className="text-4xl font-bold tracking-tight text-black font-['Tangerine'] hover:text-gray-800 transition-all duration-300 drop-shadow-sm hover:scale-105">
+            <h1 className="text-4xl font-bold tracking-tight text-black font-tangerine hover:text-gray-800 transition-all duration-300 shadow-bold hover:scale-105">
               Flo Tasks
             </h1>
           </div>

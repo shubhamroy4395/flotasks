@@ -4,11 +4,19 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    fontFamily: {
+      sans: ['Outfit', 'sans-serif'],
+      tangerine: ['Tangerine', 'cursive'],
+    },
     extend: {
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        'bold': '0 4px 14px 0 rgba(0, 0, 0, 0.25)',
+        'card': '0 8px 16px rgba(0, 0, 0, 0.15)',
       },
       colors: {
         background: "hsl(var(--background))",
