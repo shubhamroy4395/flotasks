@@ -38,7 +38,7 @@ export function GoalsSection({ onGoalsChange }: GoalsSectionProps) {
   };
 
   return (
-    <Card className="shadow-card hover:shadow-bold transition-all duration-300">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="border-b border-gray-200 dark:border-gray-700">
         <CardTitle className="flex items-center gap-2">
           <Star className="h-5 w-5 text-yellow-500" />
