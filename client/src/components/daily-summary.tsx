@@ -13,41 +13,43 @@ interface DailySummaryProps {
 }
 
 export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProps) {
-  // Calculate completion statistics
-  // Only count tasks that have actual content (non-empty tasks)
-  const visibleTodayTasks = todayTasks.filter(task => task.content);
-  const visibleOtherTasks = otherTasks.filter(task => task.content);
+  // Filter tasks to only include those with actual content
+  const validTodayTasks = todayTasks.filter(task => Boolean(task.content));
+  const validOtherTasks = otherTasks.filter(task => Boolean(task.content));
   
-  const totalTodayTasks = visibleTodayTasks.length;
-  const completedTodayTasks = visibleTodayTasks.filter(task => task.completed).length;
-  const completedOtherTasks = visibleOtherTasks.filter(task => task.completed).length;
+  // Tasks calculations
+  const totalTasks = validTodayTasks.length + validOtherTasks.length;
+  const completedTasks = validTodayTasks.filter(t => t.completed).length + 
+                         validOtherTasks.filter(t => t.completed).length;
   
-  const totalTasksWithPriority = visibleTodayTasks.filter(task => task.priority > 0).length;
-  const totalHighPriorityCompleted = visibleTodayTasks
-    .filter(task => task.priority === 3 && task.completed).length;
-  
+  // Goals calculations
   const totalGoals = goals.length;
   const completedGoals = goals.filter(goal => goal.completed).length;
   
-  // Calculate percentages - include both today's and other tasks
-  const totalAllTasks = totalTodayTasks + visibleOtherTasks.length;
-  const totalCompletedTasks = completedTodayTasks + completedOtherTasks;
-  const taskCompletionPercentage = totalAllTasks > 0 
-    ? Math.round((totalCompletedTasks / totalAllTasks) * 100) 
+  // High priority task calculations (priority 3 is the highest)
+  const highPriorityTasks = validTodayTasks.filter(task => task.priority === 3).length;
+  const completedHighPriorityTasks = validTodayTasks
+    .filter(task => task.priority === 3 && task.completed).length;
+  
+  // Calculate percentages with safeguards against division by zero
+  const taskCompletionPercentage = totalTasks > 0 
+    ? Math.round((completedTasks / totalTasks) * 100) 
     : 0;
   
   const goalCompletionPercentage = totalGoals > 0 
     ? Math.round((completedGoals / totalGoals) * 100) 
     : 0;
     
-  const highPriorityPercentage = totalTasksWithPriority > 0
-    ? Math.round((totalHighPriorityCompleted / totalTasksWithPriority) * 100)
+  const highPriorityPercentage = highPriorityTasks > 0
+    ? Math.round((completedHighPriorityTasks / highPriorityTasks) * 100)
     : 0;
   
-  const totalCompletionPercentage = Math.round(
-    (completedTodayTasks + completedGoals + completedOtherTasks) / 
-    Math.max(1, (totalTodayTasks + totalGoals + visibleOtherTasks.length)) * 100
-  );
+  // Overall progress includes both tasks and goals
+  const totalItems = totalTasks + totalGoals;
+  const completedItems = completedTasks + completedGoals;
+  const totalCompletionPercentage = totalItems > 0
+    ? Math.round((completedItems / totalItems) * 100)
+    : 0;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -60,7 +62,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
             </div>
             <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
               <span className="text-xl font-bold">
-                {completedTodayTasks + completedOtherTasks}/{totalTodayTasks + visibleOtherTasks.length}
+                {completedTasks}/{totalTasks}
               </span>
             </div>
           </div>
@@ -102,7 +104,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
             </div>
             <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
               <span className="text-xl font-bold">
-                {totalHighPriorityCompleted}/{totalTasksWithPriority}
+                {completedHighPriorityTasks}/{highPriorityTasks}
               </span>
             </div>
           </div>
