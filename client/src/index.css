@@ -201,6 +201,27 @@
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
+  
+  /* Progress bar color matching for cards */
+  /* Blue card progress bar */
+  .from-blue-500.to-blue-600 [role="progressbar"] > div > div {
+    background: #3b82f6 !important; /* Tailwind blue-500 */
+  }
+  
+  /* Green card progress bar */
+  .from-emerald-500.to-emerald-600 [role="progressbar"] > div > div {
+    background: #10b981 !important; /* Tailwind emerald-500 */
+  }
+  
+  /* Purple card progress bar */
+  .from-purple-500.to-purple-600 [role="progressbar"] > div > div {
+    background: #8b5cf6 !important; /* Tailwind purple-500 */
+  }
+  
+  /* Amber card progress bar */
+  .from-amber-500.to-amber-600 [role="progressbar"] > div > div {
+    background: #f59e0b !important; /* Tailwind amber-500 */
+  }
 
   /* Dark Mode and Winter Theme Enhanced Utilities */
   /* Global overrides for ALL cards in dark/winter mode */
