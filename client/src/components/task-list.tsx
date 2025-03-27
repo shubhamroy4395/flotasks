@@ -59,43 +59,43 @@ const TIME_SLOTS = [
   "8h", "6h", "4h", "3h", "2h", "1.5h", "1h", "45min", "30min", "15min", "10min", "5min"
 ];
 
-const TASK_FEELINGS = [
+const TASK_DIFFICULTIES = [
   {
     emoji: "😊",
     label: "Easy peasy",
     value: "easy",
-    description: "This task is enjoyable and feels effortless"
+    description: "Quick task, low complexity"
   },
   {
     emoji: "😐",
-    label: "Neutral",
-    value: "neutral",
-    description: "This task is just regular work"
+    label: "Moderate",
+    value: "moderate",
+    description: "Average difficulty and effort required"
   },
   {
-    emoji: "😖",
-    label: "I hate this",
-    value: "hate",
-    description: "This task feels difficult or unpleasant"
+    emoji: "😓",
+    label: "Challenging",
+    value: "challenging",
+    description: "Requires significant focus and effort"
   },
   {
     emoji: "🔥",
     label: "Urgent",
     value: "urgent",
-    description: "This task needs immediate attention"
+    description: "Time-sensitive task needing immediate attention"
   },
   {
-    emoji: "🤔",
-    label: "Unsure",
-    value: "unsure",
-    description: "I'm not sure how to approach this task"
+    emoji: "⭐",
+    label: "Important",
+    value: "important",
+    description: "High-value task with significant impact"
   }
 ];
 
 interface TaskListProps {
   title: string;
   tasks: Task[];
-  onSave: (task: { content: string; priority: number; category: string }) => void;
+  onSave: (task: { content: string; priority: number; difficulty: string; category: string }) => void;
   onDelete?: (id: number) => void;
   onUpdate?: (id: number, updates: Partial<Task>) => void;
 }
@@ -110,7 +110,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
       completed: false,
       priority: 0,
       eta: "",
-      feeling: "",
+      difficulty: "",
       timestamp: new Date()
     }));
 
@@ -134,7 +134,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
     content: string;
     priority: number;
     eta: string;
-    feeling?: string;
+    difficulty?: string;
   } | null>(null);
 
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -179,7 +179,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
       content: entry.content || "",
       priority: entry.priority || 0,
       eta: entry.eta || "",
-      feeling: entry.feeling || ""
+      difficulty: entry.difficulty || ""
     });
 
     // Track task editing interaction
@@ -196,13 +196,13 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
 
   const handleSave = useCallback(() => {
     if (!activeTask) return;
-    const { content, priority, eta, feeling } = activeTask;
+    const { content, priority, eta, difficulty } = activeTask;
 
     if (content.trim()) {
       onSave({
         content,
         priority,
-        feeling: feeling || "",
+        difficulty: difficulty || "",
         category: title === "Today's Tasks" ? "today" : "other"
       });
 
@@ -217,7 +217,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
         priority_value: priority, // 3, 2, 1
         has_time: Boolean(eta),
         estimated_minutes: convertTimeToMinutes(eta),
-        feeling: feeling || 'none',
+        difficulty: difficulty || 'none',
 
         // Detailed task properties
         task: {
@@ -249,7 +249,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
               content: content.trim(),
               priority,
               eta,
-              feeling: feeling || "",
+              difficulty: difficulty || "",
               isEditing: false
             }
           : entry
@@ -271,8 +271,9 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
           if (onUpdate && taskToUpdate) {
             onUpdate(taskToUpdate.id, { 
               completed: newCompleted,
-              // Ensure we explicitly pass the priority to maintain it during update
-              priority: entry.priority 
+              // Ensure we explicitly pass the priority and difficulty to maintain it during update
+              priority: entry.priority,
+              difficulty: entry.difficulty
             });
           }
           
@@ -291,6 +292,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
               priority_value: entry.priority,
               has_time: Boolean(entry.eta),
               estimated_minutes: convertTimeToMinutes(entry.eta),
+              difficulty: entry.difficulty || 'none',
               completion_time: Date.now(),
 
               // Task details
@@ -378,7 +380,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
         completed: false,
         priority: 0,
         eta: "",
-        feeling: "",
+        difficulty: "",
         timestamp: new Date()
       }))
     ]);
@@ -404,7 +406,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
     // Update local state to immediately reflect deletion
     setEntries(prev => 
       prev.map((entry, i) => 
-        i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "", feeling: "" } : entry
+        i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "", difficulty: "" } : entry
       )
     );
   }, [entries, onDelete, tasks, title]);
@@ -524,7 +526,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                     content: nextEntry.content || "",
                                     priority: nextEntry.priority || 0,
                                     eta: nextEntry.eta || "",
-                                    feeling: nextEntry.feeling || ""
+                                    difficulty: nextEntry.difficulty || ""
                                   });
                                 }, 0);
                               }
@@ -539,7 +541,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                               content: prevEntry.content || "",
                               priority: prevEntry.priority || 0,
                               eta: prevEntry.eta || "",
-                              feeling: prevEntry.feeling || ""
+                              difficulty: prevEntry.difficulty || ""
                             });
                           } else if (e.key === "ArrowDown" && activeTask.index < entries.length - 1) {
                             // Move to the next task
@@ -551,7 +553,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                               content: nextEntry.content || "",
                               priority: nextEntry.priority || 0,
                               eta: nextEntry.eta || "",
-                              feeling: nextEntry.feeling || ""
+                              difficulty: nextEntry.difficulty || ""
                             });
                           }
                         }}
@@ -569,8 +571,9 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                       </Button>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 max-w-full">
+                      {/* Priority buttons */}
+                      <div className="flex items-center gap-2 mr-2">
                         <div className="flex gap-1">
                           {PRIORITIES.map(({ label, value, color }) => (
                             <Button
@@ -616,6 +619,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         </Popover>
                       </div>
 
+                      {/* Time selector */}
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
@@ -628,23 +632,25 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         ))}
                       </select>
 
+                      {/* Task Difficulty selector (renamed from Feeling) */}
                       <select
-                        value={activeTask.feeling || ""}
-                        onChange={(e) => setActiveTask({ ...activeTask, feeling: e.target.value })}
+                        value={activeTask.difficulty || ""}
+                        onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
                         className="rounded-md border-border px-2 py-1.5 text-sm bg-transparent font-bold text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <option value="">Feeling</option>
-                        {TASK_FEELINGS.map(feeling => (
-                          <option key={feeling.value} value={feeling.value}>{feeling.emoji} {feeling.label}</option>
+                        <option value="">Task Difficulty</option>
+                        {TASK_DIFFICULTIES.map(difficulty => (
+                          <option key={difficulty.value} value={difficulty.value}>{difficulty.emoji} {difficulty.label}</option>
                         ))}
                       </select>
 
+                      {/* Save button */}
                       <Button
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
+                        className="ml-auto bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
                       >
                         Save
                       </Button>
@@ -676,6 +682,11 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           <span className="flex items-center text-xs text-muted-foreground font-bold">
                             <Clock className="h-3 w-3 mr-1" />
                             {entry.eta}
+                          </span>
+                        )}
+                        {entry.difficulty && (
+                          <span className="flex items-center text-xs font-bold ml-1">
+                            {TASK_DIFFICULTIES.find(d => d.value === entry.difficulty)?.emoji}
                           </span>
                         )}
                         {/* Delete button */}
