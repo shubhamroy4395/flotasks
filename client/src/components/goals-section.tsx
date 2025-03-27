@@ -17,7 +17,9 @@ export function GoalsSection({ onGoalsChange }: GoalsSectionProps) {
   
   useEffect(() => {
     if (onGoalsChange) {
-      onGoalsChange(goals);
+      // Only pass goals that have content
+      const validGoals = goals.filter(goal => Boolean(goal.content.trim()));
+      onGoalsChange(validGoals);
     }
   }, [goals, onGoalsChange]);
 

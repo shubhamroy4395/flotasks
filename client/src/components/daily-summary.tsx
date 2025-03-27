@@ -118,6 +118,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
                          validOtherTasks.filter(t => t.completed).length;
   
   // Goals calculations - only count goals that have content
+  // This is a safety check, as the GoalsSection should already be filtering out empty goals
   const validGoals = goals.filter(goal => Boolean(goal.content.trim()));
   const totalGoals = validGoals.length;
   const completedGoals = validGoals.filter(goal => goal.completed).length;
@@ -144,7 +145,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
     ? Math.round((completedHighPriorityTasks / highPriorityTasks) * 100)
     : 0;
   
-  // Overall progress includes both tasks and valid goals
+  // Overall progress includes only valid tasks and valid goals (those with content)
   const totalItems = totalTasks + totalGoals;
   const completedItems = completedTasks + completedGoals;
   const totalCompletionPercentage = totalItems > 0
