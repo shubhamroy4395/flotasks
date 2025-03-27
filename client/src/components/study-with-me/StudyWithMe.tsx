@@ -395,7 +395,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        "sm:max-w-xl p-0 overflow-hidden border-0", 
+        "sm:max-w-3xl p-0 overflow-hidden border-0", // Made dialog wider
         theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
       )}>
         {/* Ambient Background */}
@@ -500,10 +500,41 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
           </DialogHeader>
 
           {/* Main content tabs */}
+          {/* Focus hours selection on main screen */}
+          <div className="flex justify-between items-center mb-4 space-x-4">
+            <div className="flex-1">
+              <Select 
+                value={focusHours.toString()} 
+                onValueChange={(value) => setFocusHours(parseInt(value))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Focus duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 hour</SelectItem>
+                  <SelectItem value="2">2 hours</SelectItem>
+                  <SelectItem value="3">3 hours</SelectItem>
+                  <SelectItem value="4">4 hours</SelectItem>
+                  <SelectItem value="5">5 hours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleBackground}
+              className={cn(
+                background === 'ambient' && "text-primary"
+              )}
+            >
+              <Monitor className="h-4 w-4 mr-1" />
+              {background === 'ambient' ? 'Hide Visual' : 'Show Visual'}
+            </Button>
+          </div>
+          
           <Tabs defaultValue="timer" className="mt-2" onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3 mb-4">
+            <TabsList className="grid grid-cols-2 mb-4">
               <TabsTrigger value="timer">Timer</TabsTrigger>
-              <TabsTrigger value="sounds">Sounds</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
             
@@ -709,91 +740,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
               </Card>
             </TabsContent>
             
-            {/* Sounds Tab */}
-            <TabsContent value="sounds" className="mt-0">
-              <Card className={cn(
-                "p-6",
-                background === 'ambient' ? "bg-card/80 backdrop-blur-sm" : "bg-card",
-                "text-card-foreground",
-                theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
-              )}>
-                <h3 className="text-lg font-medium mb-4">Ambient Sounds</h3>
-                
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <Button 
-                    variant={soundType === 'ghibli' ? "default" : "outline"} 
-                    className="flex items-center justify-center gap-2 py-6"
-                    onClick={() => setSoundType('ghibli')}
-                  >
-                    <Music className="h-6 w-6" />
-                    <div className="text-left">
-                      <div className="font-medium">Ghibli</div>
-                      <div className="text-xs text-muted-foreground">Calm piano music</div>
-                    </div>
-                  </Button>
-                  
-                  <Button 
-                    variant={soundType === 'rain' ? "default" : "outline"} 
-                    className="flex items-center justify-center gap-2 py-6"
-                    onClick={() => setSoundType('rain')}
-                  >
-                    <CloudRain className="h-6 w-6" />
-                    <div className="text-left">
-                      <div className="font-medium">Rain</div>
-                      <div className="text-xs text-muted-foreground">Gentle rainfall</div>
-                    </div>
-                  </Button>
-                  
-                  <Button 
-                    variant={soundType === 'thunder' ? "default" : "outline"} 
-                    className="flex items-center justify-center gap-2 py-6"
-                    onClick={() => setSoundType('thunder')}
-                  >
-                    <CloudLightning className="h-6 w-6" />
-                    <div className="text-left">
-                      <div className="font-medium">Thunder</div>
-                      <div className="text-xs text-muted-foreground">Distant storm</div>
-                    </div>
-                  </Button>
-                  
-                  <Button 
-                    variant={soundType === 'fire' ? "default" : "outline"} 
-                    className="flex items-center justify-center gap-2 py-6"
-                    onClick={() => setSoundType('fire')}
-                  >
-                    <Flame className="h-6 w-6" />
-                    <div className="text-left">
-                      <div className="font-medium">Fireplace</div>
-                      <div className="text-xs text-muted-foreground">Crackling logs</div>
-                    </div>
-                  </Button>
-                </div>
-                
-                {/* Volume control */}
-                <div className="flex items-center space-x-2">
-                  <Volume2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <Slider
-                    value={[volume]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(value) => setVolume(value[0])}
-                    className="flex-1"
-                  />
-                  <span className="w-10 text-right text-xs text-muted-foreground shrink-0">
-                    {volume}%
-                  </span>
-                </div>
-                
-                <Button
-                  variant="outline"
-                  className="w-full mt-4"
-                  onClick={() => setSoundType('none')}
-                >
-                  No Sound
-                </Button>
-              </Card>
-            </TabsContent>
+            {/* We've removed the separate Sounds tab, adding ambient sounds control to the timer card instead */}
             
             {/* Settings Tab */}
             <TabsContent value="settings" className="mt-0">
@@ -855,15 +802,20 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
           
           {/* Dialog footer */}
           <DialogFooter className="flex items-center justify-between mt-4 pt-2 border-t border-border">
-            <div className="text-xs text-muted-foreground">
-              {soundType !== 'none' ? `Playing: ${soundType}` : 'Sound off'}
-            </div>
-            <DialogClose asChild>
-              <Button variant="ghost" size="sm">
+            <div className="text-xs text-muted-foreground flex items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="mr-2"
+              >
                 <X className="h-4 w-4 mr-1" />
-                Close
+                Close Focus Mode
               </Button>
-            </DialogClose>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {soundType !== 'none' ? `Sound: ${soundType}` : 'Sound: off'}
+            </div>
           </DialogFooter>
         </div>
       </DialogContent>
