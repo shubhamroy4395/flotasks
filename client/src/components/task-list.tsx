@@ -61,32 +61,32 @@ const TIME_SLOTS = [
 
 const TASK_DIFFICULTIES = [
   {
-    emoji: "😊",
-    label: "Easy peasy",
+    emoji: "🍰",
+    label: "Cakewalk",
     value: "easy",
     description: "Quick task, low complexity"
   },
   {
-    emoji: "😐",
-    label: "Moderate",
+    emoji: "😒",
+    label: "Meh",
     value: "moderate",
     description: "Average difficulty and effort required"
   },
   {
-    emoji: "😓",
-    label: "Challenging",
+    emoji: "🙄",
+    label: "Ugh, fine",
     value: "challenging",
     description: "Requires significant focus and effort"
   },
   {
-    emoji: "🔥",
-    label: "Urgent",
+    emoji: "😱",
+    label: "Panic Mode",
     value: "urgent",
     description: "Time-sensitive task needing immediate attention"
   },
   {
-    emoji: "⭐",
-    label: "Important",
+    emoji: "👑",
+    label: "VIP Task",
     value: "important",
     description: "High-value task with significant impact"
   }
