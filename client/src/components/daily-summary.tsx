@@ -216,24 +216,18 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
   const validOtherTasks = otherTasks.filter(task => Boolean(task.content));
   
   // Tasks calculations
-  const totalTasks = validTodayTasks.length + validOtherTasks.length;
-  const completedTasks = validTodayTasks.filter(t => t.completed).length + 
-                         validOtherTasks.filter(t => t.completed).length;
+  const totalTasks = validTodayTasks.length;
+  const completedTasks = validTodayTasks.filter(t => t.completed).length;
   
   // Goals calculations - only count goals that have content
   // This is a safety check, as the GoalsSection should already be filtering out empty goals
-  const validGoals = goals.filter(goal => Boolean(goal.content.trim()));
+  const validGoals = goals.filter(goal => Boolean(goal.content?.trim()));
   const totalGoals = validGoals.length;
   const completedGoals = validGoals.filter(goal => goal.completed).length;
   
-  // High priority task calculations (priority 3 is the highest) from both Today and Other tasks
-  const highPriorityTasks = 
-    validTodayTasks.filter(task => task.priority === 3).length + 
-    validOtherTasks.filter(task => task.priority === 3).length;
-    
-  const completedHighPriorityTasks = 
-    validTodayTasks.filter(task => task.priority === 3 && task.completed).length +
-    validOtherTasks.filter(task => task.priority === 3 && task.completed).length;
+  // High priority task calculations (priority 3 is the highest) - only "Today's Tasks"
+  const highPriorityTasks = validTodayTasks.filter(task => task.priority === 3).length;
+  const completedHighPriorityTasks = validTodayTasks.filter(task => task.priority === 3 && task.completed).length;
   
   // Calculate percentages with safeguards against division by zero
   const taskCompletionPercentage = totalTasks > 0 
@@ -269,7 +263,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
         textAccent: "text-blue-100",
         infoBg: "bg-blue-600/40",
       },
-      description: "This card tracks all your tasks from both Today's Tasks and Other Tasks sections. It shows how many tasks you've completed out of your total tasks."
+      description: "This card tracks your tasks from Today's Tasks section. It shows how many tasks you've completed out of your total tasks."
     },
     {
       title: "Goals Achieved",
@@ -298,7 +292,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
         textAccent: "text-purple-100",
         infoBg: "bg-purple-600/40",
       },
-      description: "This card specifically tracks 'L' priority tasks (high-impact, low-effort) from both Today's Tasks and Backlog sections. These are your most valuable tasks that give maximum results for minimal effort."
+      description: "This card specifically tracks 'L' priority tasks (high-impact, low-effort) from Today's Tasks section. These are your most valuable tasks that give maximum results for minimal effort."
     },
     {
       title: "Overall Progress",
