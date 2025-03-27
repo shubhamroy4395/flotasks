@@ -1,0 +1,151 @@
+📣 Replit Prompt: Build “Study With Me” MVP for FloTasks
+✅ Context
+You are working on the FloTasks productivity app. We want to introduce a new feature called “Study With Me”, inspired by YouTube study videos. The goal is to help users stay focused by combining:
+
+A pomodoro-style timer
+
+Tranquil Ghibli-style background music
+
+Break reminders
+
+Optional subtle animations later (e.g. clouds, fairy lights)
+
+The app already has a modern layout with task tracking. This new feature should be integrated non-intrusively, but available on every screen.
+
+🧠 Feature Overview: "Study With Me"
+Element	Details
+Timer Structure	25-minute focus + 5-minute break (Pomodoro)
+User Controls	Start, Pause, Reset, Close
+Background Music	Ghibli-style instrumental (loaded from /public/music/ghibli.mp3)
+Audio Player	Auto-play on start, pause on pause/reset
+Notification	Send browser notification when time is up (focus + break ends)
+Modal UI	Opens as a modal or floating panel with backdrop blur
+UI Placement	Floating 🎧 button in bottom-right corner
+Persistence	Timer & session state are local (no DB needed for MVP)
+🔧 Requirements & Tasks
+1. 🎧 Floating “Study Mode” Button
+Place a button in the bottom-right corner of the screen
+
+Style: rounded, fixed position, z-index high enough to float
+
+On click → open the StudyWithMe modal
+
+2. 🪟 Modal Component: StudyWithMe.jsx
+Create a modal overlay with:
+
+Large countdown timer
+
+“Start / Pause / Reset / Close” buttons
+
+Music player (plays automatically when timer starts)
+
+Indicator showing if user is in Focus or Break mode
+
+Notification permission prompt (once on load)
+
+3. ⏱️ Timer Logic
+Use setInterval to count down
+
+On “Start”:
+
+Timer begins (25:00)
+
+Music starts looping
+
+On timer complete:
+
+If it was a Focus session → trigger break (5 mins)
+
+If it was a Break → reset everything or allow repeat
+
+On “Pause” → stop music and countdown
+
+On “Reset” → stop everything, timer set to 25:00
+
+4. 🎵 Background Music
+Use the Audio API
+
+File: /public/music/ghibli.mp3
+
+Add volume control if possible (optional)
+
+Use audioRef.play() on start and .pause() on pause/reset
+
+5. 🔔 Web Notifications (Must Have)
+Ask for Notification permission once (if not already granted)
+
+When:
+
+Focus timer ends → show: “Focus session complete! Time for a break.”
+
+Break timer ends → show: “Break is over. Back to study!”
+
+Example logic:
+
+js
+Copy
+Edit
+if (Notification.permission === "granted") {
+  new Notification("Focus session complete! Time for a break.");
+}
+Fallback UI alert if permission is denied.
+
+6. 💅 Styling (CSS)
+Use dark or pastel theme modal
+
+Rounded corners, soft shadows
+
+Font: large digital timer (font-size: 48px)
+
+Buttons: hover, active states
+
+Backdrop blur behind modal
+
+📁 Suggested File Structure
+swift
+Copy
+Edit
+/public/music/ghibli.mp3
+
+/src/components/
+  StudyWithMe.jsx
+  TimerControls.jsx  // optional
+  AudioPlayer.jsx    // optional
+
+/src/styles/
+  study.css
+🧪 Testing Criteria
+Test Case	Expected Outcome
+Click Study Mode button	Modal opens with timer and controls
+Click Start	Timer counts down, music plays
+Timer ends	Notification appears, break starts
+Break ends	Notification appears, session resets
+Pause or Reset	Music pauses, timer stops/reset
+User denies notification permission	App still works, fallback alert used
+✅ Acceptance Criteria
+Users can launch and close the “Study With Me” session anytime
+
+Timer runs smoothly with full control
+
+Background music plays without lag or restart
+
+Notifications reliably show when session ends
+
+UI feels clean and integrated with current design
+
+🛑 Do Not:
+Add account-level persistence (no need for DB right now)
+
+Overcomplicate with theme animations (coming in V2)
+
+Leave the audio playing when modal is closed
+
+Use third-party timer libraries — keep it simple with setInterval
+
+Once done, confirm:
+
+Modal opens + works across viewports
+
+Music loops without delay
+
+Timer resets properly on manual close
