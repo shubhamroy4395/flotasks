@@ -592,11 +592,11 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         ))}
                       </div>
 
-                      {/* Time selector */}
+                      {/* Time selector with fixed width */}
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground"
+                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Time</option>
@@ -605,11 +605,11 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         ))}
                       </select>
 
-                      {/* Difficulty selector - renamed from Task Difficulty */}
+                      {/* Difficulty selector - renamed from Task Difficulty, with reduced width */}
                       <select
                         value={activeTask.difficulty || ""}
                         onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
-                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground"
+                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Difficulty</option>
@@ -664,7 +664,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           onClick={handleSave}
                           size="sm"
                           variant="outline"
-                          className="h-7 mr-1 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
+                          className="h-7 px-3 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
                         >
                           Save
                         </Button>
