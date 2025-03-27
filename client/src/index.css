@@ -49,22 +49,22 @@
   /* Dark theme - Enhanced for accessibility and contrast */
   .theme-dark {
     --background: 230 30% 7%;    /* Deeper background #121212 */
-    --foreground: 0 0% 90%;      /* Not pure white for text #E6E6E6 */
+    --foreground: 0 0% 97%;      /* Almost white for text #F7F7F7 */
 
-    --card: 225 20% 15%;         /* Darker card background #1E1E1E */
-    --card-foreground: 0 0% 92%; /* Card text #EAEAEA */
+    --card: 225 15% 12%;         /* Much darker grey card background #181819 */
+    --card-foreground: 0 0% 98%; /* Almost white card text #FAFAFA */
 
-    --popover: 225 20% 15%;      /* Match card background */
-    --popover-foreground: 0 0% 92%; /* Match card text */
+    --popover: 225 15% 12%;      /* Match card background */
+    --popover-foreground: 0 0% 98%; /* Match card text */
 
     --primary: 217 90% 65%;      /* Brighter blue for better visibility */
     --primary-foreground: 0 0% 100%; /* White text on primary buttons */
 
-    --secondary: 215 30% 25%;    /* Slightly darker secondary background */
-    --secondary-foreground: 0 0% 92%; /* Match general text color */
+    --secondary: 215 30% 20%;    /* Darker secondary background */
+    --secondary-foreground: 0 0% 98%; /* Match general text color */
 
-    --muted: 217 30% 22%;        /* Darker muted for better contrast with content */
-    --muted-foreground: 215 20% 75%; /* Lighter muted text for readability */
+    --muted: 217 30% 18%;        /* Darker muted for better contrast with content */
+    --muted-foreground: 215 20% 80%; /* Lighter muted text for readability */
 
     --accent: 217 70% 55%;       /* Brighter accent color for emphasis */
     --accent-foreground: 0 0% 100%; /* White text on accent */
@@ -72,8 +72,8 @@
     --destructive: 0 80% 60%;    /* Brighter red for destructive actions */
     --destructive-foreground: 0 0% 100%; /* White text on destructive */
 
-    --border: 215 30% 30%;       /* More visible borders for separation */
-    --input: 215 30% 30%;        /* Match border for inputs */
+    --border: 215 25% 25%;       /* More visible borders for separation */
+    --input: 215 25% 25%;        /* Match border for inputs */
     --ring: 217 90% 65%;         /* Match primary for focus rings */
   }
 
@@ -113,20 +113,20 @@
     --background: 220 30% 15%;
     --foreground: 210 40% 98%;
     
-    --card: 215 35% 20%;
-    --card-foreground: 210 40% 98%;
+    --card: 215 20% 16%;         /* Much darker grey card #1F2229 */
+    --card-foreground: 210 40% 98%; /* White card text */
     
-    --popover: 215 35% 20%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 215 20% 16%;      /* Match card background */
+    --popover-foreground: 210 40% 98%; /* Match card text */
     
-    --primary: 195 90% 50%;
+    --primary: 195 90% 50%;      /* Bright blue for better visibility */
     --primary-foreground: 210 40% 98%;
     
-    --secondary: 217 35% 25%;
+    --secondary: 217 25% 20%;    /* Darker secondary background */
     --secondary-foreground: 210 40% 98%;
     
-    --muted: 217 30% 30%;
-    --muted-foreground: 215 30% 70%;
+    --muted: 217 20% 25%;
+    --muted-foreground: 215 30% 75%; /* Lighter muted text for readability */
     
     --accent: 195 90% 50%;
     --accent-foreground: 210 40% 98%;
@@ -134,8 +134,8 @@
     --destructive: 0 70% 50%;
     --destructive-foreground: 210 40% 98%;
     
-    --border: 215 30% 30%;
-    --input: 215 30% 30%;
+    --border: 215 30% 25%;
+    --input: 215 30% 25%;
     --ring: 195 90% 50%;
   }
 }
@@ -167,49 +167,68 @@
     transform: rotateY(180deg);
   }
 
-  /* Dark Mode Enhanced Utilities */
-  .theme-dark .card-enhanced {
+  /* Dark Mode and Winter Theme Enhanced Utilities */
+  .theme-dark .card-enhanced,
+  .theme-winter .card-enhanced {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     border: 1px solid hsl(var(--border));
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background-color: hsl(var(--card)); /* Ensure card bg color is applied */
+    color: hsl(var(--card-foreground)); /* Ensure text color is applied */
   }
   
-  .theme-dark .card-enhanced:hover {
+  .theme-dark .card-enhanced:hover,
+  .theme-winter .card-enhanced:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
     transform: translateY(-2px);
   }
   
-  .theme-dark .hover-highlight {
+  .theme-dark .hover-highlight,
+  .theme-winter .hover-highlight {
     transition: background-color 0.2s ease;
   }
   
-  .theme-dark .hover-highlight:hover {
+  .theme-dark .hover-highlight:hover,
+  .theme-winter .hover-highlight:hover {
     background-color: hsl(var(--muted) / 0.7);
   }
   
-  .theme-dark .active-scale {
+  .theme-dark .active-scale,
+  .theme-winter .active-scale {
     transition: transform 0.1s ease;
   }
   
-  .theme-dark .active-scale:active {
+  .theme-dark .active-scale:active,
+  .theme-winter .active-scale:active {
     transform: scale(0.98);
   }
   
-  .theme-dark .interactive-row {
+  .theme-dark .interactive-row,
+  .theme-winter .interactive-row {
     border-bottom: 1px dashed hsl(var(--border));
     transition: background-color 0.2s ease;
+    background-color: hsl(var(--card)); /* Ensure darker bg color is applied */
   }
   
-  .theme-dark .interactive-row:hover {
+  .theme-dark .interactive-row:hover,
+  .theme-winter .interactive-row:hover {
     background-color: hsl(var(--muted) / 0.5);
   }
   
-  .theme-dark .text-enhanced {
+  .theme-dark .text-enhanced,
+  .theme-winter .text-enhanced {
     color: hsl(var(--foreground));
     font-weight: 500;
   }
   
-  .theme-dark .subtle-glow {
+  .theme-dark .subtle-glow,
+  .theme-winter .subtle-glow {
     box-shadow: 0 0 15px hsl(var(--accent) / 0.15);
+  }
+  
+  /* Force text color in specific elements */
+  .theme-dark .force-text-light,
+  .theme-winter .force-text-light {
+    color: hsl(0 0% 98%) !important;
   }
 }
