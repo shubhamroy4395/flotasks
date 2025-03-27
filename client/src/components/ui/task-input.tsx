@@ -61,6 +61,12 @@ export function TaskInput({ onSubmit }: TaskInputProps) {
                     onChange={(e) => setContent(e.target.value)}
                     className="flex-1"
                     autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey && content.trim()) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
                   />
                   <Button
                     type="button"

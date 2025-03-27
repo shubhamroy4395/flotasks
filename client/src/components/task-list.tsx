@@ -469,7 +469,49 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                         autoFocus
                         value={activeTask.content}
                         onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
-                        onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            if (!e.shiftKey) {
+                              e.preventDefault();
+                              handleSave();
+                              // Move to the next task after saving
+                              if (activeTask.index < entries.length - 1) {
+                                const nextIndex = activeTask.index + 1;
+                                const nextEntry = entries[nextIndex];
+                                setTimeout(() => {
+                                  setActiveTask({
+                                    index: nextIndex,
+                                    content: nextEntry.content || "",
+                                    priority: nextEntry.priority || 0,
+                                    eta: nextEntry.eta || ""
+                                  });
+                                }, 0);
+                              }
+                            }
+                          } else if (e.key === "ArrowUp" && activeTask.index > 0) {
+                            // Move to the previous task
+                            e.preventDefault();
+                            const prevIndex = activeTask.index - 1;
+                            const prevEntry = entries[prevIndex];
+                            setActiveTask({
+                              index: prevIndex,
+                              content: prevEntry.content || "",
+                              priority: prevEntry.priority || 0,
+                              eta: prevEntry.eta || ""
+                            });
+                          } else if (e.key === "ArrowDown" && activeTask.index < entries.length - 1) {
+                            // Move to the next task
+                            e.preventDefault();
+                            const nextIndex = activeTask.index + 1;
+                            const nextEntry = entries[nextIndex];
+                            setActiveTask({
+                              index: nextIndex,
+                              content: nextEntry.content || "",
+                              priority: nextEntry.priority || 0,
+                              eta: nextEntry.eta || ""
+                            });
+                          }
+                        }}
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                         placeholder="What needs to be done?"
                       />

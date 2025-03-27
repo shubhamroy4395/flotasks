@@ -117,9 +117,10 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
   const completedTasks = validTodayTasks.filter(t => t.completed).length + 
                          validOtherTasks.filter(t => t.completed).length;
   
-  // Goals calculations
-  const totalGoals = goals.length;
-  const completedGoals = goals.filter(goal => goal.completed).length;
+  // Goals calculations - only count goals that have content
+  const validGoals = goals.filter(goal => Boolean(goal.content.trim()));
+  const totalGoals = validGoals.length;
+  const completedGoals = validGoals.filter(goal => goal.completed).length;
   
   // High priority task calculations (priority 3 is the highest) from both Today and Other tasks
   const highPriorityTasks = 
@@ -143,7 +144,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
     ? Math.round((completedHighPriorityTasks / highPriorityTasks) * 100)
     : 0;
   
-  // Overall progress includes both tasks and goals
+  // Overall progress includes both tasks and valid goals
   const totalItems = totalTasks + totalGoals;
   const completedItems = completedTasks + completedGoals;
   const totalCompletionPercentage = totalItems > 0

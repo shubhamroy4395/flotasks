@@ -65,6 +65,20 @@ export function GoalsSection({ onGoalsChange }: GoalsSectionProps) {
                 onChange={(e) => updateGoal(index, e.target.value)}
                 className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
                 placeholder={`Goal ${index + 1}`}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown" && index < goals.length - 1) {
+                    // Move focus to the next goal input
+                    e.preventDefault();
+                    const nextInput = document.querySelector(`#goal-input-${index + 1}`) as HTMLInputElement;
+                    if (nextInput) nextInput.focus();
+                  } else if (e.key === "ArrowUp" && index > 0) {
+                    // Move focus to the previous goal input
+                    e.preventDefault();
+                    const prevInput = document.querySelector(`#goal-input-${index - 1}`) as HTMLInputElement;
+                    if (prevInput) prevInput.focus();
+                  }
+                }}
+                id={`goal-input-${index}`}
               />
             </div>
           ))}
