@@ -145,11 +145,11 @@ export default function Home() {
             />
           </div>
 
-          {/* Middle Column - Goals and Other Tasks */}
+          {/* Middle Column - Goals and Backlog */}
           <div className="lg:col-span-4 space-y-6">
             <GoalsSection onGoalsChange={setGoals} />
             <TaskList
-              title="Other Tasks"
+              title="Backlog"
               tasks={otherTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "other" })}
               onDelete={(id) => deleteTask.mutate(id)}

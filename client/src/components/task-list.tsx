@@ -658,12 +658,12 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         </PopoverContent>
                       </Popover>
 
-                      {/* Save button - Now in the same line as the other controls */}
+                      {/* Save button - Positioned to stay inside the card */}
                       <Button
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="ml-auto h-7 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
+                        className="ml-auto h-7 mr-1 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
                       >
                         Save
                       </Button>

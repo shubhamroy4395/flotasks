@@ -298,7 +298,7 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
         textAccent: "text-purple-100",
         infoBg: "bg-purple-600/40",
       },
-      description: "This card specifically tracks 'L' priority tasks (high-impact, low-effort) from both Today's Tasks and Other Tasks sections. These are your most valuable tasks that give maximum results for minimal effort."
+      description: "This card specifically tracks 'L' priority tasks (high-impact, low-effort) from both Today's Tasks and Backlog sections. These are your most valuable tasks that give maximum results for minimal effort."
     },
     {
       title: "Overall Progress",
