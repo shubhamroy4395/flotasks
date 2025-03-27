@@ -10,11 +10,17 @@ import { trackEvent, Events } from "@/lib/amplitude";
 
 const TIME_OPTIONS = [
   { label: "5 minutes", value: 5, unit: "minutes" },
+  { label: "10 minutes", value: 10, unit: "minutes" },
   { label: "15 minutes", value: 15, unit: "minutes" },
   { label: "30 minutes", value: 30, unit: "minutes" },
+  { label: "45 minutes", value: 45, unit: "minutes" },
   { label: "1 hour", value: 1, unit: "hours" },
+  { label: "1.5 hours", value: 1.5, unit: "hours" },
   { label: "2 hours", value: 2, unit: "hours" },
-  { label: "4 hours", value: 4, unit: "hours" }
+  { label: "3 hours", value: 3, unit: "hours" },
+  { label: "4 hours", value: 4, unit: "hours" },
+  { label: "6 hours", value: 6, unit: "hours" },
+  { label: "8 hours", value: 8, unit: "hours" }
 ];
 
 // Create notification sound
@@ -47,7 +53,7 @@ export function ReminderSection() {
 
   // Track section open
   useEffect(() => {
-    trackEvent(Events.REMINDER_SECTION_OPEN, {
+    trackEvent(Events.Reminder.SectionOpen, {
       componentName: 'ReminderSection',
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -79,7 +85,7 @@ export function ReminderSection() {
             });
 
             // Track reminder completion
-            trackEvent(Events.REMINDER_COMPLETED, {
+            trackEvent(Events.Reminder.Completed, {
               content: reminder.content,
               scheduledTime: reminder.time.toISOString(),
               actualCompletionTime: now.toISOString(),
@@ -110,7 +116,7 @@ export function ReminderSection() {
   const handleFormOpen = () => {
     setIsOpen(true);
     formOpenTime.current = Date.now();
-    trackEvent(Events.UI_MODAL_OPENED, {
+    trackEvent(Events.UI.ModalOpened, {
       modalType: 'reminder-form',
       timeOfDay: new Date().getHours(),
       existingReminders: reminders.length
@@ -121,9 +127,12 @@ export function ReminderSection() {
     e.preventDefault();
     if (!newReminder.trim() || !selectedTime) return;
 
+    // Handle decimal hours correctly by converting to minutes first if needed
     const dueTime = selectedTime.unit === "minutes" 
       ? addMinutes(new Date(), selectedTime.value)
-      : addHours(new Date(), selectedTime.value);
+      : (Number.isInteger(selectedTime.value) 
+        ? addHours(new Date(), selectedTime.value)
+        : addMinutes(new Date(), selectedTime.value * 60));
 
     const newId = Date.now();
     setReminders(prev => [...prev, {
@@ -133,7 +142,7 @@ export function ReminderSection() {
     }]);
 
     // Track reminder creation
-    trackEvent(Events.REMINDER_SET, {
+    trackEvent(Events.Reminder.Set, {
       content: newReminder,
       timeValue: selectedTime.value,
       timeUnit: selectedTime.unit,
@@ -162,7 +171,7 @@ export function ReminderSection() {
 
     // Track reminder deletion
     if (reminderToDelete) {
-      trackEvent(Events.REMINDER_DELETED, {
+      trackEvent(Events.Reminder.Deleted, {
         content: reminderToDelete.content,
         timeUntilDue: reminderToDelete.time.getTime() - Date.now(),
         remainingReminders: reminders.length - 1,

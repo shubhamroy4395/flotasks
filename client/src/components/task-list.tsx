@@ -12,9 +12,9 @@ import { trackEvent, Events } from "@/lib/amplitude";
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
   if (!time) return 0;
-  const hours = time.match(/(\d+)h/);
+  const hours = time.match(/(\d+\.?\d*)h/);
   const minutes = time.match(/(\d+)min/);
-  return (hours ? parseInt(hours[1]) * 60 : 0) + (minutes ? parseInt(minutes[1]) : 0);
+  return (hours ? parseFloat(hours[1]) * 60 : 0) + (minutes ? parseInt(minutes[1]) : 0);
 };
 
 // Helper function to format minutes to readable time
@@ -56,7 +56,7 @@ const PRIORITIES = [
 ];
 
 const TIME_SLOTS = [
-  "5min", "10min", "15min", "30min", "45min", "1h", "2h"
+  "5min", "10min", "15min", "30min", "45min", "1h", "1.5h", "2h", "3h", "4h", "6h", "8h"
 ];
 
 interface TaskListProps {
