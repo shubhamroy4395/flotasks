@@ -7,6 +7,7 @@ import { Plus, X, Bell, Trash2 } from "lucide-react";
 import { format, addMinutes, addHours, isAfter } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent, Events } from "@/lib/amplitude";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const TIME_OPTIONS = [
   { label: "8 hours", value: 8, unit: "hours" },
@@ -50,6 +51,8 @@ export function ReminderSection() {
   const { toast } = useToast();
   const checkInterval = useRef<NodeJS.Timeout>();
   const formOpenTime = useRef(Date.now());
+  const { theme } = useTheme();
+  const isDarkTheme = theme === 'dark' || theme === 'winter';
 
   // Track section open
   useEffect(() => {
@@ -182,7 +185,7 @@ export function ReminderSection() {
   };
 
   return (
-    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
         <CardTitle className="font-semibold">Reminders</CardTitle>
       </CardHeader>
@@ -194,14 +197,18 @@ export function ReminderSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Card className="p-4 mb-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <Card className={`p-4 mb-4 shadow-sm hover:shadow-md transition-shadow duration-300 ${
+                isDarkTheme ? 'bg-slate-800/50' : ''
+              }`}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="I need to..."
                       value={newReminder}
                       onChange={(e) => setNewReminder(e.target.value)}
-                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none"
+                      className={`flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none ${
+                        isDarkTheme ? 'text-gray-200 placeholder:text-gray-400' : ''
+                      }`}
                       autoFocus
                     />
                     <Button
@@ -210,7 +217,7 @@ export function ReminderSection() {
                       size="icon"
                       onClick={() => setIsOpen(false)}
                     >
-                      <X className="h-4 w-4" />
+                      <X className={`h-4 w-4 ${isDarkTheme ? 'text-gray-400' : ''}`} />
                     </Button>
                   </div>
                   <select
@@ -219,18 +226,20 @@ export function ReminderSection() {
                       const option = TIME_OPTIONS.find(opt => opt.label === e.target.value);
                       setSelectedTime(option || null);
                     }}
-                    className="w-full rounded-md border px-3 py-2 text-sm bg-transparent"
+                    className={`w-full rounded-md border px-3 py-2 text-sm bg-transparent ${
+                      isDarkTheme ? 'text-gray-200 border-gray-700' : ''
+                    }`}
                   >
-                    <option value="">Select time</option>
+                    <option value="" className={isDarkTheme ? 'bg-slate-800' : ''}>Select time</option>
                     {TIME_OPTIONS.map(option => (
-                      <option key={option.label} value={option.label}>
+                      <option key={option.label} value={option.label} className={isDarkTheme ? 'bg-slate-800' : ''}>
                         {option.label}
                       </option>
                     ))}
                   </select>
                   <Button 
                     type="submit" 
-                    className="w-full font-medium"
+                    className={`w-full font-medium ${isDarkTheme ? 'bg-slate-700 hover:bg-slate-600' : ''}`}
                     disabled={!selectedTime}
                   >
                     Set Reminder
@@ -249,13 +258,19 @@ export function ReminderSection() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 transition-colors group"
+                className={`p-4 rounded-lg bg-gradient-to-r ${
+                  isDarkTheme 
+                    ? 'from-amber-900/30 to-orange-900/30 hover:from-amber-900/40 hover:to-orange-900/40' 
+                    : 'from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100'
+                } transition-colors group`}
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-gray-700 font-medium">{reminder.content}</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                    <p className={`font-medium ${isDarkTheme ? 'text-gray-200' : 'text-gray-700'}`}>
+                      {reminder.content}
+                    </p>
+                    <div className={`flex items-center gap-2 text-sm mt-1 ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>
                       <Bell className="h-4 w-4" />
                       <span>Due {format(reminder.time, 'h:mm a')}</span>
                     </div>
@@ -263,7 +278,11 @@ export function ReminderSection() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
+                    className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                      isDarkTheme 
+                        ? 'text-red-400 hover:text-red-300 hover:bg-red-950/30' 
+                        : 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                    }`}
                     onClick={() => deleteReminder(reminder.id)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -279,7 +298,11 @@ export function ReminderSection() {
           <Button
             variant="outline"
             size="lg"
-            className="w-full bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 border-none font-medium"
+            className={`w-full border-none font-medium ${
+              isDarkTheme
+                ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 hover:from-amber-900/40 hover:to-orange-900/40 text-gray-200'
+                : 'bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100'
+            }`}
             onClick={handleFormOpen}
           >
             <Plus className="mr-2 h-4 w-4" />
