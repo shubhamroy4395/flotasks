@@ -168,6 +168,60 @@
   }
 
   /* Dark Mode and Winter Theme Enhanced Utilities */
+  /* Global overrides for ALL cards in dark/winter mode */
+  .theme-dark .Card,
+  .theme-dark [class*="Card"],
+  .theme-dark div[class*="card"],
+  .theme-dark div[class*="shadow"],
+  .theme-winter .Card,
+  .theme-winter [class*="Card"],
+  .theme-winter div[class*="card"],
+  .theme-winter div[class*="shadow"],
+  .theme-dark .bg-card,
+  .theme-winter .bg-card,
+  .theme-dark [class*="rounded-lg border bg-card"],
+  .theme-winter [class*="rounded-lg border bg-card"] {
+    background-color: hsl(var(--card)) !important; 
+    color: hsl(var(--card-foreground)) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid hsl(var(--border)) !important;
+  }
+  
+  /* Target all white backgrounds and make them dark */
+  .theme-dark .bg-white,
+  .theme-winter .bg-white {
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground)) !important;
+  }
+  
+  /* Direct selector for shadcn Card components */
+  .theme-dark [data-radix-popper-content-wrapper] > div,
+  .theme-winter [data-radix-popper-content-wrapper] > div {
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground)) !important;
+  }
+  
+  /* Ensure all text in cards is visible */
+  .theme-dark .Card p,
+  .theme-dark [class*="Card"] p,
+  .theme-dark div[class*="card"] p,
+  .theme-winter .Card p,
+  .theme-winter [class*="Card"] p,
+  .theme-winter div[class*="card"] p,
+  .theme-dark h1, .theme-dark h2, .theme-dark h3, .theme-dark h4, .theme-dark h5,
+  .theme-winter h1, .theme-winter h2, .theme-winter h3, .theme-winter h4, .theme-winter h5 {
+    color: hsl(var(--card-foreground)) !important;
+  }
+  
+  /* Direct override for shadcn Card component */
+  .theme-dark div[class^="rounded-lg"],
+  .theme-dark div[class*=" rounded-lg"],
+  .theme-winter div[class^="rounded-lg"],
+  .theme-winter div[class*=" rounded-lg"] {
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground)) !important;
+  }
+  
   .theme-dark .card-enhanced,
   .theme-winter .card-enhanced {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
