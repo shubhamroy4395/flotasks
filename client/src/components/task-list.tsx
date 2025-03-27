@@ -453,7 +453,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+CiAgPHBhdGggZD0iTTAgMGg2MHY2MEgweiIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0zMCAzMG0tMSAwYTEgMSAwIDEgMCAyIDBhMSAxIDAgMSAwIC0yIDB6IiBmaWxsPSJyZ2JhKDIyOSwgMjMxLCAyMzUsIDAuNSkiLz4KPC9zdmc+')] bg-repeat">
+      <CardContent className="bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+CiAgPHBhdGggZD0iTTAgMGg2MHY2MEgweiIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0zMCAzMG0tMSAwYTEgMSAwIDEgMCAyIDBhMSAxIDAgMSAwIC0yIDB6IiBmaWxsPSJyZ2JhKDIyOSwgMjMxLCAyMzUsIDAuNSkiLz4KPC9zdmc+')] bg-repeat pr-5">
         <div className="space-y-2">
           <AnimatePresence mode="sync">
             {entries.map((entry, index) => (
@@ -462,7 +462,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="group flex items-center gap-3 px-3 py-2.5 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300 interactive-row"
+                className="group flex items-center gap-3 px-3 pr-5 py-2.5 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300 interactive-row"
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
                 layout
@@ -572,7 +572,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                     </div>
 
                     {/* Controls Row - All in one line with responsive layout */}
-                    <div className="flex items-center gap-2 max-w-full pb-1 flex-wrap sm:flex-nowrap">
+                    <div className="flex items-center gap-2 max-w-full pb-1 pr-1 flex-wrap sm:flex-nowrap">
                       {/* Priority selector - compact and inline */}
                       <div className="flex gap-1 items-center">
                         {PRIORITIES.map(({ label, value, color }) => (
@@ -663,7 +663,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="ml-auto h-7 mr-1 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
+                        className="ml-auto h-7 mr-4 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
                       >
                         Save
                       </Button>
