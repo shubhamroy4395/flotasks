@@ -99,9 +99,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
     }
     
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -131,59 +128,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
     setTimeLeft(focusMinutes * 60);
   };
 
-  const loadAudio = (type: SoundType) => {
-    if (typeof window === 'undefined') return;
-    
-    let audioPath = '';
-    // First try the external sounds (FreeSound API-based sounds)
-    const apiBasedSounds = {
-      'ghibli': 'https://cdn.freesound.org/previews/617/617306_5674468-lq.mp3', // Ambient piano
-      'rain': 'https://cdn.freesound.org/previews/346/346170_4402400-lq.mp3',   // Rain sound
-      'thunder': 'https://cdn.freesound.org/previews/275/275142_5003039-lq.mp3', // Thunder
-      'fire': 'https://cdn.freesound.org/previews/213/213992_3797507-lq.mp3'     // Fire
-    };
-    
-    // Fallback to local files (if provided and if API sounds fail)
-    const localSounds = {
-      'ghibli': '/music/ghibli-style-2.mp3',
-      'rain': '/music/ghibli.mp3', // Use ghibli as fallback for now
-      'thunder': '/music/ghibli.mp3', // Use ghibli as fallback for now
-      'fire': '/music/ghibli.mp3', // Use ghibli as fallback for now
-    };
-    
-    switch (type) {
-      case 'ghibli':
-      case 'rain':
-      case 'thunder':
-      case 'fire':
-        // Try API sound first, fall back to local sound
-        try {
-          audioRef.current = new Audio(apiBasedSounds[type]);
-          // Set up error handler to try fallback
-          audioRef.current.onerror = () => {
-            console.log("Error loading sound from API, trying local fallback");
-            audioRef.current = new Audio(localSounds[type]);
-            audioRef.current.loop = true;
-            audioRef.current.volume = volume / 100;
-          };
-        } catch (e) {
-          console.error("Failed to load API sound:", e);
-          audioRef.current = new Audio(localSounds[type]);
-        }
-        break;
-      case 'none':
-        audioPath = '';
-        break;
-      default:
-        audioRef.current = new Audio(apiBasedSounds.ghibli);
-    }
-    
-    if (audioRef.current) {
-      audioRef.current.loop = true;
-      audioRef.current.volume = volume / 100;
-    }
-  };
-
   const requestNotificationPermission = async () => {
     if (typeof Notification !== 'undefined') {
       try {
@@ -204,10 +148,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
   };
 
   const handleTimerEnd = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    
     setIsRunning(false);
     
     // Show notification based on current mode
@@ -243,36 +183,14 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
   };
 
   const startTimer = () => {
-    if (audioRef.current && soundType !== 'none') {
-      // Get a user gesture to enable audio
-      const playPromise = audioRef.current.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Audio playback failed:", error);
-          toast({
-            title: "Click Play Button Again",
-            description: "Browser requires a click to play audio. Click play button once more.",
-            duration: 5000
-          });
-        });
-      }
-    }
     setIsRunning(true);
   };
 
   const pauseTimer = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
     setIsRunning(false);
   };
 
   const resetTimer = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
     setIsRunning(false);
     setMode('focus');
     setTimeLeft(focusStrategy.focusMinutes * 60);
@@ -305,12 +223,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
       }
     }
     
-    if (audioRef.current && !audioRef.current.paused) {
-      // Keep playing audio if it was already playing
-      setIsRunning(true);
-    } else {
-      setIsRunning(false);
-    }
+    setIsRunning(false);
   };
 
   const formatTime = (seconds: number): string => {
@@ -461,7 +374,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
               {mode === 'focus' 
-                ? `Focus for ${focusStrategy.focusMinutes} minutes with ambient sounds` 
+                ? `Focus for ${focusStrategy.focusMinutes} minutes` 
                 : `Take a ${focusStrategy.breakMinutes}-minute break to recharge`}
             </DialogDescription>
           </DialogHeader>
@@ -519,195 +432,146 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                     {mode === 'focus' ? (
                       <>
                         <Focus className="h-4 w-4" />
-                        FOCUS SESSION
+                        Focus Session
                       </>
                     ) : (
                       <>
-                        <Clock className="h-4 w-4" />
-                        BREAK TIME
+                        <Bell className="h-4 w-4" />
+                        Break Time
                       </>
                     )}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    {getProgressPercentage().toFixed(0)}% Complete
+                    {currentSession}/{focusStrategy.totalSessions}
                   </span>
                 </div>
                 
-                {/* Progress bar */}
-                <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full transition-all duration-1000" 
-                    style={{ 
-                      width: `${getProgressPercentage()}%`,
-                      backgroundColor: getModeColor(),
-                      boxShadow: isRunning ? `0 0 8px ${getModeColor()}` : 'none'
-                    }}
-                  />
-                </div>
-                
-                {/* Visual Session Roadmap */}
-                <div className="w-full mt-5 mb-2">
-                  <div className="text-xs text-muted-foreground mb-2 flex justify-between">
-                    <span>Session Progress</span>
-                    <span>{currentSession}/{focusStrategy.totalSessions}</span>
-                  </div>
-                  <TooltipProvider>
-                    <div className="w-full flex items-center justify-between gap-1">
-                      {Array.from({ length: focusStrategy.totalSessions * 2 - 1 }).map((_, idx) => {
-                        // Even indices are focus sessions, odd are breaks between sessions
-                        const sessionNum = Math.ceil((idx + 1) / 2);
-                        const isFocus = idx % 2 === 0;
-                        const isActive = isFocus 
-                          ? (sessionNum === currentSession && mode === 'focus')
-                          : (sessionNum === currentSession && mode === 'break' || 
-                             (sessionNum === currentSession - 1 && mode === 'break'));
-                        const isCompleted = isFocus 
-                          ? sessionNum < currentSession || (sessionNum === currentSession && mode === 'break')
-                          : sessionNum < currentSession;
-                        
-                        return isFocus ? (
-                          <Tooltip key={idx}>
-                            <TooltipTrigger asChild>
-                              <motion.div 
-                                className={cn(
-                                  "h-8 flex-1 rounded-md flex items-center justify-center text-xs font-medium transition-all relative",
-                                  isCompleted ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground",
-                                  isActive && "ring-2 ring-blue-500 ring-offset-2"
-                                )}
-                                animate={{
-                                  scale: isActive && isRunning ? [1, 1.05, 1] : 1
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut"
-                                }}
-                              >
-                                {sessionNum}
-                                {isActive && (
-                                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-ping" />
-                                )}
-                              </motion.div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {isCompleted 
-                                ? `Focus Session ${sessionNum} - Complete` 
-                                : isActive 
-                                  ? `Current Focus Session (${formatTime(timeLeft)} remaining)`
-                                  : `Focus Session ${sessionNum} - ${focusStrategy.focusMinutes} min`}
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <div key={idx} className={cn(
-                            "w-3 h-1 flex-shrink-0 rounded-full",
-                            isCompleted ? "bg-green-500" : "bg-muted"
-                          )} />
-                        );
-                      })}
+                {/* Session roadmap - A visual map of all sessions with current highlighted */}
+                <div className="w-full flex items-center justify-between gap-1 mb-2">
+                  {Array.from({ length: focusStrategy.totalSessions }).map((_, idx) => (
+                    <div key={idx} className="flex-1 flex gap-1">
+                      {/* Focus period box */}
+                      <div 
+                        className={cn(
+                          "h-2 rounded flex-1",
+                          idx + 1 === currentSession && mode === 'focus' 
+                            ? "bg-primary animate-pulse" 
+                            : idx + 1 < currentSession 
+                              ? "bg-primary/80" 
+                              : "bg-primary/20"
+                        )}
+                      ></div>
+                      
+                      {/* Break period box (don't show after last focus) */}
+                      {idx + 1 < focusStrategy.totalSessions && (
+                        <div 
+                          className={cn(
+                            "h-2 rounded w-1/5",
+                            idx + 1 === currentSession && mode === 'break' 
+                              ? "bg-green-500 animate-pulse" 
+                              : idx + 1 < currentSession 
+                                ? "bg-green-500/80" 
+                                : "bg-green-500/20"
+                          )}
+                        ></div>
+                      )}
                     </div>
-                  </TooltipProvider>
+                  ))}
                 </div>
                 
-                {/* Timer */}
-                <div className="relative">
-                  {/* Glowing background effect when timer is running */}
+                {/* Time display with glowing effect when timer is running */}
+                <div 
+                  className={cn(
+                    "text-6xl font-semibold my-4 relative",
+                    isRunning && "animate-subtle-pulse"
+                  )}
+                >
+                  {/* Glowing backdrop when timer is running */}
                   {isRunning && (
                     <div 
-                      className="absolute -inset-4 rounded-full opacity-70 blur-xl z-0 animate-pulse-slow"
-                      style={{ 
-                        backgroundColor: mode === 'focus' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'
-                      }}
+                      className={cn(
+                        "absolute inset-0 -m-8 rounded-full blur-xl opacity-20",
+                        mode === 'focus' ? "bg-primary" : "bg-green-500"
+                      )}
+                      style={{ zIndex: -1 }} 
                     />
                   )}
                   
-                  {/* Timer display */}
-                  <div className={cn(
-                    "relative z-10 text-7xl font-mono font-bold mt-4 mb-6 tracking-tight transition-all text-card-foreground",
-                    isRunning && "animate-pulse-very-slow"
-                  )}>
-                    {formatTime(timeLeft)}
-                  </div>
+                  {formatTime(timeLeft)}
                 </div>
                 
-                {/* Controls */}
-                <div className="flex items-center justify-center gap-3">
-                  {!isRunning ? (
-                    <Button 
-                      onClick={startTimer} 
-                      variant="default" 
-                      size="icon" 
-                      className={cn(
-                        "h-12 w-12 rounded-full shadow-lg",
-                        theme !== 'retro' && "bg-gradient-to-br",
-                        mode === 'focus' ? "from-blue-400 to-blue-600" : "from-green-400 to-green-600",
-                        theme === 'retro' && "bg-[#D4D0C8]"
-                      )}
-                    >
-                      <Play className="h-6 w-6" />
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={pauseTimer} 
-                      variant="default" 
-                      size="icon" 
-                      className={cn(
-                        "h-12 w-12 rounded-full shadow-lg",
-                        theme !== 'retro' && "bg-gradient-to-br",
-                        mode === 'focus' ? "from-blue-400 to-blue-600" : "from-green-400 to-green-600",
-                        theme === 'retro' && "bg-[#D4D0C8]"
-                      )}
-                    >
-                      <Pause className="h-6 w-6" />
-                    </Button>
-                  )}
-                  <Button onClick={resetTimer} variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                    <RotateCcw className="h-5 w-5" />
-                  </Button>
-                  <Button onClick={skipToNextSession} variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                    <SkipForward className="h-5 w-5" />
-                  </Button>
-                </div>
-                
-                {/* Session stats */}
-                {isRunning && (
-                  <div className="w-full mt-4 p-3 text-sm text-center rounded-md bg-primary/10">
-                    <p>{mode === 'focus' 
-                      ? 'Focus deeply and avoid distractions' 
-                      : 'Move around, stretch, and rest your eyes'}</p>
-                  </div>
-                )}
-                
-                {/* Background toggle */}
-                <div className="w-full pt-4 flex justify-between items-center">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={toggleBackground}
+                {/* Progress bar under time display */}
+                <div 
+                  className="w-full h-2 bg-muted rounded-full overflow-hidden"
+                  style={{ 
+                    boxShadow: isRunning ? `0 0 10px ${mode === 'focus' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}` : 'none' 
+                  }}
+                >
+                  <div 
                     className={cn(
-                      "text-xs",
-                      background === 'ambient' && "text-primary"
-                    )}
-                  >
-                    <Monitor className="h-3 w-3 mr-1" />
-                    {background === 'ambient' ? 'Hide Background' : 'Show Background'}
-                  </Button>
+                      "h-full transition-all duration-1000 ease-linear rounded-full",
+                      mode === 'focus' ? "bg-primary" : "bg-green-500"
+                    )} 
+                    style={{ width: `${getProgressPercentage()}%` }}
+                  />
+                </div>
+                
+                {/* Control buttons */}
+                <div className="flex space-x-4 mt-4">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant={isRunning ? "secondary" : "default"} 
+                          size="icon" 
+                          onClick={isRunning ? pauseTimer : startTimer}
+                          className={cn(
+                            isRunning && "animate-subtle-pulse shadow-lg",
+                            isRunning && mode === 'focus' && "shadow-blue-500/20",
+                            isRunning && mode === 'break' && "shadow-green-500/20"
+                          )}
+                        >
+                          {isRunning ? (
+                            <Pause className="h-5 w-5" />
+                          ) : (
+                            <Play className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isRunning ? "Pause" : "Start"} Timer</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
-                  {notificationPermission !== 'granted' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={requestNotificationPermission}
-                      className="text-xs"
-                    >
-                      <Bell className="h-3 w-3 mr-1" />
-                      Enable Notifications
-                    </Button>
-                  )}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={resetTimer}>
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Reset Timer</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={skipToNextSession}>
+                          <SkipForward className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Skip to {mode === 'focus' ? 'Break' : 'Next Focus Session'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </Card>
             </TabsContent>
-            
-            {/* We've removed the separate Sounds tab, adding ambient sounds control to the timer card instead */}
             
             {/* Settings Tab */}
             <TabsContent value="settings" className="mt-0">
@@ -719,48 +583,80 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
               )}>
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Focus Duration</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      How long do you want to focus today?
-                    </p>
-                    
-                    <Select 
-                      value={focusHours.toString()} 
-                      onValueChange={(value) => setFocusHours(parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select hours" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 hour</SelectItem>
-                        <SelectItem value="2">2 hours</SelectItem>
-                        <SelectItem value="3">3 hours</SelectItem>
-                        <SelectItem value="4">4 hours</SelectItem>
-                        <SelectItem value="5">5 hours</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="pt-2 border-t border-border">
-                    <h3 className="text-lg font-medium mb-2">Your Focus Plan</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Focus sessions:</span>
-                        <span className="font-medium">{focusStrategy.totalSessions}</span>
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                      <Settings className="h-4 w-4" />
+                      Focus Strategy
+                    </h4>
+                    <div className="grid gap-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Focus Period</span>
+                          <span className="text-xs">{focusStrategy.focusMinutes} minutes</span>
+                        </div>
+                        <Slider 
+                          defaultValue={[focusStrategy.focusMinutes]} 
+                          min={10} 
+                          max={60} 
+                          step={5} 
+                          className="z-10"
+                          onValueChange={(value) => {
+                            setFocusStrategy(prev => ({
+                              ...prev, 
+                              focusMinutes: value[0],
+                              totalSessions: Math.floor((prev.totalHours * 60) / (value[0] + prev.breakMinutes))
+                            }));
+                            if (mode === 'focus' && !isRunning) {
+                              setTimeLeft(value[0] * 60);
+                            }
+                          }}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span>Session length:</span>
-                        <span className="font-medium">{focusStrategy.focusMinutes} minutes</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Break length:</span>
-                        <span className="font-medium">{focusStrategy.breakMinutes} minutes</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Total time:</span>
-                        <span className="font-medium">{focusStrategy.totalHours} hours</span>
+                      
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Break Length</span>
+                          <span className="text-xs">{focusStrategy.breakMinutes} minutes</span>
+                        </div>
+                        <Slider 
+                          defaultValue={[focusStrategy.breakMinutes]} 
+                          min={1} 
+                          max={20} 
+                          step={1} 
+                          className="z-10"
+                          onValueChange={(value) => {
+                            setFocusStrategy(prev => ({
+                              ...prev, 
+                              breakMinutes: value[0],
+                              totalSessions: Math.floor((prev.totalHours * 60) / (prev.focusMinutes + value[0]))
+                            }));
+                            if (mode === 'break' && !isRunning) {
+                              setTimeLeft(value[0] * 60);
+                            }
+                          }}
+                        />
                       </div>
                     </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                      <Bell className="h-4 w-4" />
+                      Notifications
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Notification status: {notificationPermission === 'granted' ? 
+                        'Enabled ✓' : notificationPermission === 'denied' ? 
+                        'Blocked ✗' : 'Not set'}
+                    </p>
+                    {notificationPermission !== 'granted' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={requestNotificationPermission}
+                      >
+                        Enable Notifications
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -779,9 +675,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                 <X className="h-4 w-4 mr-1" />
                 Close Focus Mode
               </Button>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {soundType !== 'none' ? `Sound: ${soundType}` : 'Sound: off'}
             </div>
           </DialogFooter>
         </div>
