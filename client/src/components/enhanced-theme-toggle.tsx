@@ -30,26 +30,38 @@ export function EnhancedThemeToggle() {
       const cloudContainer = springAnimationRef.current;
       cloudContainer.innerHTML = ''; // Clear previous clouds
       
-      // Create 5 cloud elements
-      for (let i = 0; i < 5; i++) {
+      // Create 8 cloud elements with varied styles
+      for (let i = 0; i < 8; i++) {
         const cloud = document.createElement('div');
-        cloud.className = 'absolute opacity-70 bg-white rounded-full';
-        cloud.style.width = `${40 + Math.random() * 40}px`;
-        cloud.style.height = `${20 + Math.random() * 20}px`;
+        
+        // Create more vibrant clouds with varied colors
+        const cloudColors = [
+          'rgba(255, 255, 255, 0.8)', 
+          'rgba(220, 255, 230, 0.75)', 
+          'rgba(200, 255, 200, 0.7)'
+        ];
+        
+        cloud.className = 'absolute rounded-full';
+        cloud.style.backgroundColor = cloudColors[Math.floor(Math.random() * cloudColors.length)];
+        cloud.style.width = `${50 + Math.random() * 60}px`;
+        cloud.style.height = `${30 + Math.random() * 30}px`;
         cloud.style.top = `${Math.random() * 100}%`;
         cloud.style.left = `-100px`;
         cloud.style.zIndex = '50';
+        cloud.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.5)';
+        cloud.style.filter = 'blur(1px)';
         cloudContainer.appendChild(cloud);
       }
       
-      // Animate clouds with anime.js
+      // Animate clouds with anime.js - more varied and fluid motion
       anime({
         targets: cloudContainer.children,
         translateX: window.innerWidth + 200,
-        delay: anime.stagger(1000),
-        duration: 15000,
+        translateY: anime.stagger([-20, 20]),
+        delay: anime.stagger(800),
+        duration: function() { return 12000 + anime.random(3000, 8000); },
         loop: true,
-        easing: 'linear',
+        easing: 'easeInOutQuad',
         autoplay: true
       });
     }
@@ -69,28 +81,39 @@ export function EnhancedThemeToggle() {
       const snowContainer = winterAnimationRef.current;
       snowContainer.innerHTML = ''; // Clear previous snowflakes
       
-      // Create 20 snowflake elements
-      for (let i = 0; i < 20; i++) {
+      // Create more snowflake elements with varied appearance
+      for (let i = 0; i < 30; i++) {
         const snowflake = document.createElement('div');
-        snowflake.className = 'absolute bg-white rounded-full';
-        snowflake.style.width = `${2 + Math.random() * 3}px`;
+        
+        // Use different colors for a more dramatic winter effect
+        const snowColors = [
+          'rgba(255, 255, 255, 0.9)', 
+          'rgba(210, 235, 255, 0.85)', 
+          'rgba(190, 220, 255, 0.9)'
+        ];
+        
+        snowflake.className = 'absolute rounded-full';
+        snowflake.style.backgroundColor = snowColors[Math.floor(Math.random() * snowColors.length)];
+        snowflake.style.width = `${2 + Math.random() * 4}px`;
         snowflake.style.height = snowflake.style.width;
-        snowflake.style.opacity = `${0.6 + Math.random() * 0.4}`;
+        snowflake.style.opacity = `${0.7 + Math.random() * 0.3}`;
         snowflake.style.top = `-10px`;
         snowflake.style.left = `${Math.random() * 100}%`;
         snowflake.style.zIndex = '50';
+        snowflake.style.boxShadow = '0 0 3px rgba(255, 255, 255, 0.6)';
         snowContainer.appendChild(snowflake);
       }
       
-      // Animate snowflakes with anime.js
+      // Animate snowflakes with anime.js - more varied and realistic falling
       anime({
         targets: snowContainer.children,
         translateY: window.innerHeight + 20,
-        translateX: anime.stagger([-15, 15]),
+        translateX: anime.stagger([-25, 25], {from: 'center', grid: 'stagger'}),
+        rotate: function() { return anime.random(-360, 360); },
         duration: function() { return 5000 + anime.random(3000, 8000); },
-        delay: anime.stagger(300),
+        delay: anime.stagger(200),
         loop: true,
-        easing: 'easeInOutSine',
+        easing: 'easeInOutQuad',
         autoplay: true
       });
     }
