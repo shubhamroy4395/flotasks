@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { useState } from "react";
+import { Card, CardContent } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Task } from "@shared/schema";
-import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Target, Clock, List, CalendarCheck, BarChart3, Info, ArrowLeft } from "lucide-react";
-import { Button } from "./ui/button";
+import { motion } from "framer-motion";
+import { List, Target, Clock, BarChart3, Info, ArrowLeft } from "lucide-react";
 
 interface DailySummaryProps {
   todayTasks: Task[];
@@ -30,7 +28,7 @@ interface ProgressCardProps {
   description: string;
 }
 
-// Single flippable progress card component
+// Progress card component with info toggle
 function ProgressCard({ 
   title, 
   subtitle, 
@@ -40,101 +38,71 @@ function ProgressCard({
   color, 
   description 
 }: ProgressCardProps) {
-  const [flipped, setFlipped] = useState(false);
-
-  const toggleFlip = () => {
-    setFlipped(!flipped);
-  };
+  const [showInfo, setShowInfo] = useState(false);
 
   return (
-    <div className="perspective">
-      <motion.div
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.6, type: "spring", stiffness: 300, damping: 30 }}
-        className="preserve-3d h-full"
-      >
-        {/* Front of card (Progress view) */}
-        <AnimatePresence initial={false} mode="wait">
-          {!flipped && (
-            <motion.div
-              key="front"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute w-full h-full backface-hidden"
-            >
-              <Card className={`bg-gradient-to-br ${color.from} ${color.to} text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none h-full`}>
-                <CardContent className="pt-4 pb-3 px-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <div className={`${color.bgAccent} p-1.5 rounded-lg flex items-center gap-2`}>
-                      {icon}
-                      <button 
-                        onClick={toggleFlip}
-                        className={`rounded-full ${color.bgAccent} p-1 hover:bg-opacity-50 transition-colors`}
-                      >
-                        <Info className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                      <span className="text-lg font-bold">
-                        {count.completed}/{count.total}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-sm flex items-center gap-1.5">
-                      {title}
-                      {subtitle && (
-                        <span className={`text-xs ${color.bgAccent} rounded px-1 py-0.5`}>
-                          {subtitle}
-                        </span>
-                      )}
-                    </h3>
-                    <Progress value={percentage} className={`h-1.5 ${color.bgAccent}`} />
-                    <p className={`text-xs ${color.textAccent}`}>{percentage}% complete</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Back of card (Info view) */}
-          {flipped && (
-            <motion.div
-              key="back"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute w-full h-full backface-hidden rotate-y-180"
-            >
-              <Card className={`bg-gradient-to-br ${color.from} ${color.to} text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none h-full flex flex-col`}>
-                <CardContent className="pt-4 pb-3 px-4 flex flex-col h-full">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-semibold">About This Card</h3>
-                    <button 
-                      onClick={toggleFlip}
-                      className={`${color.bgAccent} p-1.5 rounded-full hover:bg-opacity-50 transition-colors`}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-center">
-                    <div className={`${color.infoBg} p-3 rounded-lg mb-2`}>
-                      <p className="text-sm">{description}</p>
-                    </div>
-                    <div className="bg-white/10 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-white/90">Current progress:</p>
-                      <p className="font-bold text-lg mt-1">
-                        {count.completed} of {count.total} {count.total === 1 ? 'item' : 'items'} ({percentage}%)
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+    <div>
+      {!showInfo ? (
+        // Front side - Progress view
+        <Card className={`bg-gradient-to-br ${color.from} ${color.to} text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none h-full`}>
+          <CardContent className="pt-4 pb-3 px-4">
+            <div className="flex justify-between items-center mb-3">
+              <div className={`${color.bgAccent} p-1.5 rounded-lg flex items-center gap-2`}>
+                {icon}
+                <button 
+                  onClick={() => setShowInfo(true)}
+                  className={`rounded-full ${color.bgAccent} p-1 hover:bg-opacity-50 transition-colors`}
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+                <span className="text-lg font-bold">
+                  {count.completed}/{count.total}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                {title}
+                {subtitle && (
+                  <span className={`text-xs ${color.bgAccent} rounded px-1 py-0.5`}>
+                    {subtitle}
+                  </span>
+                )}
+              </h3>
+              <Progress value={percentage} className={`h-1.5 ${color.bgAccent}`} />
+              <p className={`text-xs ${color.textAccent}`}>{percentage}% complete</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        // Back side - Info view
+        <Card className={`bg-gradient-to-br ${color.from} ${color.to} text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none h-full flex flex-col`}>
+          <CardContent className="pt-4 pb-3 px-4 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold">About This Card</h3>
+              <button 
+                onClick={() => setShowInfo(false)}
+                className={`${color.bgAccent} p-1.5 rounded-full hover:bg-opacity-50 transition-colors`}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 flex flex-col justify-center">
+              <div className={`${color.infoBg} p-3 rounded-lg mb-2`}>
+                <p className="text-sm">{description}</p>
+              </div>
+              <div className="bg-white/10 p-3 rounded-lg">
+                <p className="text-sm font-medium text-white/90">Current progress:</p>
+                <p className="font-bold text-lg mt-1">
+                  {count.completed} of {count.total} {count.total === 1 ? 'item' : 'items'} ({percentage}%)
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
