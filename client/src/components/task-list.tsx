@@ -370,32 +370,32 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
   };
 
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-b from-white to-gray-50 border-t-4 border-t-blue-400 transform-gpu">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200 flex-wrap gap-4 bg-white bg-opacity-80">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <CardTitle className="text-2xl font-black text-gray-800 tracking-tight">{title}</CardTitle>
+            <CardTitle className="text-2xl font-black text-foreground tracking-tight">{title}</CardTitle>
             {totalTime > 0 && (
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="flex items-center gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-1.5 rounded-full shadow-sm"
+                className="flex items-center gap-1 bg-accent px-4 py-1.5 rounded-full shadow-sm"
               >
-                <Clock className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-extrabold text-blue-700">
+                <Clock className="h-4 w-4 text-accent-foreground" />
+                <span className="text-sm font-extrabold text-accent-foreground">
                   {formatTotalTime(totalTime)}
                 </span>
               </motion.div>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-1 font-medium italic">Click any line to add a task</p>
+          <p className="text-sm text-muted-foreground mt-1 font-medium italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleSort}
-            className="text-gray-600 hover:text-gray-800 font-bold"
+            className="text-muted-foreground hover:text-foreground font-bold"
           >
             <ArrowUpDown className="h-4 w-4 mr-1" />
             {sortState === 'lno' ? 'L→N→O' : sortState === 'onl' ? 'O→N→L' : 'Default'}
@@ -404,7 +404,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
             variant="outline"
             size="sm"
             onClick={addMoreTasks}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold"
+            className="text-primary hover:text-primary-foreground hover:bg-primary/20 font-bold"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add More
@@ -420,7 +420,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="group flex items-center gap-4 py-3 border-b border-dashed border-gray-200 cursor-pointer relative hover:bg-white hover:bg-opacity-60 transition-all duration-300"
+                className="group flex items-center gap-4 py-3 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300"
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
                 layout
@@ -437,7 +437,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                   </motion.div>
                 )}
 
-                <span className="text-sm text-gray-400 w-6 font-mono font-bold">
+                <span className="text-sm text-muted-foreground w-6 font-mono font-bold">
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <div className="relative">
@@ -470,7 +470,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                         value={activeTask.content}
                         onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
                         onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-gray-700 placeholder:text-gray-400"
+                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                         placeholder="What needs to be done?"
                       />
                       <Button
@@ -478,9 +478,9 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                         variant="ghost"
                         size="icon"
                         onClick={() => setActiveTask(null)}
-                        className="h-8 w-8 hover:bg-gray-100 transition-colors duration-200"
+                        className="h-8 w-8 hover:bg-muted transition-colors duration-200"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </div>
 
@@ -507,7 +507,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
                             >
                               <Info className="h-4 w-4" />
                             </Button>
@@ -534,7 +534,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-gray-200 px-2 py-1.5 text-sm bg-transparent font-bold"
+                        className="rounded-md border-border px-2 py-1.5 text-sm bg-transparent font-bold text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Time</option>
@@ -547,7 +547,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border-blue-200 hover:border-blue-300 font-bold transform transition-all duration-200 hover:scale-105"
+                        className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105"
                       >
                         Save
                       </Button>
@@ -556,7 +556,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                 ) : (
                   <motion.div
                     className={`flex items-center justify-between w-full cursor-text ${
-                      entry.completed ? 'line-through text-gray-400' : 'text-gray-700 font-bold'
+                      entry.completed ? 'line-through text-muted-foreground' : 'text-foreground font-bold'
                     }`}
                     layout
                   >
@@ -576,7 +576,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                           </span>
                         )}
                         {entry.eta && (
-                          <span className="flex items-center text-xs text-gray-500 font-bold">
+                          <span className="flex items-center text-xs text-muted-foreground font-bold">
                             <Clock className="h-3 w-3 mr-1" />
                             {entry.eta}
                           </span>
@@ -586,7 +586,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(tasks[index].id, index);
