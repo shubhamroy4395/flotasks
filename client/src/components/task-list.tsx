@@ -500,13 +500,12 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
 
                 {activeTask?.index === index ? (
                   <motion.div
-                    className="flex flex-col w-full gap-2"
+                    className="flex flex-nowrap items-center w-full gap-2 rounded-lg bg-accent/10 p-2"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     layout
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center gap-2 w-full">
                       <Input
                         autoFocus
                         value={activeTask.content}
@@ -560,101 +559,111 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                         placeholder="What needs to be done?"
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setActiveTask(null)}
-                        className="h-8 w-8 hover:bg-muted transition-colors duration-200 hover-highlight active-scale"
-                      >
-                        <X className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 max-w-full">
-                      {/* Priority buttons */}
-                      <div className="flex items-center gap-2 mr-2">
-                        <div className="flex gap-1">
-                          {PRIORITIES.map(({ label, value, color }) => (
-                            <Button
-                              key={label}
-                              size="sm"
-                              variant="ghost"
-                              className={`px-2 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-2 ring-offset-2' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveTask({ ...activeTask, priority: value });
-                              }}
-                            >
-                              {label}
-                            </Button>
-                          ))}
-                        </div>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground hover-highlight active-scale"
-                            >
-                              <Info className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80">
-                            <div className="space-y-4">
-                              {PRIORITIES.map(({ label, title, subtitle, description, color }) => (
-                                <div key={label} className="space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className={`px-2 py-0.5 rounded-md text-xs font-black ${color}`}>
-                                      {label}
-                                    </span>
-                                    <h4 className="font-bold">{title}</h4>
-                                  </div>
-                                  <p className="text-sm font-medium">{subtitle}</p>
-                                  <p className="text-xs text-gray-600">{description}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                      
+                      {/* Priority selector */}
+                      <div className="flex gap-1 items-center">
+                        {PRIORITIES.map(({ label, value, color }) => (
+                          <Button
+                            key={label}
+                            size="sm"
+                            variant="ghost"
+                            className={`px-2 py-0 h-7 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-1 ring-offset-1' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTask({ ...activeTask, priority: value });
+                            }}
+                            title={`Set ${label} priority`}
+                          >
+                            {label}
+                          </Button>
+                        ))}
                       </div>
 
                       {/* Time selector */}
                       <select
                         value={activeTask.eta}
                         onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-border px-2 py-1.5 text-sm bg-transparent font-bold text-foreground"
+                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <option value="">Time</option>
+                        <option value="">⏱️</option>
                         {TIME_SLOTS.map(slot => (
                           <option key={slot} value={slot}>{slot}</option>
                         ))}
                       </select>
 
-                      {/* Task Difficulty selector (renamed from Feeling) */}
+                      {/* Task Difficulty selector */}
                       <select
                         value={activeTask.difficulty || ""}
                         onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
-                        className="rounded-md border-border px-2 py-1.5 text-sm bg-transparent font-bold text-foreground"
+                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <option value="">Task Difficulty</option>
+                        <option value="">🔄</option>
                         {TASK_DIFFICULTIES.map(difficulty => (
                           <option key={difficulty.value} value={difficulty.value}>{difficulty.emoji} {difficulty.label}</option>
                         ))}
                       </select>
+
+                      {/* Help button */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground hover-highlight active-scale"
+                          >
+                            <Info className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <div className="space-y-4">
+                            <h3 className="font-bold text-sm">Task Priorities:</h3>
+                            {PRIORITIES.map(({ label, title, subtitle, description, color }) => (
+                              <div key={label} className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-0.5 rounded-md text-xs font-black ${color}`}>
+                                    {label}
+                                  </span>
+                                  <h4 className="font-bold">{title}</h4>
+                                </div>
+                                <p className="text-sm font-medium">{subtitle}</p>
+                                <p className="text-xs text-gray-600">{description}</p>
+                              </div>
+                            ))}
+                            
+                            <h3 className="font-bold text-sm mt-4">Task Difficulties:</h3>
+                            <div className="grid grid-cols-2 gap-2">
+                              {TASK_DIFFICULTIES.map(diff => (
+                                <div key={diff.value} className="flex items-center gap-1">
+                                  <span>{diff.emoji}</span>
+                                  <span className="text-xs font-medium">{diff.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
 
                       {/* Save button */}
                       <Button
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="ml-auto bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
+                        className="ml-auto h-7 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
                       >
                         Save
                       </Button>
-                    </div>
+                      
+                      {/* Close button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        onClick={() => setActiveTask(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -689,6 +698,75 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                             {TASK_DIFFICULTIES.find(d => d.value === entry.difficulty)?.emoji}
                           </span>
                         )}
+                        
+                        {/* Quick action buttons for unassigned tasks */}
+                        {entry.content && (!entry.priority || !entry.eta || !entry.difficulty) && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {!entry.priority && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveTask({
+                                    index,
+                                    content: entry.content || "",
+                                    priority: 3, // Default to 'L' priority
+                                    eta: entry.eta || "",
+                                    difficulty: entry.difficulty || ""
+                                  });
+                                }}
+                                title="Set priority"
+                              >
+                                <span className="text-xs font-black">L</span>
+                              </Button>
+                            )}
+                            
+                            {!entry.eta && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveTask({
+                                    index,
+                                    content: entry.content || "",
+                                    priority: entry.priority || 0,
+                                    eta: "30min", // Default estimate
+                                    difficulty: entry.difficulty || ""
+                                  });
+                                }}
+                                title="Set time estimate"
+                              >
+                                <Clock className="h-3 w-3" />
+                              </Button>
+                            )}
+                            
+                            {!entry.difficulty && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-amber-500 hover:text-amber-700 hover:bg-amber-100 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveTask({
+                                    index,
+                                    content: entry.content || "",
+                                    priority: entry.priority || 0,
+                                    eta: entry.eta || "",
+                                    difficulty: "moderate" // Default difficulty
+                                  });
+                                }}
+                                title="Set difficulty"
+                              >
+                                <span className="text-xs">😐</span>
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        
                         {/* Delete button */}
                         {tasks[index]?.id && (
                           <Button
