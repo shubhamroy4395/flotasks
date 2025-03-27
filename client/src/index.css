@@ -439,20 +439,25 @@
     background: white !important;
   }
   
-  .theme-retro .progress-card-blue [role="progressbar"] > div > div {
-    background: #0000A0 !important;
+  /* Highly specific selectors to ensure color overrides */
+  .theme-retro .progress-card.progress-card-blue [role="progressbar"] > div > div,
+  .theme-retro div.progress-card-blue div[role="progressbar"] > div > div {
+    background: #0078D7 !important;
   }
   
-  .theme-retro .progress-card-green [role="progressbar"] > div > div {
-    background: #008000 !important;
+  .theme-retro .progress-card.progress-card-green [role="progressbar"] > div > div,
+  .theme-retro div.progress-card-green div[role="progressbar"] > div > div {
+    background: #00A000 !important;
   }
   
-  .theme-retro .progress-card-purple [role="progressbar"] > div > div {
-    background: #800080 !important;
+  .theme-retro .progress-card.progress-card-purple [role="progressbar"] > div > div,
+  .theme-retro div.progress-card-purple div[role="progressbar"] > div > div {
+    background: #B000B0 !important;
   }
   
-  .theme-retro .progress-card-amber [role="progressbar"] > div > div {
-    background: #A05000 !important;
+  .theme-retro .progress-card.progress-card-amber [role="progressbar"] > div > div,
+  .theme-retro div.progress-card-amber div[role="progressbar"] > div > div {
+    background: #D07000 !important;
   }
   
   /* Windows 98 raised button look */
@@ -538,7 +543,7 @@
   
   .theme-retro progress::-webkit-progress-value,
   .theme-retro [role="progressbar"] > div > div {
-    background: #000080 !important;
+    background: #0078D7 !important;
   }
   
   /* Ensure proper styling for task list rows */
