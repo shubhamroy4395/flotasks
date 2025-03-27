@@ -509,7 +509,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                     <div className="flex flex-col w-full space-y-2">
                       {/* Task input row with close button */}
                       <div className="flex items-center gap-2 w-full">
-                        <div className="flex items-center flex-1 rounded-md border border-input bg-transparent">
+                        <div className="flex-1">
                           <Input
                             autoFocus
                             value={activeTask.content}
@@ -560,18 +560,19 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                 });
                               }
                             }}
-                            className="border-none shadow-none focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
+                            className="border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                             placeholder="What needs to be done?"
                           />
-                          <Button
-                            onClick={handleSave}
-                            size="sm"
-                            variant="ghost"
-                            className="h-9 mr-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-sm font-bold transform transition-all duration-200"
-                          >
-                            Save
-                          </Button>
                         </div>
+                        
+                        <Button
+                          onClick={handleSave}
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 px-4 bg-muted text-muted-foreground font-semibold"
+                        >
+                          Save
+                        </Button>
                         
                         <Button
                           type="button"
