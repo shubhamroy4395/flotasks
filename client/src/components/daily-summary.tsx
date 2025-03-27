@@ -127,6 +127,18 @@ function ProgressCard({
                     ? "h-3 mt-1"
                     : `h-1.5 ${color.bgAccent}`
                 } 
+                style={{
+                  // Ensure consistent background color based on theme
+                  '--theme-progress-foreground': theme === 'retro' 
+                    ? 'var(--progress-foreground)' // Use the theme's default
+                    : theme === 'winter' 
+                      ? '#4a6fa5' 
+                      : theme === 'spring'
+                        ? '#7e57c2'
+                        : theme === 'dark'
+                          ? '#3b82f6'
+                          : '#3b82f6'
+                } as React.CSSProperties}
               />
               
               <p className={

@@ -59,6 +59,39 @@ const TIME_SLOTS = [
   "8h", "6h", "4h", "3h", "2h", "1.5h", "1h", "45min", "30min", "15min", "10min", "5min"
 ];
 
+const TASK_FEELINGS = [
+  {
+    emoji: "😊",
+    label: "Easy peasy",
+    value: "easy",
+    description: "This task is enjoyable and feels effortless"
+  },
+  {
+    emoji: "😐",
+    label: "Neutral",
+    value: "neutral",
+    description: "This task is just regular work"
+  },
+  {
+    emoji: "😖",
+    label: "I hate this",
+    value: "hate",
+    description: "This task feels difficult or unpleasant"
+  },
+  {
+    emoji: "🔥",
+    label: "Urgent",
+    value: "urgent",
+    description: "This task needs immediate attention"
+  },
+  {
+    emoji: "🤔",
+    label: "Unsure",
+    value: "unsure",
+    description: "I'm not sure how to approach this task"
+  }
+];
+
 interface TaskListProps {
   title: string;
   tasks: Task[];
@@ -77,6 +110,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
       completed: false,
       priority: 0,
       eta: "",
+      feeling: "",
       timestamp: new Date()
     }));
 
@@ -100,6 +134,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
     content: string;
     priority: number;
     eta: string;
+    feeling?: string;
   } | null>(null);
 
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -143,7 +178,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
       index,
       content: entry.content || "",
       priority: entry.priority || 0,
-      eta: entry.eta || ""
+      eta: entry.eta || "",
+      feeling: entry.feeling || ""
     });
 
     // Track task editing interaction
@@ -160,12 +196,13 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
 
   const handleSave = useCallback(() => {
     if (!activeTask) return;
-    const { content, priority, eta } = activeTask;
+    const { content, priority, eta, feeling } = activeTask;
 
     if (content.trim()) {
       onSave({
         content,
         priority,
+        feeling: feeling || "",
         category: title === "Today's Tasks" ? "today" : "other"
       });
 
@@ -180,6 +217,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
         priority_value: priority, // 3, 2, 1
         has_time: Boolean(eta),
         estimated_minutes: convertTimeToMinutes(eta),
+        feeling: feeling || 'none',
 
         // Detailed task properties
         task: {
@@ -211,6 +249,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
               content: content.trim(),
               priority,
               eta,
+              feeling: feeling || "",
               isEditing: false
             }
           : entry
@@ -339,6 +378,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
         completed: false,
         priority: 0,
         eta: "",
+        feeling: "",
         timestamp: new Date()
       }))
     ]);
@@ -364,7 +404,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
     // Update local state to immediately reflect deletion
     setEntries(prev => 
       prev.map((entry, i) => 
-        i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "" } : entry
+        i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "", feeling: "" } : entry
       )
     );
   }, [entries, onDelete, tasks, title]);
@@ -483,7 +523,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                     index: nextIndex,
                                     content: nextEntry.content || "",
                                     priority: nextEntry.priority || 0,
-                                    eta: nextEntry.eta || ""
+                                    eta: nextEntry.eta || "",
+                                    feeling: nextEntry.feeling || ""
                                   });
                                 }, 0);
                               }
@@ -497,7 +538,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                               index: prevIndex,
                               content: prevEntry.content || "",
                               priority: prevEntry.priority || 0,
-                              eta: prevEntry.eta || ""
+                              eta: prevEntry.eta || "",
+                              feeling: prevEntry.feeling || ""
                             });
                           } else if (e.key === "ArrowDown" && activeTask.index < entries.length - 1) {
                             // Move to the next task
@@ -508,7 +550,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                               index: nextIndex,
                               content: nextEntry.content || "",
                               priority: nextEntry.priority || 0,
-                              eta: nextEntry.eta || ""
+                              eta: nextEntry.eta || "",
+                              feeling: nextEntry.feeling || ""
                             });
                           }
                         }}
@@ -582,6 +625,18 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         <option value="">Time</option>
                         {TIME_SLOTS.map(slot => (
                           <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={activeTask.feeling || ""}
+                        onChange={(e) => setActiveTask({ ...activeTask, feeling: e.target.value })}
+                        className="rounded-md border-border px-2 py-1.5 text-sm bg-transparent font-bold text-foreground"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="">Feeling</option>
+                        {TASK_FEELINGS.map(feeling => (
+                          <option key={feeling.value} value={feeling.value}>{feeling.emoji} {feeling.label}</option>
                         ))}
                       </select>
 

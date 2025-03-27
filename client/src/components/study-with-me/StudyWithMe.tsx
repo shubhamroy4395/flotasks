@@ -255,14 +255,19 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
 
   const startTimer = () => {
     if (audioRef.current && soundType !== 'none') {
-      audioRef.current.play().catch(error => {
-        console.error("Audio playback failed:", error);
-        toast({
-          title: "Audio Playback Failed",
-          description: "Please interact with the page first to enable audio.",
-          variant: "destructive"
+      // Get a user gesture to enable audio
+      const playPromise = audioRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Audio playback failed:", error);
+          toast({
+            title: "Click Play Button Again",
+            description: "Browser requires a click to play audio. Click play button once more.",
+            duration: 5000
+          });
         });
-      });
+      }
     }
     setIsRunning(true);
   };
