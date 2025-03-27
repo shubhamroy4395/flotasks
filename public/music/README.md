@@ -1,9 +1,10 @@
-# Music File Placeholder
+# Ambient Sound Files
 
-The `ghibli.mp3` file needs to be placed in this directory.
+This directory contains the following ambient sound files used in the Focus Mode feature:
 
-This file should be a royalty-free, Ghibli-style instrumental track that provides a calming background for the Study With Me feature.
+1. **ghibli.mp3** - Calm piano music in Ghibli style
+2. **rain.mp3** - Gentle rainfall sounds
+3. **thunder.mp3** - Distant thunderstorm sounds
+4. **fire.mp3** - Fireplace crackling sounds
 
-For legal reasons, we are not providing the actual audio file in this repository.
-
-Please add your own audio file named `ghibli.mp3` to this directory.
+These audio files need to be added to enable the full functionality of the Focus Mode feature.

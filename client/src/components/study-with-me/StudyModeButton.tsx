@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Headphones } from "lucide-react";
+import { Focus } from "lucide-react";
 import { StudyWithMe } from "./StudyWithMe";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
@@ -20,8 +20,8 @@ export function StudyModeButton() {
         )}
         onClick={() => setStudyModalOpen(true)}
       >
-        <Headphones className="h-5 w-5" />
-        <span>Study Mode</span>
+        <Focus className="h-5 w-5" />
+        <span>Focus Mode</span>
       </Button>
       
       <StudyWithMe 
