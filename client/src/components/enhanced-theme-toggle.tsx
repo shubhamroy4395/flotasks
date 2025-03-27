@@ -6,6 +6,7 @@ import {
   Moon, 
   Cloud, 
   Snowflake, 
+  Laptop, 
   Palette
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -104,6 +105,8 @@ export function EnhancedThemeToggle() {
         return <Cloud className="h-5 w-5" />;
       case 'winter':
         return <Snowflake className="h-5 w-5" />;
+      case 'retro':
+        return <Laptop className="h-5 w-5" />;
       default:
         return <Sun className="h-5 w-5" />;
     }
@@ -185,6 +188,19 @@ export function EnhancedThemeToggle() {
             <Snowflake className="h-4 w-4" />
             <span>Winter</span>
             {theme === 'winter' && (
+              <motion.span 
+                className="ml-auto h-4 w-4 rounded-full bg-blue-500"
+                layoutId="activeTheme"
+              />
+            )}
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => setTheme('retro')}
+            className="flex items-center gap-2 cursor-pointer" 
+          >
+            <Laptop className="h-4 w-4" />
+            <span>Retro</span>
+            {theme === 'retro' && (
               <motion.span 
                 className="ml-auto h-4 w-4 rounded-full bg-blue-500"
                 layoutId="activeTheme"

@@ -138,6 +138,41 @@
     --input: 215 30% 25%;
     --ring: 195 90% 50%;
   }
+  
+  /* Retro Windows 98 Theme */
+  .theme-retro {
+    /* Main colors based on Windows 98 - light gray, teal accents */
+    --background: 0 0% 75%;      /* Light gray #C0C0C0 */
+    --foreground: 0 0% 0%;       /* Black text */
+    
+    --card: 0 0% 83%;            /* Lighter gray for window backgrounds #D4D0C8 */
+    --card-foreground: 0 0% 0%;  /* Black text */
+    
+    --popover: 0 0% 83%;         /* Match card */
+    --popover-foreground: 0 0% 0%; /* Match card text */
+    
+    --primary: 180 100% 27%;     /* Windows 98 teal #008080 */
+    --primary-foreground: 0 0% 100%; /* White text on teal */
+    
+    --secondary: 0 0% 92%;       /* Slightly lighter secondary background #ECECEC */
+    --secondary-foreground: 0 0% 0%; /* Black text */
+    
+    --muted: 0 0% 87%;           /* Muted gray #DEDEDE */
+    --muted-foreground: 0 0% 33%; /* Dark gray text #555555 */
+    
+    --accent: 183 100% 35%;      /* Brighter teal for accents */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
+    
+    --destructive: 0 85% 60%;    /* Red for error messages */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+    
+    --border: 0 0% 55%;          /* Medium gray for borders #8C8C8C */
+    --input: 0 0% 75%;           /* Gray for input fields */
+    --ring: 180 100% 27%;        /* Teal for focus rings */
+    
+    /* Windows 98 radius */
+    --radius: 0px;               /* Sharp corners for true retro feel */
+  }
 }
 
 @layer utilities {
@@ -284,5 +319,109 @@
   .theme-dark .force-text-light,
   .theme-winter .force-text-light {
     color: hsl(0 0% 98%) !important;
+  }
+  
+  /* Windows 98 Specific Styles */
+  .theme-retro * {
+    border-radius: 0 !important;
+  }
+  
+  .theme-retro .Card,
+  .theme-retro [class*="Card"],
+  .theme-retro div[class*="card"],
+  .theme-retro div[class*="shadow"],
+  .theme-retro .bg-card,
+  .theme-retro [class*="rounded-lg border bg-card"] {
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3) !important;
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground)) !important;
+  }
+  
+  /* Windows 98 raised button look */
+  .theme-retro button, 
+  .theme-retro .btn, 
+  .theme-retro [role="button"] {
+    border-width: 2px !important;
+    border-style: solid !important;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3) !important;
+    background-color: hsl(var(--card)) !important;
+    color: black !important;
+    font-family: 'Pixelated MS Sans Serif', 'MS Sans Serif', sans-serif !important;
+    transition: none !important;
+  }
+  
+  .theme-retro button:active, 
+  .theme-retro .btn:active, 
+  .theme-retro [role="button"]:active {
+    border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+    box-shadow: inset 1px 1px 0px rgba(0, 0, 0, 0.3) !important;
+  }
+  
+  /* Windows 98 header bar */
+  .theme-retro h1, 
+  .theme-retro h2, 
+  .theme-retro h3, 
+  .theme-retro .card-header,
+  .theme-retro [class*="CardHeader"] {
+    background: linear-gradient(90deg, #000080, #1084d0) !important;
+    color: white !important;
+    font-weight: bold !important;
+    padding: 2px 8px !important;
+    font-family: 'Pixelated MS Sans Serif', 'MS Sans Serif', sans-serif !important;
+  }
+  
+  /* Windows 98 checkboxes and inputs */
+  .theme-retro input[type="checkbox"], 
+  .theme-retro input[type="radio"] {
+    appearance: none;
+    border: 2px inset #d4d0c8;
+    background: white;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .theme-retro input[type="checkbox"]:checked::before {
+    content: "✓";
+    display: block;
+    text-align: center;
+    line-height: 14px;
+    font-size: 12px;
+  }
+  
+  .theme-retro input[type="text"], 
+  .theme-retro input[type="email"],
+  .theme-retro input[type="password"],
+  .theme-retro textarea, 
+  .theme-retro select {
+    border: 2px inset #d4d0c8 !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Windows 98 progress bar */
+  .theme-retro progress,
+  .theme-retro [role="progressbar"] {
+    height: 16px !important;
+    border: 2px inset #d4d0c8 !important;
+    background: white !important;
+  }
+  
+  .theme-retro progress::-webkit-progress-bar,
+  .theme-retro [role="progressbar"] > div {
+    background: white !important;
+  }
+  
+  .theme-retro progress::-webkit-progress-value,
+  .theme-retro [role="progressbar"] > div > div {
+    background: #000080 !important;
+  }
+  
+  /* Typical Windows 98 window styling */
+  .theme-retro .w98-window {
+    border: 2px outset #d4d0c8;
+    background-color: #d4d0c8;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
   }
 }

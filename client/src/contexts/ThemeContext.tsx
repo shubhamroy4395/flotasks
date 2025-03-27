@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ThemeName = 'default' | 'dark' | 'spring' | 'winter';
+export type ThemeName = 'default' | 'dark' | 'spring' | 'winter' | 'retro';
 
 interface ThemeContextType {
   theme: ThemeName;
@@ -33,7 +33,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('floTasks-theme', theme);
     
     // Apply theme class to document body
-    document.body.classList.remove('theme-default', 'theme-dark', 'theme-spring', 'theme-winter');
+    document.body.classList.remove('theme-default', 'theme-dark', 'theme-spring', 'theme-winter', 'theme-retro');
     document.body.classList.add(`theme-${theme}`);
     
   }, [theme]);
