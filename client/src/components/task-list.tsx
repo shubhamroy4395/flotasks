@@ -509,7 +509,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                     <div className="flex flex-col w-full space-y-2">
                       {/* Task input row with close button */}
                       <div className="flex items-center gap-2 w-full">
-                        <div className="flex-1 relative">
+                        <div className="flex items-center flex-1 rounded-md border border-input bg-transparent">
                           <Input
                             autoFocus
                             value={activeTask.content}
@@ -560,20 +560,17 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                 });
                               }
                             }}
-                            className="border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground pr-16"
+                            className="border-none shadow-none focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                             placeholder="What needs to be done?"
                           />
-                          {/* Save button positioned inside the input */}
-                          <div className="absolute right-0 top-0 h-full flex items-center">
-                            <Button
-                              onClick={handleSave}
-                              size="sm"
-                              variant="outline"
-                              className="h-7 px-3 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
-                            >
-                              Save
-                            </Button>
-                          </div>
+                          <Button
+                            onClick={handleSave}
+                            size="sm"
+                            variant="ghost"
+                            className="h-9 mr-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-sm font-bold transform transition-all duration-200"
+                          >
+                            Save
+                          </Button>
                         </div>
                         
                         <Button
