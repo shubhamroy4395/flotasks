@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { InfoDialog } from "@/components/ui/info-dialog";
 
 export function EnhancedThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -139,98 +140,103 @@ export function EnhancedThemeToggle() {
         aria-hidden="true"
       />
       
-      {/* Theme dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="relative bg-background border border-input hover:bg-accent hover:text-accent-foreground"
-          >
-            <div ref={animationRef} className="flex items-center justify-center">
-              {getThemeIcon()}
-            </div>
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem 
-            onClick={() => setTheme('default')}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <Sun className="h-4 w-4" />
-            <span>Default</span>
-            {theme === 'default' && (
-              <motion.span 
-                className="ml-auto h-4 w-4 rounded-full bg-blue-500"
-                layoutId="activeTheme"
-              />
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => setTheme('dark')}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <Moon className="h-4 w-4" />
-            <span>Dark</span>
-            {theme === 'dark' && (
-              <motion.span 
-                className="ml-auto h-4 w-4 rounded-full bg-blue-500"
-                layoutId="activeTheme"
-              />
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => setTheme('spring')}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <Cloud className="h-4 w-4" />
-            <span>Spring</span>
-            {theme === 'spring' && (
-              <motion.span 
-                className="ml-auto h-4 w-4 rounded-full bg-blue-500"
-                layoutId="activeTheme"
-              />
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => setTheme('winter')}
-            className="flex items-center gap-2 cursor-pointer" 
-          >
-            <Snowflake className="h-4 w-4" />
-            <span>Winter</span>
-            {theme === 'winter' && (
-              <motion.span 
-                className="ml-auto h-4 w-4 rounded-full bg-blue-500"
-                layoutId="activeTheme"
-              />
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => setTheme('retro')}
-            className="flex items-center gap-2 cursor-pointer" 
-          >
-            <div className="w-4 h-4 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="16" height="16" fill="#C0C0C0" />
-                <rect x="1" y="1" width="14" height="14" fill="#DFDFDF" stroke="#808080" strokeWidth="1" />
-                <rect x="2" y="2" width="12" height="2" fill="#000080" />
-                <rect x="4" y="6" width="8" height="6" fill="white" stroke="#000000" strokeWidth="1" />
-                <rect x="5" y="7" width="2" height="2" fill="#000000" />
-                <rect x="9" y="7" width="2" height="2" fill="#000000" />
-                <rect x="6" y="10" width="4" height="1" fill="#000000" />
-              </svg>
-            </div>
-            <span>Windows 98</span>
-            {theme === 'retro' && (
-              <motion.span 
-                className="ml-auto h-4 w-4 rounded-full bg-blue-500"
-                layoutId="activeTheme"
-              />
-            )}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center">
+        {/* Theme dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="relative bg-background border border-input hover:bg-accent hover:text-accent-foreground"
+            >
+              <div ref={animationRef} className="flex items-center justify-center">
+                {getThemeIcon()}
+              </div>
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem 
+              onClick={() => setTheme('default')}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Sun className="h-4 w-4" />
+              <span>Default</span>
+              {theme === 'default' && (
+                <motion.span 
+                  className="ml-auto h-4 w-4 rounded-full bg-blue-500"
+                  layoutId="activeTheme"
+                />
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setTheme('dark')}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Moon className="h-4 w-4" />
+              <span>Dark</span>
+              {theme === 'dark' && (
+                <motion.span 
+                  className="ml-auto h-4 w-4 rounded-full bg-blue-500"
+                  layoutId="activeTheme"
+                />
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setTheme('spring')}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Cloud className="h-4 w-4" />
+              <span>Spring</span>
+              {theme === 'spring' && (
+                <motion.span 
+                  className="ml-auto h-4 w-4 rounded-full bg-blue-500"
+                  layoutId="activeTheme"
+                />
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setTheme('winter')}
+              className="flex items-center gap-2 cursor-pointer" 
+            >
+              <Snowflake className="h-4 w-4" />
+              <span>Winter</span>
+              {theme === 'winter' && (
+                <motion.span 
+                  className="ml-auto h-4 w-4 rounded-full bg-blue-500"
+                  layoutId="activeTheme"
+                />
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setTheme('retro')}
+              className="flex items-center gap-2 cursor-pointer" 
+            >
+              <div className="w-4 h-4 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="0" y="0" width="16" height="16" fill="#C0C0C0" />
+                  <rect x="1" y="1" width="14" height="14" fill="#DFDFDF" stroke="#808080" strokeWidth="1" />
+                  <rect x="2" y="2" width="12" height="2" fill="#000080" />
+                  <rect x="4" y="6" width="8" height="6" fill="white" stroke="#000000" strokeWidth="1" />
+                  <rect x="5" y="7" width="2" height="2" fill="#000000" />
+                  <rect x="9" y="7" width="2" height="2" fill="#000000" />
+                  <rect x="6" y="10" width="4" height="1" fill="#000000" />
+                </svg>
+              </div>
+              <span>Windows 98</span>
+              {theme === 'retro' && (
+                <motion.span 
+                  className="ml-auto h-4 w-4 rounded-full bg-blue-500"
+                  layoutId="activeTheme"
+                />
+              )}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Info dialog component */}
+        <InfoDialog />
+      </div>
     </>
   );
 }
