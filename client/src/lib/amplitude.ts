@@ -21,7 +21,8 @@ export const Events = {
     Deleted: 'TaskToday.Deleted',
     PriorityChanged: 'TaskToday.PriorityChanged',
     TimeSet: 'TaskToday.TimeSet',
-    Sorted: 'TaskToday.Sorted'
+    Sorted: 'TaskToday.Sorted',
+    Updated: 'TaskToday.Updated'
   },
   TaskOther: {
     View: 'TaskOther.View',
@@ -31,7 +32,8 @@ export const Events = {
     Deleted: 'TaskOther.Deleted',
     PriorityChanged: 'TaskOther.PriorityChanged',
     TimeSet: 'TaskOther.TimeSet',
-    Sorted: 'TaskOther.Sorted'
+    Sorted: 'TaskOther.Sorted',
+    Updated: 'TaskOther.Updated'
   },
   Mood: {
     SectionOpen: 'Mood.SectionOpen',

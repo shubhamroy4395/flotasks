@@ -712,24 +712,87 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         {entry.content && (!entry.priority || !entry.eta || !entry.difficulty) && (
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {!entry.priority && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveTask({
-                                    index,
-                                    content: entry.content || "",
-                                    priority: 3, // Default to 'L' priority
-                                    eta: entry.eta || "",
-                                    difficulty: entry.difficulty || ""
-                                  });
-                                }}
-                                title="Set priority"
-                              >
-                                <span className="text-xs font-black">L</span>
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground mr-1">Priority:</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-1.5 py-0 rounded-full bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Find the corresponding task in the tasks array
+                                    const taskToUpdate = tasks.find(t => t.content === entry.content);
+                                    if (onUpdate && taskToUpdate) {
+                                      onUpdate(taskToUpdate.id, { priority: 3 });
+                                      // Update local state
+                                      setEntries(prev => prev.map((e, i) => i === index ? { ...e, priority: 3 } : e));
+                                      // Track the event
+                                      trackEvent(title === "Today's Tasks" ? Events.TaskToday.Updated : Events.TaskOther.Updated, {
+                                        taskId: taskToUpdate.id,
+                                        updatedField: 'priority',
+                                        newValue: 3,
+                                        oldValue: 0,
+                                        category: title === "Today's Tasks" ? "today" : "other"
+                                      });
+                                    }
+                                  }}
+                                  title="High impact, low effort - Do first!"
+                                >
+                                  <span className="text-xs font-black">L</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-1.5 py-0 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Find the corresponding task in the tasks array
+                                    const taskToUpdate = tasks.find(t => t.content === entry.content);
+                                    if (onUpdate && taskToUpdate) {
+                                      onUpdate(taskToUpdate.id, { priority: 2 });
+                                      // Update local state
+                                      setEntries(prev => prev.map((e, i) => i === index ? { ...e, priority: 2 } : e));
+                                      // Track the event
+                                      trackEvent(title === "Today's Tasks" ? Events.TaskToday.Updated : Events.TaskOther.Updated, {
+                                        taskId: taskToUpdate.id,
+                                        updatedField: 'priority',
+                                        newValue: 2,
+                                        oldValue: 0,
+                                        category: title === "Today's Tasks" ? "today" : "other"
+                                      });
+                                    }
+                                  }}
+                                  title="Necessary but balanced"
+                                >
+                                  <span className="text-xs font-black">N</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-1.5 py-0 rounded-full bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/30 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Find the corresponding task in the tasks array
+                                    const taskToUpdate = tasks.find(t => t.content === entry.content);
+                                    if (onUpdate && taskToUpdate) {
+                                      onUpdate(taskToUpdate.id, { priority: 1 });
+                                      // Update local state
+                                      setEntries(prev => prev.map((e, i) => i === index ? { ...e, priority: 1 } : e));
+                                      // Track the event
+                                      trackEvent(title === "Today's Tasks" ? Events.TaskToday.Updated : Events.TaskOther.Updated, {
+                                        taskId: taskToUpdate.id,
+                                        updatedField: 'priority',
+                                        newValue: 1,
+                                        oldValue: 0,
+                                        category: title === "Today's Tasks" ? "today" : "other"
+                                      });
+                                    }
+                                  }}
+                                  title="High effort, low reward - Avoid"
+                                >
+                                  <span className="text-xs font-black">O</span>
+                                </Button>
+                              </div>
                             )}
                             
                             {!entry.eta && (
@@ -770,7 +833,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                 }}
                                 title="Set difficulty"
                               >
-                                <span className="text-xs">😐</span>
+                                <span className="text-xs">😒</span>
                               </Button>
                             )}
                           </div>
