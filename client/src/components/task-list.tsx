@@ -500,13 +500,13 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
 
                 {activeTask?.index === index ? (
                   <motion.div
-                    className="flex flex-col w-full gap-2"
+                    className="flex flex-col w-full gap-2 max-w-[95%]"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     layout
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center gap-2 w-full">
+                    <div className="flex items-center gap-2 w-full pr-2">
                       <Input
                         autoFocus
                         value={activeTask.content}
@@ -571,8 +571,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                       </Button>
                     </div>
 
-                    {/* Controls Row - All in one line with responsive layout */}
-                    <div className="flex items-center gap-2 max-w-full pb-1 pr-1 flex-wrap sm:flex-nowrap">
+                    {/* Controls Row - In a container with definite width constraints */}
+                    <div className="flex items-center gap-2 max-w-full pb-1 pr-1 flex-wrap sm:flex-nowrap overflow-x-hidden">
                       {/* Priority selector - compact and inline */}
                       <div className="flex gap-1 items-center">
                         {PRIORITIES.map(({ label, value, color }) => (
@@ -658,15 +658,17 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         </PopoverContent>
                       </Popover>
 
-                      {/* Save button - Positioned to stay inside the card */}
-                      <Button
-                        onClick={handleSave}
-                        size="sm"
-                        variant="outline"
-                        className="ml-auto h-7 mr-4 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
-                      >
-                        Save
-                      </Button>
+                      {/* Save button - In a container with fixed width */}
+                      <div className="ml-auto">
+                        <Button
+                          onClick={handleSave}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 mr-1 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
+                        >
+                          Save
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 ) : (
