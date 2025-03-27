@@ -796,45 +796,99 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                             )}
                             
                             {!entry.eta && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveTask({
-                                    index,
-                                    content: entry.content || "",
-                                    priority: entry.priority || 0,
-                                    eta: "30min", // Default estimate
-                                    difficulty: entry.difficulty || ""
-                                  });
-                                }}
-                                title="Set time estimate"
-                              >
-                                <Clock className="h-3 w-3" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground mr-1">Time:</span>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                                      title="Set time estimate"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Clock className="h-3 w-3" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent side="bottom" className="w-56 p-1 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
+                                    {["15min", "30min", "1h", "2h", "4h"].map((time) => (
+                                      <Button 
+                                        key={time}
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="flex-1 text-xs py-0 h-7"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Find the corresponding task in the tasks array
+                                          const taskToUpdate = tasks.find(t => t.content === entry.content);
+                                          if (onUpdate && taskToUpdate) {
+                                            onUpdate(taskToUpdate.id, { eta: time });
+                                            // Update local state
+                                            setEntries(prev => prev.map((e, i) => i === index ? { ...e, eta: time } : e));
+                                            // Track the event
+                                            trackEvent(title === "Today's Tasks" ? Events.TaskToday.TimeSet : Events.TaskOther.TimeSet, {
+                                              taskId: taskToUpdate.id,
+                                              time,
+                                              category: title === "Today's Tasks" ? "today" : "other"
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        {time}
+                                      </Button>
+                                    ))}
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
                             )}
                             
                             {!entry.difficulty && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-amber-500 hover:text-amber-700 hover:bg-amber-100 transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveTask({
-                                    index,
-                                    content: entry.content || "",
-                                    priority: entry.priority || 0,
-                                    eta: entry.eta || "",
-                                    difficulty: "moderate" // Default difficulty
-                                  });
-                                }}
-                                title="Set difficulty"
-                              >
-                                <span className="text-xs">😒</span>
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground mr-1">Level:</span>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-amber-500 hover:text-amber-700 hover:bg-amber-100 transition-colors"
+                                      title="Set difficulty"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <span className="text-xs">😒</span>
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent side="bottom" className="w-64 p-1 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
+                                    {TASK_DIFFICULTIES.map((diff) => (
+                                      <Button 
+                                        key={diff.value}
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="flex-1 text-xs py-0 h-7 flex items-center gap-1"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Find the corresponding task in the tasks array
+                                          const taskToUpdate = tasks.find(t => t.content === entry.content);
+                                          if (onUpdate && taskToUpdate) {
+                                            onUpdate(taskToUpdate.id, { difficulty: diff.value });
+                                            // Update local state
+                                            setEntries(prev => prev.map((e, i) => i === index ? { ...e, difficulty: diff.value } : e));
+                                            // Track the event
+                                            trackEvent(title === "Today's Tasks" ? Events.TaskToday.Updated : Events.TaskOther.Updated, {
+                                              taskId: taskToUpdate.id,
+                                              updatedField: 'difficulty',
+                                              newValue: diff.value,
+                                              oldValue: '',
+                                              category: title === "Today's Tasks" ? "today" : "other"
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        <span>{diff.emoji}</span> {diff.label}
+                                      </Button>
+                                    ))}
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
                             )}
                           </div>
                         )}
