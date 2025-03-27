@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
@@ -67,7 +67,7 @@ interface TaskListProps {
   onUpdate?: (id: number, updates: Partial<Task>) => void;
 }
 
-export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListProps) {
+function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskListProps) {
   const initialLines = title === "Other Tasks" ? 8 : 10;
   const [entries, setEntries] = useState(() => {
     const lines = Array(initialLines).fill(null).map((_, i) => ({
@@ -136,7 +136,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
     );
   }, []);
 
-  const handleLineClick = (index: number, e: React.MouseEvent) => {
+  const handleLineClick = useCallback((index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const entry = entries[index];
     setActiveTask({
@@ -156,9 +156,9 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
         category: title === "Today's Tasks" ? "today" : "other"
       });
     }
-  };
+  }, [entries, title]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!activeTask) return;
     const { content, priority, eta } = activeTask;
 
@@ -217,9 +217,9 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
       )
     );
     setActiveTask(null);
-  };
+  }, [activeTask, entries, onSave, title]);
 
-  const toggleComplete = (index: number) => {
+  const toggleComplete = useCallback((index: number) => {
     setEntries(prev =>
       prev.map((entry, i) => {
         if (i === index) {
@@ -276,9 +276,9 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
         return entry;
       })
     );
-  };
+  }, [entries, onUpdate, tasks, title]);
 
-  const toggleSort = () => {
+  const toggleSort = useCallback(() => {
     setSortState(prev => {
       const states: ('lno' | 'onl' | 'default')[] = ['lno', 'onl', 'default'];
       const currentIndex = states.indexOf(prev);
@@ -327,9 +327,9 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
 
       return nextState;
     });
-  };
+  }, [entries, initialEntries, title]);
 
-  const addMoreTasks = () => {
+  const addMoreTasks = useCallback(() => {
     setEntries(prev => [
       ...prev,
       ...Array(5).fill(null).map((_, i) => ({
@@ -342,9 +342,9 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
         timestamp: new Date()
       }))
     ]);
-  };
+  }, []);
 
-  const handleDelete = (taskId: number, index: number) => {
+  const handleDelete = useCallback((taskId: number, index: number) => {
     const entry = entries[index];
     // Find the corresponding task in the tasks array
     const taskToDelete = tasks.find(t => t.content === entry.content && t.priority === entry.priority);
@@ -367,7 +367,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
         i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "" } : entry
       )
     );
-  };
+  }, [entries, onDelete, tasks, title]);
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu card-enhanced">
@@ -649,3 +649,6 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
     </Card>
   );
 }
+
+// Optimize the TaskList component with React.memo
+export const TaskList = memo(TaskListComponent);
