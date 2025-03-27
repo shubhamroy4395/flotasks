@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface StudyWithMeProps {
   open: boolean;
@@ -166,32 +168,52 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
     if (typeof window === 'undefined') return;
     
     let audioPath = '';
+    // First try the external sounds (FreeSound API-based sounds)
+    const apiBasedSounds = {
+      'ghibli': 'https://cdn.freesound.org/previews/617/617306_5674468-lq.mp3', // Ambient piano
+      'rain': 'https://cdn.freesound.org/previews/346/346170_4402400-lq.mp3',   // Rain sound
+      'thunder': 'https://cdn.freesound.org/previews/275/275142_5003039-lq.mp3', // Thunder
+      'fire': 'https://cdn.freesound.org/previews/213/213992_3797507-lq.mp3'     // Fire
+    };
+    
+    // Fallback to local files (if provided and if API sounds fail)
+    const localSounds = {
+      'ghibli': '/music/ghibli-style-2.mp3',
+      'rain': '/music/ghibli.mp3', // Use ghibli as fallback for now
+      'thunder': '/music/ghibli.mp3', // Use ghibli as fallback for now
+      'fire': '/music/ghibli.mp3', // Use ghibli as fallback for now
+    };
+    
     switch (type) {
       case 'ghibli':
-        audioPath = '/music/ghibli.mp3';
-        break;
       case 'rain':
-        audioPath = '/music/rain.mp3';
-        break;
       case 'thunder':
-        audioPath = '/music/thunder.mp3';
-        break;
       case 'fire':
-        audioPath = '/music/fire.mp3';
+        // Try API sound first, fall back to local sound
+        try {
+          audioRef.current = new Audio(apiBasedSounds[type]);
+          // Set up error handler to try fallback
+          audioRef.current.onerror = () => {
+            console.log("Error loading sound from API, trying local fallback");
+            audioRef.current = new Audio(localSounds[type]);
+            audioRef.current.loop = true;
+            audioRef.current.volume = volume / 100;
+          };
+        } catch (e) {
+          console.error("Failed to load API sound:", e);
+          audioRef.current = new Audio(localSounds[type]);
+        }
         break;
       case 'none':
         audioPath = '';
         break;
       default:
-        audioPath = '/music/ghibli.mp3';
+        audioRef.current = new Audio(apiBasedSounds.ghibli);
     }
     
-    if (audioPath) {
-      audioRef.current = new Audio(audioPath);
+    if (audioRef.current) {
       audioRef.current.loop = true;
       audioRef.current.volume = volume / 100;
-    } else {
-      audioRef.current = null;
     }
   };
 
@@ -392,26 +414,62 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                   : "bg-gradient-to-b from-green-500/10 to-transparent animate-pulse-slower"
               )}></div>
               
-              {/* Moving particles for visual interest */}
+              {/* Moving particles for visual interest - using Framer Motion */}
               {isRunning && (
                 <div className="particle-container">
-                  {Array.from({ length: 15 }).map((_, i) => (
-                    <div 
-                      key={i}
-                      className={cn(
-                        "particle absolute rounded-full",
-                        mode === 'focus' ? "bg-primary/20" : "bg-green-500/20"
-                      )}
-                      style={{
-                        width: `${Math.random() * 10 + 5}px`,
-                        height: `${Math.random() * 10 + 5}px`,
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        animationDuration: `${Math.random() * 20 + 10}s`,
-                        animationDelay: `${Math.random() * 10}s`
-                      }}
-                    ></div>
-                  ))}
+                  {Array.from({ length: 20 }).map((_, i) => {
+                    // Create more varied and theme-aware particles
+                    const size = Math.random() * 10 + 5;
+                    const startX = Math.random() * 100;
+                    const startY = Math.random() * 100;
+                    const endX = startX + (Math.random() * 100 - 50);
+                    const endY = startY - Math.random() * 100;
+                    const duration = Math.random() * 20 + 15;
+                    const delay = Math.random() * 8;
+                    
+                    // Theme-specific particle colors
+                    let particleColor;
+                    if (theme === 'retro') {
+                      particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-600/20";
+                    } else if (theme === 'winter') {
+                      particleColor = mode === 'focus' ? "bg-sky-400/20" : "bg-teal-400/20";
+                    } else if (theme === 'spring') {
+                      particleColor = mode === 'focus' ? "bg-purple-400/20" : "bg-lime-400/20";
+                    } else if (theme === 'dark') {
+                      particleColor = mode === 'focus' ? "bg-blue-400/20" : "bg-emerald-400/20";
+                    } else {
+                      particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-500/20";
+                    }
+                    
+                    return (
+                      <motion.div
+                        key={i}
+                        className={cn(
+                          "absolute rounded-full",
+                          particleColor
+                        )}
+                        style={{
+                          width: size,
+                          height: size,
+                          left: `${startX}%`,
+                          top: `${startY}%`,
+                          opacity: 0
+                        }}
+                        animate={{
+                          x: endX - startX,
+                          y: endY - startY,
+                          opacity: [0, 0.7, 0],
+                          scale: [0.7, 1.3, 0.9]
+                        }}
+                        transition={{
+                          duration: duration,
+                          delay: delay,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -489,12 +547,88 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                   />
                 </div>
                 
+                {/* Visual Session Roadmap */}
+                <div className="w-full mt-5 mb-2">
+                  <div className="text-xs text-muted-foreground mb-2 flex justify-between">
+                    <span>Session Progress</span>
+                    <span>{currentSession}/{focusStrategy.totalSessions}</span>
+                  </div>
+                  <TooltipProvider>
+                    <div className="w-full flex items-center justify-between gap-1">
+                      {Array.from({ length: focusStrategy.totalSessions * 2 - 1 }).map((_, idx) => {
+                        // Even indices are focus sessions, odd are breaks between sessions
+                        const sessionNum = Math.ceil((idx + 1) / 2);
+                        const isFocus = idx % 2 === 0;
+                        const isActive = isFocus 
+                          ? (sessionNum === currentSession && mode === 'focus')
+                          : (sessionNum === currentSession && mode === 'break' || 
+                             (sessionNum === currentSession - 1 && mode === 'break'));
+                        const isCompleted = isFocus 
+                          ? sessionNum < currentSession || (sessionNum === currentSession && mode === 'break')
+                          : sessionNum < currentSession;
+                        
+                        return isFocus ? (
+                          <Tooltip key={idx}>
+                            <TooltipTrigger asChild>
+                              <motion.div 
+                                className={cn(
+                                  "h-8 flex-1 rounded-md flex items-center justify-center text-xs font-medium transition-all relative",
+                                  isCompleted ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground",
+                                  isActive && "ring-2 ring-blue-500 ring-offset-2"
+                                )}
+                                animate={{
+                                  scale: isActive && isRunning ? [1, 1.05, 1] : 1
+                                }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut"
+                                }}
+                              >
+                                {sessionNum}
+                                {isActive && (
+                                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-ping" />
+                                )}
+                              </motion.div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {isCompleted 
+                                ? `Focus Session ${sessionNum} - Complete` 
+                                : isActive 
+                                  ? `Current Focus Session (${formatTime(timeLeft)} remaining)`
+                                  : `Focus Session ${sessionNum} - ${focusStrategy.focusMinutes} min`}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <div key={idx} className={cn(
+                            "w-3 h-1 flex-shrink-0 rounded-full",
+                            isCompleted ? "bg-green-500" : "bg-muted"
+                          )} />
+                        );
+                      })}
+                    </div>
+                  </TooltipProvider>
+                </div>
+                
                 {/* Timer */}
-                <div className={cn(
-                  "text-7xl font-mono font-bold my-6 tracking-tight transition-all text-card-foreground",
-                  isRunning && "animate-pulse-very-slow"
-                )}>
-                  {formatTime(timeLeft)}
+                <div className="relative">
+                  {/* Glowing background effect when timer is running */}
+                  {isRunning && (
+                    <div 
+                      className="absolute -inset-4 rounded-full opacity-70 blur-xl z-0 animate-pulse-slow"
+                      style={{ 
+                        backgroundColor: mode === 'focus' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Timer display */}
+                  <div className={cn(
+                    "relative z-10 text-7xl font-mono font-bold mt-4 mb-6 tracking-tight transition-all text-card-foreground",
+                    isRunning && "animate-pulse-very-slow"
+                  )}>
+                    {formatTime(timeLeft)}
+                  </div>
                 </div>
                 
                 {/* Controls */}
