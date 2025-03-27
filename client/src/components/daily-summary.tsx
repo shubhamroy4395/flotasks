@@ -2,15 +2,141 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Task } from "@shared/schema";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Target, Clock, List, CalendarCheck, BarChart3, Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { CheckCircle2, Target, Clock, List, CalendarCheck, BarChart3, Info, ArrowLeft } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface DailySummaryProps {
   todayTasks: Task[];
   otherTasks: Task[];
   goals: { id: number; content: string; completed: boolean }[];
+}
+
+// Define props for each progress card
+interface ProgressCardProps {
+  title: string;
+  subtitle?: string;
+  percentage: number;
+  count: { completed: number; total: number };
+  icon: React.ReactNode;
+  color: {
+    from: string;
+    to: string;
+    bgAccent: string;
+    textAccent: string;
+    infoBg: string;
+  };
+  description: string;
+}
+
+// Single flippable progress card component
+function ProgressCard({ 
+  title, 
+  subtitle, 
+  percentage, 
+  count, 
+  icon, 
+  color, 
+  description 
+}: ProgressCardProps) {
+  const [flipped, setFlipped] = useState(false);
+
+  const toggleFlip = () => {
+    setFlipped(!flipped);
+  };
+
+  return (
+    <div className="perspective">
+      <motion.div
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ duration: 0.6, type: "spring", stiffness: 300, damping: 30 }}
+        className="preserve-3d h-full"
+      >
+        {/* Front of card (Progress view) */}
+        <AnimatePresence initial={false} mode="wait">
+          {!flipped && (
+            <motion.div
+              key="front"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute w-full h-full backface-hidden"
+            >
+              <Card className={`bg-gradient-to-br ${color.from} ${color.to} text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none h-full`}>
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className={`${color.bgAccent} p-1.5 rounded-lg flex items-center gap-2`}>
+                      {icon}
+                      <button 
+                        onClick={toggleFlip}
+                        className={`rounded-full ${color.bgAccent} p-1 hover:bg-opacity-50 transition-colors`}
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+                      <span className="text-lg font-bold">
+                        {count.completed}/{count.total}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                      {title}
+                      {subtitle && (
+                        <span className={`text-xs ${color.bgAccent} rounded px-1 py-0.5`}>
+                          {subtitle}
+                        </span>
+                      )}
+                    </h3>
+                    <Progress value={percentage} className={`h-1.5 ${color.bgAccent}`} />
+                    <p className={`text-xs ${color.textAccent}`}>{percentage}% complete</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Back of card (Info view) */}
+          {flipped && (
+            <motion.div
+              key="back"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute w-full h-full backface-hidden rotate-y-180"
+            >
+              <Card className={`bg-gradient-to-br ${color.from} ${color.to} text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none h-full flex flex-col`}>
+                <CardContent className="pt-4 pb-3 px-4 flex flex-col h-full">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-semibold">About This Card</h3>
+                    <button 
+                      onClick={toggleFlip}
+                      className={`${color.bgAccent} p-1.5 rounded-full hover:bg-opacity-50 transition-colors`}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <div className={`${color.infoBg} p-3 rounded-lg mb-2`}>
+                      <p className="text-sm">{description}</p>
+                    </div>
+                    <div className="bg-white/10 p-3 rounded-lg">
+                      <p className="text-sm font-medium text-white/90">Current progress:</p>
+                      <p className="font-bold text-lg mt-1">
+                        {count.completed} of {count.total} {count.total === 1 ? 'item' : 'items'} ({percentage}%)
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
 }
 
 export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProps) {
@@ -56,135 +182,72 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
     ? Math.round((completedItems / totalItems) * 100)
     : 0;
   
+  // Define card data for each progress card
+  const cards: ProgressCardProps[] = [
+    {
+      title: "Tasks Completed",
+      percentage: taskCompletionPercentage,
+      count: { completed: completedTasks, total: totalTasks },
+      icon: <List className="h-5 w-5" />,
+      color: {
+        from: "from-blue-500",
+        to: "to-blue-600",
+        bgAccent: "bg-blue-400/30",
+        textAccent: "text-blue-100",
+        infoBg: "bg-blue-600/40",
+      },
+      description: "This card tracks all your tasks from both Today's Tasks and Other Tasks sections. It shows how many tasks you've completed out of your total tasks."
+    },
+    {
+      title: "Goals Achieved",
+      percentage: goalCompletionPercentage,
+      count: { completed: completedGoals, total: totalGoals },
+      icon: <Target className="h-5 w-5" />,
+      color: {
+        from: "from-emerald-500",
+        to: "to-emerald-600",
+        bgAccent: "bg-emerald-400/30",
+        textAccent: "text-emerald-100",
+        infoBg: "bg-emerald-600/40",
+      },
+      description: "This card tracks your personal goals from the Goals section. It shows your progress toward accomplishing your set objectives."
+    },
+    {
+      title: "High Priority",
+      subtitle: "(L tasks)",
+      percentage: highPriorityPercentage,
+      count: { completed: completedHighPriorityTasks, total: highPriorityTasks },
+      icon: <Clock className="h-5 w-5" />,
+      color: {
+        from: "from-purple-500",
+        to: "to-purple-600",
+        bgAccent: "bg-purple-400/30",
+        textAccent: "text-purple-100",
+        infoBg: "bg-purple-600/40",
+      },
+      description: "This card specifically tracks 'L' priority tasks (high-impact, low-effort) from both Today's Tasks and Other Tasks sections. These are your most valuable tasks that give maximum results for minimal effort."
+    },
+    {
+      title: "Overall Progress",
+      percentage: totalCompletionPercentage,
+      count: { completed: completedItems, total: totalItems },
+      icon: <BarChart3 className="h-5 w-5" />,
+      color: {
+        from: "from-amber-500",
+        to: "to-amber-600",
+        bgAccent: "bg-amber-400/30",
+        textAccent: "text-amber-100",
+        infoBg: "bg-amber-600/40",
+      },
+      description: "This card shows your combined progress across all activities. It aggregates your tasks and goals to give you an overall completion percentage for the day."
+    }
+  ];
+
   return (
-    <TooltipProvider>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Tasks Progress Card */}
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none transform hover:scale-[1.02]">
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="bg-blue-400/30 p-1.5 rounded-lg flex items-center gap-2">
-                <List className="h-5 w-5" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="rounded-full bg-blue-400/30 p-1 hover:bg-blue-400/50 transition-colors">
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-blue-900 text-white border-blue-700">
-                    <p className="max-w-xs">Tracks the completion of all tasks from both Today's Tasks and Other Tasks sections.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-lg font-bold">
-                  {completedTasks}/{totalTasks}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-semibold text-sm">Tasks Completed</h3>
-              <Progress value={taskCompletionPercentage} className="h-1.5 bg-blue-400/30" />
-              <p className="text-xs text-blue-100">{taskCompletionPercentage}% complete</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Goals Progress Card */}
-        <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none transform hover:scale-[1.02]">
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="bg-emerald-400/30 p-1.5 rounded-lg flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="rounded-full bg-emerald-400/30 p-1 hover:bg-emerald-400/50 transition-colors">
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-emerald-900 text-white border-emerald-700">
-                    <p className="max-w-xs">Tracks the achievement of goals from the Goals section.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-lg font-bold">
-                  {completedGoals}/{totalGoals}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-semibold text-sm">Goals Achieved</h3>
-              <Progress value={goalCompletionPercentage} className="h-1.5 bg-emerald-400/30" />
-              <p className="text-xs text-emerald-100">{goalCompletionPercentage}% complete</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Priority Tasks Card */}
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none transform hover:scale-[1.02]">
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="bg-purple-400/30 p-1.5 rounded-lg flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="rounded-full bg-purple-400/30 p-1 hover:bg-purple-400/50 transition-colors">
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-purple-900 text-white border-purple-700">
-                    <p className="max-w-xs">Tracks "L" priority tasks (high-impact, low-effort) from both Today's Tasks and Other Tasks sections.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-lg font-bold">
-                  {completedHighPriorityTasks}/{highPriorityTasks}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-semibold text-sm flex items-center gap-1.5">
-                High Priority <span className="text-xs bg-purple-400/30 rounded px-1 py-0.5">(L tasks)</span>
-              </h3>
-              <Progress value={highPriorityPercentage} className="h-1.5 bg-purple-400/30" />
-              <p className="text-xs text-purple-100">{highPriorityPercentage}% complete</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Overall Progress Card */}
-        <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border-none transform hover:scale-[1.02]">
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="bg-amber-400/30 p-1.5 rounded-lg flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="rounded-full bg-amber-400/30 p-1 hover:bg-amber-400/50 transition-colors">
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-amber-900 text-white border-amber-700">
-                    <p className="max-w-xs">Combined daily progress showing the completion rate of all tasks and goals together.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-lg font-bold">
-                  {totalCompletionPercentage}%
-                </span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-semibold text-sm">Overall Progress</h3>
-              <Progress value={totalCompletionPercentage} className="h-1.5 bg-amber-400/30" />
-              <p className="text-xs text-amber-100">Daily completion rate</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </TooltipProvider>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      {cards.map((card, index) => (
+        <ProgressCard key={index} {...card} />
+      ))}
+    </div>
   );
 }
