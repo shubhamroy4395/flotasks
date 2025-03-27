@@ -571,7 +571,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                       </Button>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 max-w-full pb-1">
+                    {/* Controls Row - All in one line with responsive layout */}
+                    <div className="flex items-center gap-2 max-w-full pb-1 flex-wrap sm:flex-nowrap">
                       {/* Priority selector - compact and inline */}
                       <div className="flex gap-1 items-center">
                         {PRIORITIES.map(({ label, value, color }) => (
@@ -604,14 +605,14 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         ))}
                       </select>
 
-                      {/* Task Difficulty selector */}
+                      {/* Difficulty selector - renamed from Task Difficulty */}
                       <select
                         value={activeTask.difficulty || ""}
                         onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
                         className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <option value="">Task Difficulty</option>
+                        <option value="">Difficulty</option>
                         {TASK_DIFFICULTIES.map(difficulty => (
                           <option key={difficulty.value} value={difficulty.value}>{difficulty.emoji} {difficulty.label}</option>
                         ))}
@@ -644,7 +645,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                               </div>
                             ))}
                             
-                            <h3 className="font-bold text-sm mt-4">Task Difficulties:</h3>
+                            <h3 className="font-bold text-sm mt-4">Difficulties:</h3>
                             <div className="grid grid-cols-2 gap-2">
                               {TASK_DIFFICULTIES.map(diff => (
                                 <div key={diff.value} className="flex items-center gap-1">
@@ -657,7 +658,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         </PopoverContent>
                       </Popover>
 
-                      {/* Save button */}
+                      {/* Save button - Now in the same line as the other controls */}
                       <Button
                         onClick={handleSave}
                         size="sm"
