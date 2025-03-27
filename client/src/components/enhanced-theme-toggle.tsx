@@ -108,7 +108,7 @@ export function EnhancedThemeToggle() {
       anime({
         targets: snowContainer.children,
         translateY: window.innerHeight + 20,
-        translateX: anime.stagger([-25, 25], {from: 'center', grid: 'stagger'}),
+        translateX: function() { return anime.random(-25, 25); },
         rotate: function() { return anime.random(-360, 360); },
         duration: function() { return 5000 + anime.random(3000, 8000); },
         delay: anime.stagger(200),
