@@ -9,7 +9,8 @@ import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
 import { NotesSection } from "@/components/notes-section";
-import { DailySummary } from "@/components/daily-summary"; // Import the DailySummary component
+import { DailySummary } from "@/components/daily-summary";
+import { EnhancedThemeToggle } from "@/components/enhanced-theme-toggle";
 
 
 export default function Home() {
@@ -96,27 +97,28 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa]">
+    <div className="min-h-screen bg-background">
       {/* Date and Time Bar */}
-      <div className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-10 shadow-md">
+      <div className="bg-card border-b border-border py-4 px-6 sticky top-0 z-10 shadow-md">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-extrabold text-gray-800">
+            <h2 className="text-2xl font-extrabold text-foreground">
               {format(currentTime, 'EEEE')}
             </h2>
-            <span className="text-gray-500">•</span>
-            <span className="text-xl font-bold text-gray-700">
+            <span className="text-muted-foreground">•</span>
+            <span className="text-xl font-bold text-foreground">
               {format(currentTime, 'dd-MMM-yyyy')}
             </span>
-            <span className="text-gray-500">•</span>
-            <span className="text-xl font-bold text-gray-700">
+            <span className="text-muted-foreground">•</span>
+            <span className="text-xl font-bold text-foreground">
               {format(currentTime, 'HH:mm:ss')}
             </span>
           </div>
-          <div className="flex items-center">
-            <h1 className="text-4xl font-bold tracking-tight text-black font-tangerine hover:text-gray-800 transition-all duration-300 hover:scale-105">
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl font-bold tracking-tight text-primary font-tangerine hover:text-accent-foreground transition-all duration-300 hover:scale-105">
               Flo Tasks
             </h1>
+            <EnhancedThemeToggle />
           </div>
         </div>
       </div>
