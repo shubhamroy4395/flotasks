@@ -46,35 +46,35 @@
     --radius: 0.5rem;
   }
 
-  /* Dark theme - Bolder with deep navy blue */
+  /* Dark theme - Enhanced for accessibility and contrast */
   .theme-dark {
-    --background: 230 30% 10%;
-    --foreground: 210 50% 98%;
+    --background: 230 30% 7%;    /* Deeper background #121212 */
+    --foreground: 0 0% 90%;      /* Not pure white for text #E6E6E6 */
 
-    --card: 225 30% 18%;
-    --card-foreground: 210 50% 98%;
+    --card: 225 20% 15%;         /* Darker card background #1E1E1E */
+    --card-foreground: 0 0% 92%; /* Card text #EAEAEA */
 
-    --popover: 225 30% 18%;
-    --popover-foreground: 210 50% 98%;
+    --popover: 225 20% 15%;      /* Match card background */
+    --popover-foreground: 0 0% 92%; /* Match card text */
 
-    --primary: 217 90% 60%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 217 90% 65%;      /* Brighter blue for better visibility */
+    --primary-foreground: 0 0% 100%; /* White text on primary buttons */
 
-    --secondary: 215 50% 22%;
-    --secondary-foreground: 210 50% 98%;
+    --secondary: 215 30% 25%;    /* Slightly darker secondary background */
+    --secondary-foreground: 0 0% 92%; /* Match general text color */
 
-    --muted: 217 40% 20%;
-    --muted-foreground: 215 30% 70%;
+    --muted: 217 30% 22%;        /* Darker muted for better contrast with content */
+    --muted-foreground: 215 20% 75%; /* Lighter muted text for readability */
 
-    --accent: 217 60% 45%;
-    --accent-foreground: 210 50% 98%;
+    --accent: 217 70% 55%;       /* Brighter accent color for emphasis */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 210 50% 98%;
+    --destructive: 0 80% 60%;    /* Brighter red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
 
-    --border: 217 40% 25%;
-    --input: 217 40% 25%;
-    --ring: 224 76% 48%;
+    --border: 215 30% 30%;       /* More visible borders for separation */
+    --input: 215 30% 30%;        /* Match border for inputs */
+    --ring: 217 90% 65%;         /* Match primary for focus rings */
   }
 
   /* Spring theme - Nice soft greens */
@@ -165,5 +165,51 @@
   
   .rotate-y-180 {
     transform: rotateY(180deg);
+  }
+
+  /* Dark Mode Enhanced Utilities */
+  .theme-dark .card-enhanced {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border: 1px solid hsl(var(--border));
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .theme-dark .card-enhanced:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+    transform: translateY(-2px);
+  }
+  
+  .theme-dark .hover-highlight {
+    transition: background-color 0.2s ease;
+  }
+  
+  .theme-dark .hover-highlight:hover {
+    background-color: hsl(var(--muted) / 0.7);
+  }
+  
+  .theme-dark .active-scale {
+    transition: transform 0.1s ease;
+  }
+  
+  .theme-dark .active-scale:active {
+    transform: scale(0.98);
+  }
+  
+  .theme-dark .interactive-row {
+    border-bottom: 1px dashed hsl(var(--border));
+    transition: background-color 0.2s ease;
+  }
+  
+  .theme-dark .interactive-row:hover {
+    background-color: hsl(var(--muted) / 0.5);
+  }
+  
+  .theme-dark .text-enhanced {
+    color: hsl(var(--foreground));
+    font-weight: 500;
+  }
+  
+  .theme-dark .subtle-glow {
+    box-shadow: 0 0 15px hsl(var(--accent) / 0.15);
   }
 }

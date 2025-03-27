@@ -1,0 +1,70 @@
+You are working on the FloTasks productivity web app.
+
+The app has a dark mode, but it currently suffers from usability issues:
+- Many content blocks (like “Today’s Tasks”, “Top 3 Goals”, and “Gratitude Journal”) use pale greys or low-contrast whites that blend into the background.
+- Some text (like “Click any line to add a task” or goal labels) are barely readable.
+- Buttons like “Add More” lack hover/active contrast and don’t stand out from the layout.
+- White boxes on a dark background without shadows or borders lack depth and feel invisible.
+- There’s a lack of visual cues for interaction (hover, focus, selection).
+
+## ✅ Task:
+Please revise the dark mode to follow **UI/UX accessibility best practices** and improve **visual clarity, contrast, and readability**.
+
+## 🎯 Goals:
+1. Improve **text readability** with higher contrast ratios.
+   - Use `#F1F1F1` or `#E0E0E0` for light text, and avoid full white `#FFFFFF`.
+   - Avoid placing light grey text over light grey containers.
+   - Use `font-weight: 500+` for better readability.
+
+2. Give **white/grey containers a subtle shadow or border**:
+   - Add `box-shadow` or a `1px solid #333` border to cards like “Goals for Today”, “Gratitude Journal”, etc.
+
+3. Improve **interactivity of buttons**:
+   - Add hover states (e.g., darken background slightly).
+   - Add active/pressed states with animations like `transform: scale(0.98)`.
+
+4. Adjust **input and list visibility**:
+   - Increase visibility of empty input areas (like unchecked task list rows).
+   - Add `:hover` states for empty lines so users feel where to click.
+
+5. Ensure **consistent spacing and container hierarchy**:
+   - Use 8px-based spacing.
+   - Make containers like “How are you feeling” and “Reminders” pop slightly with a soft glow or background tint.
+
+6. Use **color-coded semantic design**:
+   - Blue (Tasks Completed), Green (Goals), Purple (Priority), Orange (Progress) are great — but increase their brightness or saturation slightly for dark mode.
+
+7. Add **dark-mode specific styling logic**:
+   - Use a top-level `dark-theme` class and scope styles to it:
+     ```css
+     .dark-theme .card {
+       background-color: #1E1E1E;
+       color: #EAEAEA;
+     }
+     ```
+
+## 💡 Optional Enhancements:
+- Allow user to adjust contrast from settings panel.
+- Add subtle animation when toggling between light and dark mode.
+- Use CSS `@media (prefers-color-scheme: dark)` for system-based dark mode toggling.
+
+## 🎨 Suggested Colors for Dark Mode:
+| Element                | Suggested Color        |
+|------------------------|------------------------|
+| Background             | `#121212`              |
+| Card background        | `#1E1E1E` – `#222222`   |
+| Primary text           | `#EAEAEA`              |
+| Secondary text         | `#B0B0B0`              |
+| Button text            | `#FFFFFF`              |
+| Accent colors (icons)  | Keep blue, green, purple, orange — just brighten a bit |
+
+## 🧪 Validation:
+Once done, please test the layout:
+- On both desktop and mobile.
+- For users with vision issues — use a contrast checker (aim for 4.5:1 minimum for text).
+- Try keyboard navigation to ensure focus visibility.
+
+Do not proceed if:
+- Any text appears faint or unreadable.
+- Containers visually "disappear" into the background.
+- Buttons have no hover/active state.

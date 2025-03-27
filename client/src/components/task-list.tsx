@@ -370,7 +370,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
   };
 
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu card-enhanced">
       <CardHeader className="flex flex-row items-center justify-between border-b border-border flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -395,7 +395,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
             variant="ghost"
             size="sm"
             onClick={toggleSort}
-            className="text-muted-foreground hover:text-foreground font-bold"
+            className="text-muted-foreground hover:text-foreground font-bold hover-highlight active-scale"
           >
             <ArrowUpDown className="h-4 w-4 mr-1" />
             {sortState === 'lno' ? 'L→N→O' : sortState === 'onl' ? 'O→N→L' : 'Default'}
@@ -404,7 +404,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
             variant="outline"
             size="sm"
             onClick={addMoreTasks}
-            className="text-primary hover:text-primary-foreground hover:bg-primary/20 font-bold"
+            className="text-primary hover:text-primary-foreground hover:bg-primary/20 font-bold active-scale"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add More
@@ -420,7 +420,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="group flex items-center gap-4 py-3 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300"
+                className="group flex items-center gap-4 py-3 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300 interactive-row"
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
                 layout
@@ -478,7 +478,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                         variant="ghost"
                         size="icon"
                         onClick={() => setActiveTask(null)}
-                        className="h-8 w-8 hover:bg-muted transition-colors duration-200"
+                        className="h-8 w-8 hover:bg-muted transition-colors duration-200 hover-highlight active-scale"
                       >
                         <X className="h-4 w-4 text-muted-foreground" />
                       </Button>
@@ -507,7 +507,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground hover-highlight active-scale"
                             >
                               <Info className="h-4 w-4" />
                             </Button>
@@ -547,7 +547,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                         onClick={handleSave}
                         size="sm"
                         variant="outline"
-                        className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105"
+                        className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
                       >
                         Save
                       </Button>
@@ -586,7 +586,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(tasks[index].id, index);

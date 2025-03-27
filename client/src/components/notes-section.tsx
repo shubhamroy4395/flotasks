@@ -20,7 +20,7 @@ export function NotesSection() {
 
   // Track section open
   useEffect(() => {
-    trackEvent(Events.NOTES_SECTION_OPEN, {
+    trackEvent(Events.Notes.SectionOpen, {
       componentName: 'NotesSection',
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -46,7 +46,7 @@ export function NotesSection() {
       });
 
       // Track note creation
-      trackEvent(Events.NOTE_CREATED, {
+      trackEvent(Events.Notes.Created, {
         contentLength: newNote.length,
         wordCount: newNote.trim().split(/\s+/).length,
         formDuration: Date.now() - formOpenTime.current,
@@ -68,7 +68,7 @@ export function NotesSection() {
       // Track note deletion
       const deletedNote = notes.find(note => note.id === id);
       if (deletedNote) {
-        trackEvent(Events.NOTE_DELETED, {
+        trackEvent(Events.Notes.Deleted, {
           noteAge: Date.now() - new Date(deletedNote.timestamp).getTime(),
           contentLength: deletedNote.content.length,
           remainingNotes: notes.length - 1,
@@ -82,7 +82,7 @@ export function NotesSection() {
   const handleFormOpen = () => {
     setIsAdding(true);
     formOpenTime.current = Date.now();
-    trackEvent(Events.UI_MODAL_OPENED, {
+    trackEvent(Events.UI.ModalOpened, {
       modalType: 'note-form',
       timeOfDay: new Date().getHours(),
       existingNotes: notes.length
@@ -91,7 +91,7 @@ export function NotesSection() {
 
   const handleFormClose = () => {
     setIsAdding(false);
-    trackEvent(Events.UI_MODAL_CLOSED, {
+    trackEvent(Events.UI.ModalClosed, {
       modalType: 'note-form',
       formDuration: Date.now() - formOpenTime.current,
       hadContent: newNote.length > 0
@@ -111,7 +111,7 @@ export function NotesSection() {
   };
 
   return (
-    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 card-enhanced">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
         <CardTitle className="font-semibold">Quick Notes</CardTitle>
       </CardHeader>
@@ -123,7 +123,7 @@ export function NotesSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Card className="p-4 mb-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <Card className="p-4 mb-4 shadow-sm hover:shadow-md transition-shadow duration-300 card-enhanced">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input
@@ -138,13 +138,14 @@ export function NotesSection() {
                       variant="ghost"
                       size="icon"
                       onClick={handleFormClose}
+                      className="hover-highlight active-scale"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full font-medium"
+                    className="w-full font-medium active-scale"
                     disabled={!newNote.trim()}
                   >
                     Add Note
@@ -163,20 +164,20 @@ export function NotesSection() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors group"
+                className="p-4 rounded-lg bg-card hover:bg-muted/50 transition-colors group interactive-row"
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-gray-700">{note.content}</p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-foreground font-medium text-enhanced">{note.content}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                       {format(new Date(note.timestamp), 'MMM d, h:mm a')}
                     </p>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive/70 hover:text-destructive hover:bg-destructive/10 active-scale"
                     onClick={() => deleteNote.mutate(note.id)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -191,7 +192,7 @@ export function NotesSection() {
           <Button
             variant="outline"
             size="lg"
-            className="w-full mt-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-none font-medium"
+            className="w-full mt-4 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-medium active-scale"
             onClick={handleFormOpen}
           >
             <Plus className="mr-2 h-4 w-4" />
