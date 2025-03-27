@@ -506,168 +506,173 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                     layout
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center gap-2 w-full pr-2">
-                      <Input
-                        autoFocus
-                        value={activeTask.content}
-                        onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            if (!e.shiftKey) {
-                              e.preventDefault();
-                              handleSave();
-                              // Move to the next task after saving
-                              if (activeTask.index < entries.length - 1) {
+                    <div className="flex flex-col w-full space-y-2">
+                      {/* Task input row with close button */}
+                      <div className="flex items-center gap-2 w-full">
+                        <div className="flex-1 relative">
+                          <Input
+                            autoFocus
+                            value={activeTask.content}
+                            onChange={(e) => setActiveTask({ ...activeTask, content: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                if (!e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSave();
+                                  // Move to the next task after saving
+                                  if (activeTask.index < entries.length - 1) {
+                                    const nextIndex = activeTask.index + 1;
+                                    const nextEntry = entries[nextIndex];
+                                    setTimeout(() => {
+                                      setActiveTask({
+                                        index: nextIndex,
+                                        content: nextEntry.content || "",
+                                        priority: nextEntry.priority || 0,
+                                        eta: nextEntry.eta || "",
+                                        difficulty: nextEntry.difficulty || ""
+                                      });
+                                    }, 0);
+                                  }
+                                }
+                              } else if (e.key === "ArrowUp" && activeTask.index > 0) {
+                                // Move to the previous task
+                                e.preventDefault();
+                                const prevIndex = activeTask.index - 1;
+                                const prevEntry = entries[prevIndex];
+                                setActiveTask({
+                                  index: prevIndex,
+                                  content: prevEntry.content || "",
+                                  priority: prevEntry.priority || 0,
+                                  eta: prevEntry.eta || "",
+                                  difficulty: prevEntry.difficulty || ""
+                                });
+                              } else if (e.key === "ArrowDown" && activeTask.index < entries.length - 1) {
+                                // Move to the next task
+                                e.preventDefault();
                                 const nextIndex = activeTask.index + 1;
                                 const nextEntry = entries[nextIndex];
-                                setTimeout(() => {
-                                  setActiveTask({
-                                    index: nextIndex,
-                                    content: nextEntry.content || "",
-                                    priority: nextEntry.priority || 0,
-                                    eta: nextEntry.eta || "",
-                                    difficulty: nextEntry.difficulty || ""
-                                  });
-                                }, 0);
+                                setActiveTask({
+                                  index: nextIndex,
+                                  content: nextEntry.content || "",
+                                  priority: nextEntry.priority || 0,
+                                  eta: nextEntry.eta || "",
+                                  difficulty: nextEntry.difficulty || ""
+                                });
                               }
-                            }
-                          } else if (e.key === "ArrowUp" && activeTask.index > 0) {
-                            // Move to the previous task
-                            e.preventDefault();
-                            const prevIndex = activeTask.index - 1;
-                            const prevEntry = entries[prevIndex];
-                            setActiveTask({
-                              index: prevIndex,
-                              content: prevEntry.content || "",
-                              priority: prevEntry.priority || 0,
-                              eta: prevEntry.eta || "",
-                              difficulty: prevEntry.difficulty || ""
-                            });
-                          } else if (e.key === "ArrowDown" && activeTask.index < entries.length - 1) {
-                            // Move to the next task
-                            e.preventDefault();
-                            const nextIndex = activeTask.index + 1;
-                            const nextEntry = entries[nextIndex];
-                            setActiveTask({
-                              index: nextIndex,
-                              content: nextEntry.content || "",
-                              priority: nextEntry.priority || 0,
-                              eta: nextEntry.eta || "",
-                              difficulty: nextEntry.difficulty || ""
-                            });
-                          }
-                        }}
-                        className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
-                        placeholder="What needs to be done?"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setActiveTask(null)}
-                        className="h-8 w-8 hover:bg-muted transition-colors duration-200 hover-highlight active-scale"
-                      >
-                        <X className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </div>
-
-                    {/* Controls Row - In a container with definite width constraints */}
-                    <div className="flex items-center gap-2 max-w-full pb-1 pr-1 flex-wrap sm:flex-nowrap overflow-x-hidden">
-                      {/* Priority selector - compact and inline */}
-                      <div className="flex gap-1 items-center">
-                        {PRIORITIES.map(({ label, value, color }) => (
-                          <Button
-                            key={label}
-                            size="sm"
-                            variant="ghost"
-                            className={`px-2 py-0 h-7 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-1 ring-offset-1' : ''}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveTask({ ...activeTask, priority: value });
                             }}
-                            title={`Set ${label} priority`}
-                          >
-                            {label}
-                          </Button>
-                        ))}
+                            className="border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground pr-16"
+                            placeholder="What needs to be done?"
+                          />
+                          {/* Save button positioned inside the input */}
+                          <div className="absolute right-0 top-0 h-full flex items-center">
+                            <Button
+                              onClick={handleSave}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-3 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setActiveTask(null)}
+                          className="h-8 w-8 hover:bg-muted transition-colors duration-200 hover-highlight active-scale"
+                        >
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                       </div>
 
-                      {/* Time selector with fixed width */}
-                      <select
-                        value={activeTask.eta}
-                        onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value="">Time</option>
-                        {TIME_SLOTS.map(slot => (
-                          <option key={slot} value={slot}>{slot}</option>
-                        ))}
-                      </select>
+                      {/* Controls Row - In a container with definite width constraints */}
+                      <div className="flex items-center gap-2 max-w-full pb-1 pr-1 flex-wrap sm:flex-nowrap overflow-x-hidden">
+                        {/* Priority selector - compact and inline */}
+                        <div className="flex gap-1 items-center">
+                          {PRIORITIES.map(({ label, value, color }) => (
+                            <Button
+                              key={label}
+                              size="sm"
+                              variant="ghost"
+                              className={`px-2 py-0 h-7 ${color} font-black transform transition-all duration-200 hover:scale-105 ${activeTask.priority === value ? 'ring-1 ring-offset-1' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveTask({ ...activeTask, priority: value });
+                              }}
+                              title={`Set ${label} priority`}
+                            >
+                              {label}
+                            </Button>
+                          ))}
+                        </div>
 
-                      {/* Difficulty selector - renamed from Task Difficulty, with reduced width */}
-                      <select
-                        value={activeTask.difficulty || ""}
-                        onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
-                        className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value="">Difficulty</option>
-                        {TASK_DIFFICULTIES.map(difficulty => (
-                          <option key={difficulty.value} value={difficulty.value}>{difficulty.emoji} {difficulty.label}</option>
-                        ))}
-                      </select>
+                        {/* Time selector with fixed width */}
+                        <select
+                          value={activeTask.eta}
+                          onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
+                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="">Time</option>
+                          {TIME_SLOTS.map(slot => (
+                            <option key={slot} value={slot}>{slot}</option>
+                          ))}
+                        </select>
 
-                      {/* Help button */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground hover-highlight active-scale"
-                          >
-                            <Info className="h-4 w-4" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                          <div className="space-y-4">
-                            <h3 className="font-bold text-sm">Task Priorities:</h3>
-                            {PRIORITIES.map(({ label, title, subtitle, description, color }) => (
-                              <div key={label} className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className={`px-2 py-0.5 rounded-md text-xs font-black ${color}`}>
-                                    {label}
-                                  </span>
-                                  <h4 className="font-bold">{title}</h4>
-                                </div>
-                                <p className="text-sm font-medium">{subtitle}</p>
-                                <p className="text-xs text-gray-600">{description}</p>
-                              </div>
-                            ))}
-                            
-                            <h3 className="font-bold text-sm mt-4">Difficulties:</h3>
-                            <div className="grid grid-cols-2 gap-2">
-                              {TASK_DIFFICULTIES.map(diff => (
-                                <div key={diff.value} className="flex items-center gap-1">
-                                  <span>{diff.emoji}</span>
-                                  <span className="text-xs font-medium">{diff.label}</span>
+                        {/* Difficulty selector - renamed from Task Difficulty, with reduced width */}
+                        <select
+                          value={activeTask.difficulty || ""}
+                          onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
+                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="">Difficulty</option>
+                          {TASK_DIFFICULTIES.map(difficulty => (
+                            <option key={difficulty.value} value={difficulty.value}>{difficulty.emoji} {difficulty.label}</option>
+                          ))}
+                        </select>
+
+                        {/* Help button */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground hover-highlight active-scale"
+                            >
+                              <Info className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80">
+                            <div className="space-y-4">
+                              <h3 className="font-bold text-sm">Task Priorities:</h3>
+                              {PRIORITIES.map(({ label, title, subtitle, description, color }) => (
+                                <div key={label} className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-black ${color}`}>
+                                      {label}
+                                    </span>
+                                    <h4 className="font-bold">{title}</h4>
+                                  </div>
+                                  <p className="text-sm font-medium">{subtitle}</p>
+                                  <p className="text-xs text-gray-600">{description}</p>
                                 </div>
                               ))}
+                              
+                              <h3 className="font-bold text-sm mt-4">Difficulties:</h3>
+                              <div className="grid grid-cols-2 gap-2">
+                                {TASK_DIFFICULTIES.map(diff => (
+                                  <div key={diff.value} className="flex items-center gap-1">
+                                    <span>{diff.emoji}</span>
+                                    <span className="text-xs font-medium">{diff.label}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-
-                      {/* Save button - In a container with fixed width */}
-                      <div className="ml-auto">
-                        <Button
-                          onClick={handleSave}
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-3 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 font-bold transform transition-all duration-200 hover:scale-105 active-scale"
-                        >
-                          Save
-                        </Button>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   </motion.div>
