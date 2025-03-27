@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { 
-  Focus, Play, Pause, RotateCcw, X, Monitor, Bell, 
+  Focus, Play, Pause, RotateCcw, X, Bell, 
   Clock, SkipForward, Settings
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface StudyWithMeProps {
   open: boolean;
@@ -235,25 +234,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
     return ((totalSeconds - timeLeft) / totalSeconds) * 100;
   };
 
-  const toggleBackground = () => {
-    setBackground(background === 'none' ? 'ambient' : 'none');
-  };
-
-  const getBackgroundForTheme = (): string => {
-    switch (theme) {
-      case 'dark':
-        return '/images/ambient/night.svg';
-      case 'winter':
-        return '/images/ambient/winter.svg';
-      case 'spring':
-        return '/images/ambient/spring.svg';
-      case 'retro':
-        return '/images/ambient/retro.svg';
-      default:
-        return '/images/ambient/forest.svg';
-    }
-  };
-
   const getModeColor = (): string => {
     if (theme === 'retro') {
       return mode === 'focus' ? '#0000AA' : '#008000';
@@ -273,102 +253,18 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        "sm:max-w-3xl p-0 overflow-hidden border-0", // Made dialog wider
+        "sm:max-w-md p-0 overflow-hidden border-0", // Made dialog smaller
         theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
       )}>
-        {/* Ambient Background */}
-        {background === 'ambient' && (
-          <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
-            <div className={cn(
-              "absolute inset-0 bg-no-repeat bg-cover bg-center transition-opacity duration-1000",
-              isRunning ? "opacity-100" : "opacity-70"
-            )} 
-            style={{ backgroundImage: `url(${getBackgroundForTheme()})` }}>
-              {/* Animated overlay for relaxing pulse effect - different for focus/break */}
-              <div className={cn(
-                "absolute inset-0",
-                mode === 'focus' 
-                  ? "bg-gradient-to-b from-primary/10 to-transparent animate-pulse-slow"
-                  : "bg-gradient-to-b from-green-500/10 to-transparent animate-pulse-slower"
-              )}></div>
-              
-              {/* Moving particles for visual interest - using Framer Motion */}
-              {isRunning && (
-                <div className="particle-container">
-                  {Array.from({ length: 20 }).map((_, i) => {
-                    // Create more varied and theme-aware particles
-                    const size = Math.random() * 10 + 5;
-                    const startX = Math.random() * 100;
-                    const startY = Math.random() * 100;
-                    const endX = startX + (Math.random() * 100 - 50);
-                    const endY = startY - Math.random() * 100;
-                    const duration = Math.random() * 20 + 15;
-                    const delay = Math.random() * 8;
-                    
-                    // Theme-specific particle colors
-                    let particleColor;
-                    if (theme === 'retro') {
-                      particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-600/20";
-                    } else if (theme === 'winter') {
-                      particleColor = mode === 'focus' ? "bg-sky-400/20" : "bg-teal-400/20";
-                    } else if (theme === 'spring') {
-                      particleColor = mode === 'focus' ? "bg-purple-400/20" : "bg-lime-400/20";
-                    } else if (theme === 'dark') {
-                      particleColor = mode === 'focus' ? "bg-blue-400/20" : "bg-emerald-400/20";
-                    } else {
-                      particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-500/20";
-                    }
-                    
-                    return (
-                      <motion.div
-                        key={i}
-                        className={cn(
-                          "absolute rounded-full",
-                          particleColor
-                        )}
-                        style={{
-                          width: size,
-                          height: size,
-                          left: `${startX}%`,
-                          top: `${startY}%`,
-                          opacity: 0
-                        }}
-                        animate={{
-                          x: endX - startX,
-                          y: endY - startY,
-                          opacity: [0, 0.7, 0],
-                          scale: [0.7, 1.3, 0.9]
-                        }}
-                        transition={{
-                          duration: duration,
-                          delay: delay,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        
         {/* Foreground Content */}
-        <div className={cn(
-          "relative z-10 p-6 backdrop-blur-sm",
-          background === 'ambient' ? "bg-background/70" : "bg-background",
-          "text-foreground" // Ensure text color follows the theme
-        )}>
+        <div className="relative z-10 p-6 bg-background text-foreground">
           <DialogHeader>
             <DialogTitle className="text-xl flex items-center gap-2 text-foreground">
               <Focus className="h-5 w-5" />
               Focus Mode
-              {currentSession > 1 && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  Session {currentSession}/{focusStrategy.totalSessions}
-                </Badge>
-              )}
+              <Badge variant="outline" className="ml-2 text-xs">
+                Session {currentSession}/{focusStrategy.totalSessions}
+              </Badge>
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
               {mode === 'focus' 
@@ -397,17 +293,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                 </SelectContent>
               </Select>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleBackground}
-              className={cn(
-                background === 'ambient' && "text-primary"
-              )}
-            >
-              <Monitor className="h-4 w-4 mr-1" />
-              {background === 'ambient' ? 'Hide Visual' : 'Show Visual'}
-            </Button>
           </div>
           
           <Tabs defaultValue="timer" className="mt-2" onValueChange={setActiveTab}>
@@ -420,8 +305,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
             <TabsContent value="timer" className="mt-0">
               <Card className={cn(
                 "p-6 flex flex-col items-center justify-center space-y-4",
-                background === 'ambient' ? "bg-card/80 backdrop-blur-sm" : "bg-card",
-                "text-card-foreground", // Ensure card text uses the correct theme color
+                "bg-card text-card-foreground", 
                 theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
               )}>
                 {/* Mode indicator */}
@@ -439,34 +323,39 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                       </>
                     )}
                   </span>
-                  <span className="text-sm text-muted-foreground">
-                    {currentSession}/{focusStrategy.totalSessions}
+                  <span className="text-sm font-medium" style={{ color: getModeColor() }}>
+                    Session {currentSession}/{focusStrategy.totalSessions}
                   </span>
                 </div>
                 
                 {/* Session roadmap - A visual map of all sessions with current highlighted */}
                 <div className="w-full flex items-center justify-between gap-1 mb-2">
                   {Array.from({ length: focusStrategy.totalSessions }).map((_, idx) => (
-                    <div key={idx} className="flex-1 flex gap-1">
+                    <div key={idx} className="flex-1 flex gap-1 relative">
                       {/* Focus period box */}
                       <div 
                         className={cn(
-                          "h-2 rounded flex-1",
+                          "h-3 rounded flex-1",
                           idx + 1 === currentSession && mode === 'focus' 
-                            ? "bg-primary animate-pulse" 
+                            ? "bg-primary" 
                             : idx + 1 < currentSession 
                               ? "bg-primary/80" 
                               : "bg-primary/20"
                         )}
                       ></div>
                       
+                      {/* Session number label */}
+                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-[10px] font-medium">
+                        {idx + 1}
+                      </div>
+                      
                       {/* Break period box (don't show after last focus) */}
                       {idx + 1 < focusStrategy.totalSessions && (
                         <div 
                           className={cn(
-                            "h-2 rounded w-1/5",
+                            "h-3 rounded w-1/5",
                             idx + 1 === currentSession && mode === 'break' 
-                              ? "bg-green-500 animate-pulse" 
+                              ? "bg-green-500" 
                               : idx + 1 < currentSession 
                                 ? "bg-green-500/80" 
                                 : "bg-green-500/20"
@@ -477,34 +366,13 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                   ))}
                 </div>
                 
-                {/* Time display with glowing effect when timer is running */}
-                <div 
-                  className={cn(
-                    "text-6xl font-semibold my-4 relative",
-                    isRunning && "animate-subtle-pulse"
-                  )}
-                >
-                  {/* Glowing backdrop when timer is running */}
-                  {isRunning && (
-                    <div 
-                      className={cn(
-                        "absolute inset-0 -m-8 rounded-full blur-xl opacity-20",
-                        mode === 'focus' ? "bg-primary" : "bg-green-500"
-                      )}
-                      style={{ zIndex: -1 }} 
-                    />
-                  )}
-                  
+                {/* Time display */}
+                <div className="text-6xl font-semibold my-4 relative">
                   {formatTime(timeLeft)}
                 </div>
                 
                 {/* Progress bar under time display */}
-                <div 
-                  className="w-full h-2 bg-muted rounded-full overflow-hidden"
-                  style={{ 
-                    boxShadow: isRunning ? `0 0 10px ${mode === 'focus' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}` : 'none' 
-                  }}
-                >
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                   <div 
                     className={cn(
                       "h-full transition-all duration-1000 ease-linear rounded-full",
@@ -523,11 +391,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                           variant={isRunning ? "secondary" : "default"} 
                           size="icon" 
                           onClick={isRunning ? pauseTimer : startTimer}
-                          className={cn(
-                            isRunning && "animate-subtle-pulse shadow-lg",
-                            isRunning && mode === 'focus' && "shadow-blue-500/20",
-                            isRunning && mode === 'break' && "shadow-green-500/20"
-                          )}
                         >
                           {isRunning ? (
                             <Pause className="h-5 w-5" />
@@ -575,8 +438,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
             <TabsContent value="settings" className="mt-0">
               <Card className={cn(
                 "p-6",
-                background === 'ambient' ? "bg-card/80 backdrop-blur-sm" : "bg-card",
-                "text-card-foreground",
+                "bg-card text-card-foreground",
                 theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
               )}>
                 <div className="space-y-4">
