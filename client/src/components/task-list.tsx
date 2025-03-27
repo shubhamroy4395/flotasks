@@ -420,7 +420,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="group flex items-center gap-4 py-3 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300 interactive-row"
+                className="group flex items-center gap-3 px-3 py-2.5 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300 interactive-row"
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
                 layout
@@ -440,7 +440,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                 <span className="text-sm text-muted-foreground w-6 font-mono font-bold">
                   {String(index + 1).padStart(2, '0')}
                 </span>
-                <div className="relative">
+                <div className="relative flex items-center justify-center w-6">
                   <Checkbox
                     checked={entry.completed}
                     disabled={!entry.content}
@@ -449,7 +449,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                         toggleComplete(index);
                       }
                     }}
-                    className={`h-5 w-5 transition-transform duration-200 ${
+                    className={`h-4 w-4 transition-transform duration-200 ${
                       entry.content ? 'hover:scale-110' : 'opacity-50 cursor-not-allowed'
                     }`}
                     onClick={(e) => e.stopPropagation()}
@@ -555,7 +555,7 @@ export function TaskList({ title, tasks, onSave, onDelete, onUpdate }: TaskListP
                   </motion.div>
                 ) : (
                   <motion.div
-                    className={`flex items-center justify-between w-full cursor-text ${
+                    className={`flex items-center justify-between w-full cursor-text px-1 ${
                       entry.completed ? 'line-through text-muted-foreground' : 'text-foreground font-bold'
                     }`}
                     layout
