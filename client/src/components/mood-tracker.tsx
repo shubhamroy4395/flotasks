@@ -6,22 +6,65 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { MoodEntry } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
 import { useEffect } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 
-const MOOD_LABELS: Record<string, { label: string, color: string }> = {
-  "😊": { label: "Happy", color: "from-green-50 to-emerald-50" },
-  "🥳": { label: "Excited", color: "from-purple-50 to-pink-50" },
-  "😌": { label: "Peaceful", color: "from-yellow-50 to-amber-50" },
-  "🤔": { label: "Thoughtful", color: "from-blue-50 to-cyan-50" },
-  "😐": { label: "Neutral", color: "from-gray-50 to-slate-50" },
-  "😴": { label: "Tired", color: "from-blue-50 to-indigo-50" },
-  "😤": { label: "Frustrated", color: "from-red-50 to-orange-50" },
-  "😢": { label: "Sad", color: "from-indigo-50 to-blue-50" },
-  "😰": { label: "Anxious", color: "from-orange-50 to-red-50" },
-  "🤗": { label: "Grateful", color: "from-teal-50 to-emerald-50" }
+const MOOD_LABELS: Record<string, { label: string, color: string, darkColor: string }> = {
+  "😊": { 
+    label: "Happy", 
+    color: "from-green-50 to-emerald-50", 
+    darkColor: "from-green-900/30 to-emerald-900/30" 
+  },
+  "🥳": { 
+    label: "Excited", 
+    color: "from-purple-50 to-pink-50", 
+    darkColor: "from-purple-900/30 to-pink-900/30" 
+  },
+  "😌": { 
+    label: "Peaceful", 
+    color: "from-yellow-50 to-amber-50", 
+    darkColor: "from-yellow-900/30 to-amber-900/30" 
+  },
+  "🤔": { 
+    label: "Thoughtful", 
+    color: "from-blue-50 to-cyan-50", 
+    darkColor: "from-blue-900/30 to-cyan-900/30" 
+  },
+  "😐": { 
+    label: "Neutral", 
+    color: "from-gray-50 to-slate-50", 
+    darkColor: "from-gray-800/40 to-slate-800/40" 
+  },
+  "😴": { 
+    label: "Tired", 
+    color: "from-blue-50 to-indigo-50", 
+    darkColor: "from-blue-900/30 to-indigo-900/30" 
+  },
+  "😤": { 
+    label: "Frustrated", 
+    color: "from-red-50 to-orange-50", 
+    darkColor: "from-red-900/30 to-orange-900/30" 
+  },
+  "😢": { 
+    label: "Sad", 
+    color: "from-indigo-50 to-blue-50", 
+    darkColor: "from-indigo-900/30 to-blue-900/30" 
+  },
+  "😰": { 
+    label: "Anxious", 
+    color: "from-orange-50 to-red-50", 
+    darkColor: "from-orange-900/30 to-red-900/30" 
+  },
+  "🤗": { 
+    label: "Grateful", 
+    color: "from-teal-50 to-emerald-50", 
+    darkColor: "from-teal-900/30 to-emerald-900/30" 
+  }
 };
 
 export function MoodTracker() {
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
+  const isDarkTheme = theme === 'dark' || theme === 'winter';
 
   // Track when the mood section is opened
   useEffect(() => {
@@ -87,11 +130,11 @@ export function MoodTracker() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${moodInfo.color} transform hover:scale-105 transition-transform min-h-[80px] flex items-center justify-center`}
+                  className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${isDarkTheme ? moodInfo.darkColor : moodInfo.color} transform hover:scale-105 transition-transform min-h-[80px] flex items-center justify-center`}
                 >
                   <div className="flex items-center justify-center gap-3">
                     <span className="text-4xl">{currentMood}</span>
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className={`text-lg font-semibold ${isDarkTheme ? 'text-gray-100' : 'text-gray-800'}`}>
                       {moodInfo.label}
                     </h3>
                   </div>
