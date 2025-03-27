@@ -1,0 +1,58 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8ec5fc" />
+      <stop offset="100%" stop-color="#e0c3fc" />
+    </linearGradient>
+    <linearGradient id="mountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a8c0ff" />
+      <stop offset="100%" stop-color="#3f5efb" />
+    </linearGradient>
+    <linearGradient id="forestGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#56ab2f" />
+      <stop offset="100%" stop-color="#a8e063" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky Background -->
+  <rect width="800" height="600" fill="url(#skyGradient)" />
+  
+  <!-- Far Mountains -->
+  <path d="M0,600 L0,380 Q100,280 200,350 Q300,250 400,330 Q500,280 600,350 Q700,300 800,380 L800,600 Z" 
+        fill="url(#mountainGradient)" opacity="0.6" />
+  
+  <!-- Near Mountains -->
+  <path d="M0,600 L0,420 Q100,320 200,390 Q300,290 400,370 Q500,320 600,390 Q700,340 800,420 L800,600 Z" 
+        fill="url(#forestGradient)" opacity="0.8" />
+  
+  <!-- Trees and Forest -->
+  <g>
+    <!-- Trees Group 1 -->
+    <circle cx="100" cy="480" r="30" fill="#2e7d32" />
+    <circle cx="150" cy="500" r="35" fill="#388e3c" />
+    <circle cx="60" cy="510" r="25" fill="#43a047" />
+    <circle cx="200" cy="490" r="40" fill="#2e7d32" />
+    
+    <!-- Trees Group 2 -->
+    <circle cx="300" cy="500" r="35" fill="#388e3c" />
+    <circle cx="350" cy="520" r="30" fill="#43a047" />
+    <circle cx="400" cy="490" r="40" fill="#2e7d32" />
+    
+    <!-- Trees Group 3 -->
+    <circle cx="500" cy="510" r="30" fill="#43a047" />
+    <circle cx="550" cy="490" r="35" fill="#2e7d32" />
+    <circle cx="600" cy="520" r="25" fill="#388e3c" />
+    <circle cx="650" cy="500" r="40" fill="#2e7d32" />
+    <circle cx="700" cy="480" r="30" fill="#43a047" />
+  </g>
+  
+  <!-- Subtle Clouds -->
+  <ellipse cx="200" cy="150" rx="100" ry="40" fill="white" opacity="0.5" />
+  <ellipse cx="600" cy="100" rx="120" ry="30" fill="white" opacity="0.4" />
+  <ellipse cx="400" cy="120" rx="80" ry="25" fill="white" opacity="0.3" />
+  
+  <!-- Birds (small v shapes) -->
+  <path d="M250,200 L260,210 L270,200" stroke="#555" stroke-width="2" fill="none" />
+  <path d="M500,180 L510,190 L520,180" stroke="#555" stroke-width="2" fill="none" />
+  <path d="M650,220 L660,230 L670,220" stroke="#555" stroke-width="2" fill="none" />
+</svg>

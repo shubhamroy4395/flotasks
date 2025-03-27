@@ -202,6 +202,114 @@
     transform: rotateY(180deg);
   }
   
+  /* Study With Me Animations and Effects */
+  @keyframes pulse-very-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+  
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+  
+  @keyframes pulse-slower {
+    0%, 100% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  @keyframes particle-drift {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.6;
+    }
+    80% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translate(var(--tx, 100px), var(--ty, -100px));
+      opacity: 0;
+    }
+  }
+  
+  .animate-pulse-very-slow {
+    animation: pulse-very-slow 4s ease-in-out infinite;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+  }
+  
+  .animate-pulse-slower {
+    animation: pulse-slower 5s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .particle {
+    animation: particle-drift 20s ease-out forwards;
+    --tx: 100px;
+    --ty: -100px;
+    pointer-events: none;
+  }
+  
+  .particle:nth-child(odd) {
+    --tx: -120px;
+    --ty: -80px;
+  }
+  
+  .particle:nth-child(3n) {
+    --tx: 60px;
+    --ty: -150px;
+  }
+  
+  .particle:nth-child(3n+1) {
+    --tx: -80px;
+    --ty: -50px;
+  }
+  
+  .particle:nth-child(5n) {
+    --tx: 120px;
+    --ty: -40px;
+  }
+  
+  .particle-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
   /* Progress bar color matching for cards */
   /* Blue card progress bar */
   .from-blue-500.to-blue-600 [role="progressbar"] > div > div {

@@ -1,0 +1,81 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="retroSkyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#003366" />
+      <stop offset="100%" stop-color="#008080" />
+    </linearGradient>
+    <linearGradient id="gridGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff00ff" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#00ffff" stop-opacity="0.2" />
+    </linearGradient>
+    <linearGradient id="sunGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#ff6600" />
+      <stop offset="100%" stop-color="#ff00ff" />
+    </linearGradient>
+    <filter id="retroGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+  </defs>
+  
+  <!-- Retro Background -->
+  <rect width="800" height="600" fill="url(#retroSkyGradient)" />
+  
+  <!-- Retro grid -->
+  <g opacity="0.3">
+    <!-- Horizontal lines -->
+    <line x1="0" y1="400" x2="800" y2="400" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="420" x2="800" y2="420" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="440" x2="800" y2="440" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="460" x2="800" y2="460" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="480" x2="800" y2="480" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="500" x2="800" y2="500" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="520" x2="800" y2="520" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="540" x2="800" y2="540" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="560" x2="800" y2="560" stroke="#00ffff" stroke-width="1" />
+    <line x1="0" y1="580" x2="800" y2="580" stroke="#00ffff" stroke-width="1" />
+    
+    <!-- Vertical lines -->
+    <line x1="100" y1="400" x2="100" y2="600" stroke="#00ffff" stroke-width="1" />
+    <line x1="200" y1="400" x2="200" y2="600" stroke="#00ffff" stroke-width="1" />
+    <line x1="300" y1="400" x2="300" y2="600" stroke="#00ffff" stroke-width="1" />
+    <line x1="400" y1="400" x2="400" y2="600" stroke="#00ffff" stroke-width="1" />
+    <line x1="500" y1="400" x2="500" y2="600" stroke="#00ffff" stroke-width="1" />
+    <line x1="600" y1="400" x2="600" y2="600" stroke="#00ffff" stroke-width="1" />
+    <line x1="700" y1="400" x2="700" y2="600" stroke="#00ffff" stroke-width="1" />
+  </g>
+  
+  <!-- Main horizon line (representing ground) -->
+  <rect x="0" y="400" width="800" height="3" fill="#ff00ff" />
+  
+  <!-- Retro Sun -->
+  <circle cx="400" cy="300" r="60" fill="#ff00ff" filter="url(#retroGlow)" opacity="0.8" />
+  <circle cx="400" cy="300" r="40" fill="#ffff00" />
+  
+  <!-- Mountain silhouettes -->
+  <path d="M0,400 L100,300 L200,350 L300,250 L400,350 L500,300 L600,350 L700,280 L800,400 Z" 
+        fill="#000066" opacity="0.8" />
+        
+  <!-- Decorative grid plane (perspective grid) -->
+  <g>
+    <polygon points="200,400 600,400 500,500 300,500" fill="url(#gridGradient)" />
+    
+    <!-- Grid lines on the plane -->
+    <line x1="200" y1="400" x2="300" y2="500" stroke="#00ffff" stroke-width="2" opacity="0.5" />
+    <line x1="300" y1="400" x2="350" y2="500" stroke="#00ffff" stroke-width="2" opacity="0.5" />
+    <line x1="400" y1="400" x2="400" y2="500" stroke="#00ffff" stroke-width="2" opacity="0.5" />
+    <line x1="500" y1="400" x2="450" y2="500" stroke="#00ffff" stroke-width="2" opacity="0.5" />
+    <line x1="600" y1="400" x2="500" y2="500" stroke="#00ffff" stroke-width="2" opacity="0.5" />
+    
+    <line x1="200" y1="400" x2="600" y2="400" stroke="#ff00ff" stroke-width="2" opacity="0.5" />
+    <line x1="225" y1="425" x2="575" y2="425" stroke="#ff00ff" stroke-width="2" opacity="0.5" />
+    <line x1="250" y1="450" x2="550" y2="450" stroke="#ff00ff" stroke-width="2" opacity="0.5" />
+    <line x1="275" y1="475" x2="525" y2="475" stroke="#ff00ff" stroke-width="2" opacity="0.5" />
+    <line x1="300" y1="500" x2="500" y2="500" stroke="#ff00ff" stroke-width="2" opacity="0.5" />
+  </g>
+  
+  <!-- Abstract digital shapes -->
+  <rect x="150" y="200" width="20" height="20" fill="#00ffff" opacity="0.7" />
+  <rect x="600" y="250" width="30" height="30" fill="#ff00ff" opacity="0.7" />
+  <rect x="300" y="150" width="15" height="15" fill="#ffff00" opacity="0.7" />
+  <rect x="450" y="180" width="25" height="25" fill="#00ffff" opacity="0.7" />
+</svg>
