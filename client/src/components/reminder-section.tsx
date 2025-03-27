@@ -9,18 +9,18 @@ import { useToast } from "@/hooks/use-toast";
 import { trackEvent, Events } from "@/lib/amplitude";
 
 const TIME_OPTIONS = [
-  { label: "5 minutes", value: 5, unit: "minutes" },
-  { label: "10 minutes", value: 10, unit: "minutes" },
-  { label: "15 minutes", value: 15, unit: "minutes" },
-  { label: "30 minutes", value: 30, unit: "minutes" },
-  { label: "45 minutes", value: 45, unit: "minutes" },
-  { label: "1 hour", value: 1, unit: "hours" },
-  { label: "1.5 hours", value: 1.5, unit: "hours" },
-  { label: "2 hours", value: 2, unit: "hours" },
-  { label: "3 hours", value: 3, unit: "hours" },
-  { label: "4 hours", value: 4, unit: "hours" },
+  { label: "8 hours", value: 8, unit: "hours" },
   { label: "6 hours", value: 6, unit: "hours" },
-  { label: "8 hours", value: 8, unit: "hours" }
+  { label: "4 hours", value: 4, unit: "hours" },
+  { label: "3 hours", value: 3, unit: "hours" },
+  { label: "2 hours", value: 2, unit: "hours" },
+  { label: "1.5 hours", value: 1.5, unit: "hours" },
+  { label: "1 hour", value: 1, unit: "hours" },
+  { label: "45 minutes", value: 45, unit: "minutes" },
+  { label: "30 minutes", value: 30, unit: "minutes" },
+  { label: "15 minutes", value: 15, unit: "minutes" },
+  { label: "10 minutes", value: 10, unit: "minutes" },
+  { label: "5 minutes", value: 5, unit: "minutes" }
 ];
 
 // Create notification sound

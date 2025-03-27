@@ -56,7 +56,7 @@ const PRIORITIES = [
 ];
 
 const TIME_SLOTS = [
-  "5min", "10min", "15min", "30min", "45min", "1h", "1.5h", "2h", "3h", "4h", "6h", "8h"
+  "8h", "6h", "4h", "3h", "2h", "1.5h", "1h", "45min", "30min", "15min", "10min", "5min"
 ];
 
 interface TaskListProps {
