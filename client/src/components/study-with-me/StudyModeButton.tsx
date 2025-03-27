@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Focus } from "lucide-react";
-import { StudyWithMe } from "./StudyWithMe.fixed";
+import { StudyWithMe } from "./SimpleFocusMode";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 
