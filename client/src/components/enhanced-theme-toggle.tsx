@@ -23,55 +23,12 @@ export function EnhancedThemeToggle() {
   const springAnimationRef = useRef<HTMLDivElement>(null);
   const winterAnimationRef = useRef<HTMLDivElement>(null);
   
-  // Handle spring animation with anime.js
+  // Spring animations disabled per user request
   useEffect(() => {
-    if (theme === 'spring' && springAnimationRef.current) {
-      // Create clouds from div elements inside the container
-      const cloudContainer = springAnimationRef.current;
-      cloudContainer.innerHTML = ''; // Clear previous clouds
-      
-      // Create 8 cloud elements with varied styles
-      for (let i = 0; i < 8; i++) {
-        const cloud = document.createElement('div');
-        
-        // Create more vibrant clouds with varied colors
-        const cloudColors = [
-          'rgba(255, 255, 255, 0.8)', 
-          'rgba(220, 255, 230, 0.75)', 
-          'rgba(200, 255, 200, 0.7)'
-        ];
-        
-        cloud.className = 'absolute rounded-full';
-        cloud.style.backgroundColor = cloudColors[Math.floor(Math.random() * cloudColors.length)];
-        cloud.style.width = `${50 + Math.random() * 60}px`;
-        cloud.style.height = `${30 + Math.random() * 30}px`;
-        cloud.style.top = `${Math.random() * 100}%`;
-        cloud.style.left = `-100px`;
-        cloud.style.zIndex = '50';
-        cloud.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.5)';
-        cloud.style.filter = 'blur(1px)';
-        cloudContainer.appendChild(cloud);
-      }
-      
-      // Animate clouds with anime.js - more varied and fluid motion
-      anime({
-        targets: cloudContainer.children,
-        translateX: window.innerWidth + 200,
-        translateY: anime.stagger([-20, 20]),
-        delay: anime.stagger(800),
-        duration: function() { return 12000 + anime.random(3000, 8000); },
-        loop: true,
-        easing: 'easeInOutQuad',
-        autoplay: true
-      });
-    }
+    // Animation code removed - spring theme no longer has animations
     
-    // Cleanup animation on component unmount or theme change
-    return () => {
-      if (springAnimationRef.current) {
-        anime.remove(springAnimationRef.current.children);
-      }
-    };
+    // Cleanup function still needed for React but does nothing
+    return () => {};
   }, [theme]);
   
   // Handle winter animation with anime.js
