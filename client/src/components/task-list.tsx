@@ -560,7 +560,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                 });
                               }
                             }}
-                            className="border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
+                            className="h-9 border-input rounded-md border shadow-none focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                             placeholder="What needs to be done?"
                           />
                         </div>
@@ -569,7 +569,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           onClick={handleSave}
                           size="sm"
                           variant="secondary"
-                          className="h-8 px-4 bg-muted text-muted-foreground font-semibold"
+                          className="h-9 px-4 bg-muted text-muted-foreground font-medium"
                         >
                           Save
                         </Button>
