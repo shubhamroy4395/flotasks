@@ -500,12 +500,13 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
 
                 {activeTask?.index === index ? (
                   <motion.div
-                    className="flex flex-nowrap items-center w-full gap-2 rounded-lg bg-accent/10 p-2"
+                    className="flex flex-col w-full gap-2"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     layout
                     onClick={(e) => e.stopPropagation()}
                   >
+                    <div className="flex items-center gap-2 w-full">
                       <Input
                         autoFocus
                         value={activeTask.content}
@@ -559,8 +560,19 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                         placeholder="What needs to be done?"
                       />
-                      
-                      {/* Priority selector */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setActiveTask(null)}
+                        className="h-8 w-8 hover:bg-muted transition-colors duration-200 hover-highlight active-scale"
+                      >
+                        <X className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 max-w-full pb-1">
+                      {/* Priority selector - compact and inline */}
                       <div className="flex gap-1 items-center">
                         {PRIORITIES.map(({ label, value, color }) => (
                           <Button
@@ -586,7 +598,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <option value="">⏱️</option>
+                        <option value="">Time</option>
                         {TIME_SLOTS.map(slot => (
                           <option key={slot} value={slot}>{slot}</option>
                         ))}
@@ -599,7 +611,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <option value="">🔄</option>
+                        <option value="">Task Difficulty</option>
                         {TASK_DIFFICULTIES.map(difficulty => (
                           <option key={difficulty.value} value={difficulty.value}>{difficulty.emoji} {difficulty.label}</option>
                         ))}
@@ -654,16 +666,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                       >
                         Save
                       </Button>
-                      
-                      {/* Close button */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        onClick={() => setActiveTask(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                    </div>
                   </motion.div>
                 ) : (
                   <motion.div
