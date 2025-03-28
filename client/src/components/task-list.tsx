@@ -4,10 +4,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2 } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
+import { showCalendarExportPopup } from "@/lib/calendar-export";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -891,6 +892,36 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                               </div>
                             )}
                           </div>
+                        )}
+                        
+                        {/* Calendar export button */}
+                        {tasks[index]?.id && entry.content && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              
+                              // Find the corresponding task and export it
+                              const taskToExport = tasks.find(t => t.content === entry.content && t.priority === entry.priority);
+                              if (taskToExport) {
+                                // Track calendar export event
+                                trackEvent(
+                                  title === "Today's Tasks" ? Events.TaskToday.Exported : Events.TaskOther.Exported, 
+                                  {
+                                    taskId: taskToExport.id,
+                                    content: taskToExport.content,
+                                    category: title === "Today's Tasks" ? "today" : "other"
+                                  }
+                                );
+                                
+                                showCalendarExportPopup(taskToExport);
+                              }
+                            }}
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                          </Button>
                         )}
                         
                         {/* Delete button */}
