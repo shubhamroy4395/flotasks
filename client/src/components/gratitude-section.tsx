@@ -6,9 +6,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { GratitudeEntry } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Trash2 } from "lucide-react";
+import { Plus, X, Trash2, Share2 } from "lucide-react";
 import { trackEvent, Events } from "@/lib/amplitude";
 import { useTheme } from "@/contexts/ThemeContext";
+import { shareContent } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function GratitudeSection() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +19,7 @@ export function GratitudeSection() {
   const queryClient = useQueryClient();
   const { theme } = useTheme();
   const isDarkTheme = theme === 'dark' || theme === 'winter';
+  const isMobile = useIsMobile();
 
   // Track section opening
   useEffect(() => {
@@ -91,6 +95,30 @@ export function GratitudeSection() {
     createEntry.mutate(newEntry);
   };
 
+  const handleShare = async (content: string) => {
+    // Track share attempt
+    trackEvent('Gratitude Entry Shared', {
+      contentLength: content.length,
+      timeOfDay: new Date().getHours(),
+      dayOfWeek: new Date().getDay(),
+      platform: isMobile ? 'mobile' : 'desktop'
+    });
+
+    // Share the content
+    const success = await shareContent({ 
+      title: 'Gratitude Note', 
+      text: content
+    });
+
+    // Track share completion
+    if (success) {
+      trackEvent('Gratitude Share Success', {
+        contentLength: content.length,
+        platform: isMobile ? 'mobile' : 'desktop'
+      });
+    }
+  };
+
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
@@ -158,18 +186,42 @@ export function GratitudeSection() {
                   <p className={`font-medium ${isDarkTheme ? 'text-gray-200' : 'text-gray-700'}`}>
                     {entry.content}
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`opacity-0 group-hover:opacity-100 transition-opacity ${
-                      isDarkTheme 
-                        ? 'text-red-400 hover:text-red-300 hover:bg-red-950/30' 
-                        : 'text-red-500 hover:text-red-700 hover:bg-red-50'
-                    }`}
-                    onClick={() => deleteEntry.mutate(entry.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                              isDarkTheme 
+                                ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-950/30' 
+                                : 'text-blue-500 hover:text-blue-700 hover:bg-blue-50'
+                            }`}
+                            onClick={() => handleShare(entry.content)}
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Share this gratitude</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                        isDarkTheme 
+                          ? 'text-red-400 hover:text-red-300 hover:bg-red-950/30' 
+                          : 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                      }`}
+                      onClick={() => deleteEntry.mutate(entry.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             ))}
