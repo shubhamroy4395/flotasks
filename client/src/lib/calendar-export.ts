@@ -145,6 +145,9 @@ export function exportTaskToCalendar({ task, dueDate, service }: CalendarExportO
 
 // Create popup with calendar export options
 export function showCalendarExportPopup(task: Task, dueDate?: Date): void {
+  // Create a fresh copy of the task to ensure we're using the latest data
+  const taskCopy: Task = { ...task };
+  
   const left = window.innerWidth / 2 - 300;
   const top = window.innerHeight / 2 - 200;
   
@@ -216,26 +219,26 @@ export function showCalendarExportPopup(task: Task, dueDate?: Date): void {
         <body>
           <h2>Export Task to Calendar/Todo App</h2>
           <div class="task-preview">
-            <p><strong>${task.content}</strong></p>
-            <p>Priority: ${task.priority}</p>
-            <p>Difficulty: ${task.difficulty}</p>
-            <p>Category: ${task.category}</p>
+            <p><strong>${taskCopy.content}</strong></p>
+            <p>Priority: ${taskCopy.priority}</p>
+            <p>Difficulty: ${taskCopy.difficulty || 'Not specified'}</p>
+            <p>Category: ${taskCopy.category}</p>
             ${dueDate ? `<p>Due: ${dueDate.toLocaleDateString()} ${dueDate.toLocaleTimeString()}</p>` : ''}
           </div>
           <div class="export-options">
-            <a href="${getGoogleCalendarUrl(task, dueDate)}" target="_blank" class="export-button google">Add to Google Calendar</a>
-            <a href="${getOutlookCalendarUrl(task, dueDate)}" target="_blank" class="export-button outlook">Add to Outlook Calendar</a>
+            <a href="${getGoogleCalendarUrl(taskCopy, dueDate)}" target="_blank" class="export-button google">Add to Google Calendar</a>
+            <a href="${getOutlookCalendarUrl(taskCopy, dueDate)}" target="_blank" class="export-button outlook">Add to Outlook Calendar</a>
             <button onclick="downloadIcal()" class="export-button ical">Download .ics File</button>
-            <a href="${getTodoistUrl(task, dueDate)}" target="_blank" class="export-button todoist">Add to Todoist</a>
-            <a href="${getMicrosoftTodoUrl(task)}" target="_blank" class="export-button microsoft">Add to Microsoft To Do</a>
+            <a href="${getTodoistUrl(taskCopy, dueDate)}" target="_blank" class="export-button todoist">Add to Todoist</a>
+            <a href="${getMicrosoftTodoUrl(taskCopy)}" target="_blank" class="export-button microsoft">Add to Microsoft To Do</a>
           </div>
           <script>
             function downloadIcal() {
-              const icalContent = \`${createICalEvent(task, dueDate)}\`;
+              const icalContent = \`${createICalEvent(taskCopy, dueDate)}\`;
               const blob = new Blob([icalContent], { type: 'text/calendar;charset=utf-8' });
               const link = document.createElement('a');
               link.href = URL.createObjectURL(blob);
-              link.download = "${task.content.slice(0, 20)}.ics";
+              link.download = "${taskCopy.content.slice(0, 20)}.ics";
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);

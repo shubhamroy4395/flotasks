@@ -903,8 +903,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                             onClick={(e) => {
                               e.stopPropagation();
                               
-                              // Find the corresponding task and export it
-                              const taskToExport = tasks.find(t => t.content === entry.content && t.priority === entry.priority);
+                              // Get the task directly from the tasks array by index
+                              const taskToExport = tasks[index];
                               if (taskToExport) {
                                 // Track calendar export event
                                 trackEvent(

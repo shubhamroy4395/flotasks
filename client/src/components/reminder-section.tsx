@@ -290,8 +290,8 @@ export function ReminderSection() {
                       onClick={(e) => {
                         e.stopPropagation();
                         
-                        // Create a pseudo-task object compatible with the calendar export function
-                        const taskObj = {
+                        // Create a fresh task object for each export to ensure we always use the current data
+                        const taskObj: Task = {
                           id: reminder.id,
                           content: reminder.content,
                           priority: 0, // Default priority
@@ -300,7 +300,7 @@ export function ReminderSection() {
                           difficulty: "Normal",
                           eta: null,
                           timestamp: new Date()
-                        } as Task;
+                        };
                         
                         // Track reminder export event
                         trackEvent(Events.Reminder.Exported, {
