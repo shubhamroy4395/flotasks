@@ -3,11 +3,13 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card"
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Bell, Trash2 } from "lucide-react";
+import { Plus, X, Bell, Trash2, Calendar } from "lucide-react";
 import { format, addMinutes, addHours, isAfter } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent, Events } from "@/lib/amplitude";
 import { useTheme } from "@/contexts/ThemeContext";
+import { showCalendarExportPopup } from "@/lib/calendar-export";
+import type { Task } from "@shared/schema";
 
 const TIME_OPTIONS = [
   { label: "8 hours", value: 8, unit: "hours" },
@@ -275,18 +277,59 @@ export function ReminderSection() {
                       <span>Due {format(reminder.time, 'h:mm a')}</span>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`opacity-0 group-hover:opacity-100 transition-opacity ${
-                      isDarkTheme 
-                        ? 'text-red-400 hover:text-red-300 hover:bg-red-950/30' 
-                        : 'text-red-500 hover:text-red-700 hover:bg-red-50'
-                    }`}
-                    onClick={() => deleteReminder(reminder.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center">
+                    {/* Calendar export button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity ${
+                        isDarkTheme 
+                          ? 'hover:bg-blue-900/30' 
+                          : 'hover:bg-blue-50'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        
+                        // Create a pseudo-task object compatible with the calendar export function
+                        const taskObj = {
+                          id: reminder.id,
+                          content: reminder.content,
+                          priority: 0, // Default priority
+                          completed: false,
+                          category: "Reminder",
+                          difficulty: "Normal",
+                          eta: null,
+                          timestamp: new Date()
+                        } as Task;
+                        
+                        // Track reminder export event
+                        trackEvent(Events.Reminder.Exported, {
+                          id: reminder.id,
+                          content: reminder.content,
+                          scheduledTime: reminder.time.toISOString()
+                        });
+                        
+                        // Pass the reminder time as dueDate
+                        showCalendarExportPopup(taskObj, reminder.time);
+                      }}
+                    >
+                      <Calendar className="h-3.5 w-3.5" />
+                    </Button>
+                    
+                    {/* Delete button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity ${
+                        isDarkTheme 
+                          ? 'text-red-400 hover:text-red-300 hover:bg-red-950/30' 
+                          : 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                      }`}
+                      onClick={() => deleteReminder(reminder.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             ))}

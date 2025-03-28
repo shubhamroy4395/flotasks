@@ -55,7 +55,8 @@ export const Events = {
     SectionOpen: 'Reminder.SectionOpen',
     Set: 'Reminder.Set',
     Completed: 'Reminder.Completed',
-    Deleted: 'Reminder.Deleted'
+    Deleted: 'Reminder.Deleted',
+    Exported: 'Reminder.Exported'
   },
   Goals: {
     SectionOpen: 'Goals.SectionOpen',
