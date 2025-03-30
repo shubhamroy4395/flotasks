@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar, ArrowRight, ArrowLeft } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
@@ -412,12 +412,45 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
     );
   }, [entries, onDelete, tasks, title]);
 
+  const handleMoveTask = useCallback((index: number) => {
+    const entry = entries[index];
+    if (!entry.content) return;
+    
+    // Find the corresponding task in the tasks array
+    const taskToMove = tasks.find(t => t.content === entry.content && t.priority === entry.priority);
+    
+    if (onUpdate && taskToMove) {
+      // Current category is the opposite of what we're moving to
+      const currentCategory = title === "Today's Tasks" ? "today" : "other";
+      const targetCategory = currentCategory === "today" ? "other" : "today";
+      
+      // Update the task in the database
+      onUpdate(taskToMove.id, { category: targetCategory });
+      
+      // Track the move event
+      const eventName = currentCategory === "today" ? Events.TaskToday.Updated : Events.TaskOther.Updated;
+      trackEvent(eventName, {
+        taskId: taskToMove.id,
+        updatedField: 'category',
+        oldValue: currentCategory,
+        newValue: targetCategory
+      });
+      
+      // Update local state to immediately reflect the move
+      setEntries(prev => 
+        prev.map((entry, i) => 
+          i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "", difficulty: "" } : entry
+        )
+      );
+    }
+  }, [entries, onUpdate, tasks, title]);
+
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu card-enhanced">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-border flex-wrap gap-4">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border flex-wrap gap-4 pb-3">
         <div>
           <div className="flex items-center gap-3">
-            <CardTitle className="text-2xl font-black text-foreground tracking-tight">{title}</CardTitle>
+            <CardTitle className={`text-2xl font-black tracking-tight ${title === "Backlog" ? "text-muted-foreground" : "text-foreground"}`}>{title}</CardTitle>
             {totalTime > 0 && (
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -431,7 +464,9 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
               </motion.div>
             )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1 font-medium italic">Click any line to add a task</p>
+          <p className="text-sm text-muted-foreground mt-1 font-medium italic">
+            {title === "Backlog" ? "Store tasks for later that aren't urgent" : "Click any line to add a task"}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -625,7 +660,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                         <select
                           value={activeTask.difficulty || ""}
                           onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
-                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24 appearance-none bg-no-repeat bg-right pr-6"
+                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-28 sm:w-32 appearance-none bg-no-repeat bg-right pr-6"
                           style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")", backgroundSize: "12px" }}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -923,6 +958,26 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                             }}
                           >
                             <Calendar className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        
+                        {/* Move task button */}
+                        {tasks[index]?.id && entry.content && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveTask(index);
+                            }}
+                            title={`Move to ${title === "Today's Tasks" ? "Backlog" : "Today's Tasks"}`}
+                          >
+                            {title === "Today's Tasks" ? (
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            ) : (
+                              <ArrowLeft className="h-3.5 w-3.5" />
+                            )}
                           </Button>
                         )}
                         
