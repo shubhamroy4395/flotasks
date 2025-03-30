@@ -4,9 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar, ArrowRight, ArrowLeft, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
 import { showCalendarExportPopup } from "@/lib/calendar-export";
@@ -413,45 +412,12 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
     );
   }, [entries, onDelete, tasks, title]);
 
-  const handleMoveTask = useCallback((index: number) => {
-    const entry = entries[index];
-    if (!entry.content) return;
-    
-    // Find the corresponding task in the tasks array
-    const taskToMove = tasks.find(t => t.content === entry.content && t.priority === entry.priority);
-    
-    if (onUpdate && taskToMove) {
-      // Current category is the opposite of what we're moving to
-      const currentCategory = title === "Today's Tasks" ? "today" : "other";
-      const targetCategory = currentCategory === "today" ? "other" : "today";
-      
-      // Update the task in the database
-      onUpdate(taskToMove.id, { category: targetCategory });
-      
-      // Track the move event
-      const eventName = currentCategory === "today" ? Events.TaskToday.Updated : Events.TaskOther.Updated;
-      trackEvent(eventName, {
-        taskId: taskToMove.id,
-        updatedField: 'category',
-        oldValue: currentCategory,
-        newValue: targetCategory
-      });
-      
-      // Update local state to immediately reflect the move
-      setEntries(prev => 
-        prev.map((entry, i) => 
-          i === index ? { ...entry, content: "", completed: false, priority: 0, eta: "", difficulty: "" } : entry
-        )
-      );
-    }
-  }, [entries, onUpdate, tasks, title]);
-
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu card-enhanced">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-border flex-wrap gap-4 pb-3">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <CardTitle className={`text-2xl font-black tracking-tight ${title === "Backlog" ? "text-muted-foreground" : "text-foreground"}`}>{title}</CardTitle>
+            <CardTitle className="text-2xl font-black text-foreground tracking-tight">{title}</CardTitle>
             {totalTime > 0 && (
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -465,9 +431,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
               </motion.div>
             )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1 font-medium italic">
-            {title === "Backlog" ? "Store tasks for later that aren't urgent" : "Click any line to add a task"}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1 font-medium italic">Click any line to add a task</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -543,10 +507,10 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                     layout
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex flex-col w-full space-y-2 max-w-full">
+                    <div className="flex flex-col w-full space-y-2">
                       {/* Task input row with close button */}
                       <div className="flex items-center gap-2 w-full">
-                        <div className="flex-1 max-w-[calc(100%-4rem)]">
+                        <div className="flex-1">
                           <Input
                             autoFocus
                             value={activeTask.content}
@@ -597,7 +561,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                 });
                               }
                             }}
-                            className="w-full max-w-full h-9 border-input rounded-md border shadow-none focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
+                            className="h-9 border-input rounded-md border shadow-none focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                             placeholder="What needs to be done?"
                           />
                         </div>
@@ -643,12 +607,11 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           ))}
                         </div>
 
-                        {/* Time selector with better mobile styling */}
+                        {/* Time selector with fixed width */}
                         <select
                           value={activeTask.eta}
                           onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-20 sm:w-24 appearance-none bg-no-repeat bg-right pr-6"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")", backgroundSize: "12px" }}
+                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">Time</option>
@@ -657,12 +620,11 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           ))}
                         </select>
 
-                        {/* Difficulty selector - with better mobile styling */}
+                        {/* Difficulty selector - renamed from Task Difficulty, with reduced width */}
                         <select
                           value={activeTask.difficulty || ""}
                           onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
-                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-28 sm:w-32 appearance-none bg-no-repeat bg-right pr-6"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")", backgroundSize: "12px" }}
+                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">Difficulty</option>
@@ -937,7 +899,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="hidden sm:flex h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                            className="h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
                             onClick={(e) => {
                               e.stopPropagation();
                               
@@ -962,122 +924,19 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           </Button>
                         )}
                         
-                        {/* Move task button */}
-                        {tasks[index]?.id && entry.content && (
+                        {/* Delete button */}
+                        {tasks[index]?.id && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="hidden sm:flex h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                            className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleMoveTask(index);
+                              handleDelete(tasks[index].id, index);
                             }}
-                            title={`Move to ${title === "Today's Tasks" ? "Backlog" : "Today's Tasks"}`}
                           >
-                            {title === "Today's Tasks" ? (
-                              <ArrowRight className="h-3.5 w-3.5" />
-                            ) : (
-                              <ArrowLeft className="h-3.5 w-3.5" />
-                            )}
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
-                        )}
-                        
-                        {/* Mobile "More" dropdown button - only visible on small screens */}
-                        {tasks[index]?.id && entry.content && (
-                          <div className="hidden sm:block">
-                            {/* Delete button */}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(tasks[index].id, index);
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {/* Mobile-friendly dropdown menu - visible only on small screens */}
-                        {tasks[index]?.id && entry.content && (
-                          <div className="block sm:hidden">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-muted-foreground/70 hover:text-muted-foreground hover:bg-accent/20 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
-                                >
-                                  <MoreHorizontal className="h-3.5 w-3.5" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
-                                {/* Export to calendar option */}
-                                <DropdownMenuItem 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const taskToExport = tasks.find(
-                                      t => t.content === entry.content && t.priority === entry.priority
-                                    );
-                                    
-                                    if (taskToExport) {
-                                      trackEvent(
-                                        title === "Today's Tasks" ? 
-                                          Events.TaskToday.Exported : 
-                                          Events.TaskOther.Exported,
-                                        {
-                                          taskId: taskToExport.id,
-                                          content: taskToExport.content,
-                                          category: title === "Today's Tasks" ? "today" : "other"
-                                        }
-                                      );
-                                      
-                                      showCalendarExportPopup(taskToExport);
-                                    }
-                                  }}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Calendar className="h-3.5 w-3.5" />
-                                  <span>Export to Calendar</span>
-                                </DropdownMenuItem>
-                                
-                                {/* Move task option */}
-                                <DropdownMenuItem 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveTask(index);
-                                  }}
-                                  className="flex items-center gap-2"
-                                >
-                                  {title === "Today's Tasks" ? (
-                                    <>
-                                      <ArrowRight className="h-3.5 w-3.5" />
-                                      <span>Move to Backlog</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ArrowLeft className="h-3.5 w-3.5" />
-                                      <span>Move to Today</span>
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                
-                                {/* Delete task option */}
-                                <DropdownMenuItem 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(tasks[index].id, index);
-                                  }}
-                                  className="flex items-center gap-2 text-red-500"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  <span>Delete Task</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
                         )}
                       </motion.div>
                     )}
