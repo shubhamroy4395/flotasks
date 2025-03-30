@@ -4,8 +4,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar, ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar, ArrowRight, ArrowLeft, MoreHorizontal } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
 import { showCalendarExportPopup } from "@/lib/calendar-export";
@@ -936,7 +937,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                            className="hidden sm:flex h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
                             onClick={(e) => {
                               e.stopPropagation();
                               
@@ -966,7 +967,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                            className="hidden sm:flex h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleMoveTask(index);
@@ -981,19 +982,102 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           </Button>
                         )}
                         
-                        {/* Delete button */}
-                        {tasks[index]?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(tasks[index].id, index);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                        {/* Mobile "More" dropdown button - only visible on small screens */}
+                        {tasks[index]?.id && entry.content && (
+                          <div className="hidden sm:block">
+                            {/* Delete button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(tasks[index].id, index);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Mobile-friendly dropdown menu - visible only on small screens */}
+                        {tasks[index]?.id && entry.content && (
+                          <div className="block sm:hidden">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground/70 hover:text-muted-foreground hover:bg-accent/20 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
+                                >
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                {/* Export to calendar option */}
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const taskToExport = tasks.find(
+                                      t => t.content === entry.content && t.priority === entry.priority
+                                    );
+                                    
+                                    if (taskToExport) {
+                                      trackEvent(
+                                        title === "Today's Tasks" ? 
+                                          Events.TaskToday.Exported : 
+                                          Events.TaskOther.Exported,
+                                        {
+                                          taskId: taskToExport.id,
+                                          content: taskToExport.content,
+                                          category: title === "Today's Tasks" ? "today" : "other"
+                                        }
+                                      );
+                                      
+                                      showCalendarExportPopup(taskToExport);
+                                    }
+                                  }}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  <span>Export to Calendar</span>
+                                </DropdownMenuItem>
+                                
+                                {/* Move task option */}
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveTask(index);
+                                  }}
+                                  className="flex items-center gap-2"
+                                >
+                                  {title === "Today's Tasks" ? (
+                                    <>
+                                      <ArrowRight className="h-3.5 w-3.5" />
+                                      <span>Move to Backlog</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ArrowLeft className="h-3.5 w-3.5" />
+                                      <span>Move to Today</span>
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                
+                                {/* Delete task option */}
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(tasks[index].id, index);
+                                  }}
+                                  className="flex items-center gap-2 text-red-500"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Delete Task</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         )}
                       </motion.div>
                     )}
