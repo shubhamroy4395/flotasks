@@ -507,10 +507,10 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                     layout
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex flex-col w-full space-y-2">
+                    <div className="flex flex-col w-full space-y-2 max-w-full">
                       {/* Task input row with close button */}
                       <div className="flex items-center gap-2 w-full">
-                        <div className="flex-1">
+                        <div className="flex-1 max-w-[calc(100%-4rem)]">
                           <Input
                             autoFocus
                             value={activeTask.content}
@@ -561,7 +561,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                                 });
                               }
                             }}
-                            className="h-9 border-input rounded-md border shadow-none focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
+                            className="w-full max-w-full h-9 border-input rounded-md border shadow-none focus:ring-0 focus:outline-none font-bold text-foreground placeholder:text-muted-foreground"
                             placeholder="What needs to be done?"
                           />
                         </div>
@@ -607,11 +607,12 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           ))}
                         </div>
 
-                        {/* Time selector with fixed width */}
+                        {/* Time selector with better mobile styling */}
                         <select
                           value={activeTask.eta}
                           onChange={(e) => setActiveTask({ ...activeTask, eta: e.target.value })}
-                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
+                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-20 sm:w-24 appearance-none bg-no-repeat bg-right pr-6"
+                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")", backgroundSize: "12px" }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">Time</option>
@@ -620,11 +621,12 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           ))}
                         </select>
 
-                        {/* Difficulty selector - renamed from Task Difficulty, with reduced width */}
+                        {/* Difficulty selector - with better mobile styling */}
                         <select
                           value={activeTask.difficulty || ""}
                           onChange={(e) => setActiveTask({ ...activeTask, difficulty: e.target.value })}
-                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24"
+                          className="rounded-md border-border px-2 py-1 text-sm h-7 bg-transparent font-bold text-foreground w-24 appearance-none bg-no-repeat bg-right pr-6"
+                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")", backgroundSize: "12px" }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">Difficulty</option>
