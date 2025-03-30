@@ -52,15 +52,26 @@ export function ResizableCard({
   const startDimensions = useRef({ width: 0, height: 0 });
 
   // Save dimensions to localStorage when they change
+  // Using a ref to track previous dimensions to prevent infinite loops
+  const previousDimensions = useRef(dimensions);
+  
   useEffect(() => {
-    if (storageKey && typeof window !== "undefined") {
-      localStorage.setItem(
-        `flo-resizable-${storageKey}`,
-        JSON.stringify(dimensions)
-      );
-    }
-    if (onResize) {
-      onResize(dimensions.width, dimensions.height);
+    // Only update if dimensions actually changed
+    if (previousDimensions.current.width !== dimensions.width || 
+        previousDimensions.current.height !== dimensions.height) {
+      
+      previousDimensions.current = dimensions;
+      
+      if (storageKey && typeof window !== "undefined") {
+        localStorage.setItem(
+          `flo-resizable-${storageKey}`,
+          JSON.stringify(dimensions)
+        );
+      }
+      
+      if (onResize) {
+        onResize(dimensions.width, dimensions.height);
+      }
     }
   }, [dimensions, storageKey, onResize]);
 
@@ -79,10 +90,15 @@ export function ResizableCard({
     if (!resizing.current) return;
 
     const dx = e.clientX - startPos.current.x;
-    const dy = e.clientY - startPos.current.y;
-
-    const newWidth = Math.max(minWidth, startDimensions.current.width + dx);
-    const newHeight = Math.max(minHeight, startDimensions.current.height + dy);
+    
+    // Only adjust width, not height, to prevent layout issues
+    // Also add a maximum width limit to prevent overlapping
+    const containerWidth = cardRef.current?.parentElement?.clientWidth || 800;
+    const maxWidth = Math.min(containerWidth - 10, 800); // 10px buffer, absolute max of 800px
+    
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, startDimensions.current.width + dx));
+    // Keep the current height - only adjust height via explicit handle
+    const newHeight = startDimensions.current.height;
 
     setDimensions({ width: newWidth, height: newHeight });
   };
