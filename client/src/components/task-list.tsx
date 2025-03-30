@@ -677,15 +677,17 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                   </motion.div>
                 ) : (
                   <motion.div
-                    className={`flex items-center justify-between w-full cursor-text px-1 ${
+                    className={`flex items-center justify-between w-full gap-2 cursor-text px-1 ${
                       entry.completed ? 'line-through text-muted-foreground' : 'text-foreground font-bold'
                     }`}
                     layout
                   >
-                    <span>{entry.content || " "}</span>
+                    <div className="max-w-[70%] overflow-hidden text-ellipsis">
+                      <span>{entry.content || " "}</span>
+                    </div>
                     {entry.content && (
                       <motion.div
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 ml-auto"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.1 }}

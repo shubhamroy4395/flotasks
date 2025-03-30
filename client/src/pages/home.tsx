@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ResizableTaskList } from "@/components/resizable-task-list";
 import { TaskList } from "@/components/task-list";
 import { MoodTracker } from "@/components/mood-tracker";
 import { GratitudeSection } from "@/components/gratitude-section";
@@ -136,24 +137,32 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column - Today's Tasks (wider) */}
           <div className="lg:col-span-5">
-            <TaskList
+            <ResizableTaskList
               title="Today's Tasks"
               tasks={todayTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "today" })}
               onDelete={(id) => deleteTask.mutate(id)}
               onUpdate={(id, updates) => updateTask.mutate({ id, updates })}
+              defaultWidth={550}
+              defaultHeight={500}
+              minWidth={300}
+              minHeight={250}
             />
           </div>
 
           {/* Middle Column - Goals and Backlog */}
           <div className="lg:col-span-4 space-y-6">
             <GoalsSection onGoalsChange={setGoals} />
-            <TaskList
+            <ResizableTaskList
               title="Backlog"
               tasks={otherTasks || []}
               onSave={(task) => createTask.mutate({ ...task, category: "other" })}
               onDelete={(id) => deleteTask.mutate(id)}
               onUpdate={(id, updates) => updateTask.mutate({ id, updates })}
+              defaultWidth={450}
+              defaultHeight={400}
+              minWidth={250}
+              minHeight={200}
             />
           </div>
 
