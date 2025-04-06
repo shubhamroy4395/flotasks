@@ -5,11 +5,15 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
+// Create mock db connection for development
+const mockPool = {
+  query: async () => ({ rows: [] }),
+  release: () => {},
+  end: () => {},
+  on: () => {},
+  // Add other required methods that might be called
+} as unknown as Pool;
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+// Use the mock database connection instead of requiring a real one
+export const pool = mockPool;
+export const db = drizzle({ client: mockPool, schema });

@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Bell, Trash2, Calendar } from "lucide-react";
+import { Plus, X, Bell, Trash2 } from "lucide-react";
 import { format, addMinutes, addHours, isAfter } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
 import { trackEvent, Events } from "@/lib/amplitude";
 import { useTheme } from "@/contexts/ThemeContext";
-import { showCalendarExportPopup } from "@/lib/calendar-export";
+import { useToast } from "@/hooks/use-toast";
 import type { Task } from "@shared/schema";
 
 const TIME_OPTIONS = [
@@ -278,44 +277,6 @@ export function ReminderSection() {
                     </div>
                   </div>
                   <div className="flex items-center">
-                    {/* Calendar export button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity ${
-                        isDarkTheme 
-                          ? 'hover:bg-blue-900/30' 
-                          : 'hover:bg-blue-50'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        
-                        // Create a fresh task object for each export to ensure we always use the current data
-                        const taskObj: Task = {
-                          id: reminder.id,
-                          content: reminder.content,
-                          priority: 0, // Default priority
-                          completed: false,
-                          category: "Reminder",
-                          difficulty: "Normal",
-                          eta: null,
-                          timestamp: new Date()
-                        };
-                        
-                        // Track reminder export event
-                        trackEvent(Events.Reminder.Exported, {
-                          id: reminder.id,
-                          content: reminder.content,
-                          scheduledTime: reminder.time.toISOString()
-                        });
-                        
-                        // Pass the reminder time as dueDate
-                        showCalendarExportPopup(taskObj, reminder.time);
-                      }}
-                    >
-                      <Calendar className="h-3.5 w-3.5" />
-                    </Button>
-                    
                     {/* Delete button */}
                     <Button
                       variant="ghost"

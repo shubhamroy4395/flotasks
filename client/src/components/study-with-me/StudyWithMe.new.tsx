@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 interface StudyWithMeProps {
   open: boolean;
@@ -270,413 +271,431 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
     return mode === 'focus' ? 'rgb(59, 130, 246)' : 'rgb(16, 185, 129)';
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "sm:max-w-3xl p-0 overflow-hidden border-0", // Made dialog wider
-        theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
-      )}>
-        {/* Ambient Background */}
-        {background === 'ambient' && (
-          <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
-            <div className={cn(
-              "absolute inset-0 bg-no-repeat bg-cover bg-center transition-opacity duration-1000",
-              isRunning ? "opacity-100" : "opacity-70"
-            )} 
-            style={{ backgroundImage: `url(${getBackgroundForTheme()})` }}>
-              {/* Animated overlay for relaxing pulse effect - different for focus/break */}
-              <div className={cn(
-                "absolute inset-0",
-                mode === 'focus' 
-                  ? "bg-gradient-to-b from-primary/10 to-transparent animate-pulse-slow"
-                  : "bg-gradient-to-b from-green-500/10 to-transparent animate-pulse-slower"
-              )}></div>
-              
-              {/* Moving particles for visual interest - using Framer Motion */}
-              {isRunning && (
-                <div className="particle-container">
-                  {Array.from({ length: 20 }).map((_, i) => {
-                    // Create more varied and theme-aware particles
-                    const size = Math.random() * 10 + 5;
-                    const startX = Math.random() * 100;
-                    const startY = Math.random() * 100;
-                    const endX = startX + (Math.random() * 100 - 50);
-                    const endY = startY - Math.random() * 100;
-                    const duration = Math.random() * 20 + 15;
-                    const delay = Math.random() * 8;
-                    
-                    // Theme-specific particle colors
-                    let particleColor;
-                    if (theme === 'retro') {
-                      particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-600/20";
-                    } else if (theme === 'winter') {
-                      particleColor = mode === 'focus' ? "bg-sky-400/20" : "bg-teal-400/20";
-                    } else if (theme === 'spring') {
-                      particleColor = mode === 'focus' ? "bg-purple-400/20" : "bg-lime-400/20";
-                    } else if (theme === 'dark') {
-                      particleColor = mode === 'focus' ? "bg-blue-400/20" : "bg-emerald-400/20";
-                    } else {
-                      particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-500/20";
-                    }
-                    
-                    return (
-                      <motion.div
-                        key={i}
-                        className={cn(
-                          "absolute rounded-full",
-                          particleColor
-                        )}
-                        style={{
-                          width: size,
-                          height: size,
-                          left: `${startX}%`,
-                          top: `${startY}%`,
-                          opacity: 0
-                        }}
-                        animate={{
-                          x: endX - startX,
-                          y: endY - startY,
-                          opacity: [0, 0.7, 0],
-                          scale: [0.7, 1.3, 0.9]
-                        }}
-                        transition={{
-                          duration: duration,
-                          delay: delay,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        
-        {/* Foreground Content */}
-        <div className={cn(
-          "relative z-10 p-6 backdrop-blur-sm",
-          background === 'ambient' ? "bg-background/70" : "bg-background",
-          "text-foreground" // Ensure text color follows the theme
-        )}>
-          <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2 text-foreground">
-              <Focus className="h-5 w-5" />
-              Focus Mode
-              {currentSession > 1 && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  Session {currentSession}/{focusStrategy.totalSessions}
-                </Badge>
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              {mode === 'focus' 
-                ? `Focus for ${focusStrategy.focusMinutes} minutes` 
-                : `Take a ${focusStrategy.breakMinutes}-minute break to recharge`}
-            </DialogDescription>
-          </DialogHeader>
+  // Handle close button click only, prevent outside clicks from closing
+  const handleOpenChange = (open: boolean) => {
+    // Only allow closing through the explicit close button
+    if (!open) {
+      // Do nothing - don't allow automatic closing
+      return;
+    }
+    onOpenChange(open);
+  };
 
-          {/* Main content tabs */}
-          {/* Focus hours selection on main screen */}
-          <div className="flex justify-between items-center mb-4 space-x-4">
-            <div className="flex-1">
-              <Select 
-                value={focusHours.toString()} 
-                onValueChange={(value) => setFocusHours(parseInt(value))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Focus duration" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 hour</SelectItem>
-                  <SelectItem value="2">2 hours</SelectItem>
-                  <SelectItem value="3">3 hours</SelectItem>
-                  <SelectItem value="4">4 hours</SelectItem>
-                  <SelectItem value="5">5 hours</SelectItem>
-                </SelectContent>
-              </Select>
+  // This function will be called when the user deliberately clicks the close button
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogContent className={cn(
+          "sm:max-w-3xl p-0 overflow-hidden border-0", // Made dialog wider
+          theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
+        )}>
+          {/* Ambient Background */}
+          {background === 'ambient' && (
+            <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
+              <div className={cn(
+                "absolute inset-0 bg-no-repeat bg-cover bg-center transition-opacity duration-1000",
+                isRunning ? "opacity-100" : "opacity-70"
+              )} 
+              style={{ backgroundImage: `url(${getBackgroundForTheme()})` }}>
+                {/* Animated overlay for relaxing pulse effect - different for focus/break */}
+                <div className={cn(
+                  "absolute inset-0",
+                  mode === 'focus' 
+                    ? "bg-gradient-to-b from-primary/10 to-transparent animate-pulse-slow"
+                    : "bg-gradient-to-b from-green-500/10 to-transparent animate-pulse-slower"
+                )}></div>
+                
+                {/* Moving particles for visual interest - using Framer Motion */}
+                {isRunning && (
+                  <div className="particle-container">
+                    {Array.from({ length: 20 }).map((_, i) => {
+                      // Create more varied and theme-aware particles
+                      const size = Math.random() * 10 + 5;
+                      const startX = Math.random() * 100;
+                      const startY = Math.random() * 100;
+                      const endX = startX + (Math.random() * 100 - 50);
+                      const endY = startY - Math.random() * 100;
+                      const duration = Math.random() * 20 + 15;
+                      const delay = Math.random() * 8;
+                      
+                      // Theme-specific particle colors
+                      let particleColor;
+                      if (theme === 'retro') {
+                        particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-600/20";
+                      } else if (theme === 'winter') {
+                        particleColor = mode === 'focus' ? "bg-sky-400/20" : "bg-teal-400/20";
+                      } else if (theme === 'spring') {
+                        particleColor = mode === 'focus' ? "bg-purple-400/20" : "bg-lime-400/20";
+                      } else if (theme === 'dark') {
+                        particleColor = mode === 'focus' ? "bg-blue-400/20" : "bg-emerald-400/20";
+                      } else {
+                        particleColor = mode === 'focus' ? "bg-blue-500/20" : "bg-green-500/20";
+                      }
+                      
+                      return (
+                        <motion.div
+                          key={i}
+                          className={cn(
+                            "absolute rounded-full",
+                            particleColor
+                          )}
+                          style={{
+                            width: size,
+                            height: size,
+                            left: `${startX}%`,
+                            top: `${startY}%`,
+                            opacity: 0
+                          }}
+                          animate={{
+                            x: endX - startX,
+                            y: endY - startY,
+                            opacity: [0, 0.7, 0],
+                            scale: [0.7, 1.3, 0.9]
+                          }}
+                          transition={{
+                            duration: duration,
+                            delay: delay,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleBackground}
-              className={cn(
-                background === 'ambient' && "text-primary"
-              )}
-            >
-              <Monitor className="h-4 w-4 mr-1" />
-              {background === 'ambient' ? 'Hide Visual' : 'Show Visual'}
-            </Button>
-          </div>
+          )}
           
-          <Tabs defaultValue="timer" className="mt-2" onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="timer">Timer</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-            
-            {/* Timer Tab */}
-            <TabsContent value="timer" className="mt-0">
-              <Card className={cn(
-                "p-6 flex flex-col items-center justify-center space-y-4",
-                background === 'ambient' ? "bg-card/80 backdrop-blur-sm" : "bg-card",
-                "text-card-foreground", // Ensure card text uses the correct theme color
-                theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
-              )}>
-                {/* Mode indicator */}
-                <div className="w-full flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium flex items-center gap-1" style={{ color: getModeColor() }}>
-                    {mode === 'focus' ? (
-                      <>
-                        <Focus className="h-4 w-4" />
-                        Focus Session
-                      </>
-                    ) : (
-                      <>
-                        <Bell className="h-4 w-4" />
-                        Break Time
-                      </>
-                    )}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {currentSession}/{focusStrategy.totalSessions}
-                  </span>
-                </div>
-                
-                {/* Session roadmap - A visual map of all sessions with current highlighted */}
-                <div className="w-full flex items-center justify-between gap-1 mb-2">
-                  {Array.from({ length: focusStrategy.totalSessions }).map((_, idx) => (
-                    <div key={idx} className="flex-1 flex gap-1">
-                      {/* Focus period box */}
-                      <div 
-                        className={cn(
-                          "h-2 rounded flex-1",
-                          idx + 1 === currentSession && mode === 'focus' 
-                            ? "bg-primary animate-pulse" 
-                            : idx + 1 < currentSession 
-                              ? "bg-primary/80" 
-                              : "bg-primary/20"
-                        )}
-                      ></div>
-                      
-                      {/* Break period box (don't show after last focus) */}
-                      {idx + 1 < focusStrategy.totalSessions && (
-                        <div 
-                          className={cn(
-                            "h-2 rounded w-1/5",
-                            idx + 1 === currentSession && mode === 'break' 
-                              ? "bg-green-500 animate-pulse" 
-                              : idx + 1 < currentSession 
-                                ? "bg-green-500/80" 
-                                : "bg-green-500/20"
-                          )}
-                        ></div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Time display with glowing effect when timer is running */}
-                <div 
-                  className={cn(
-                    "text-6xl font-semibold my-4 relative",
-                    isRunning && "animate-subtle-pulse"
-                  )}
+          {/* Foreground Content */}
+          <div className={cn(
+            "relative z-10 p-6 backdrop-blur-sm",
+            background === 'ambient' ? "bg-background/70" : "bg-background",
+            "text-foreground" // Ensure text color follows the theme
+          )}>
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 text-foreground">
+                <Focus className="h-5 w-5" />
+                Focus Mode
+                {currentSession > 1 && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    Session {currentSession}/{focusStrategy.totalSessions}
+                  </Badge>
+                )}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                {mode === 'focus' 
+                  ? `Focus for ${focusStrategy.focusMinutes} minutes` 
+                  : `Take a ${focusStrategy.breakMinutes}-minute break to recharge`}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Main content tabs */}
+            {/* Focus hours selection on main screen */}
+            <div className="flex justify-between items-center mb-4 space-x-4">
+              <div className="flex-1">
+                <Select 
+                  value={focusHours.toString()} 
+                  onValueChange={(value) => setFocusHours(parseInt(value))}
                 >
-                  {/* Glowing backdrop when timer is running */}
-                  {isRunning && (
-                    <div 
-                      className={cn(
-                        "absolute inset-0 -m-8 rounded-full blur-xl opacity-20",
-                        mode === 'focus' ? "bg-primary" : "bg-green-500"
-                      )}
-                      style={{ zIndex: -1 }} 
-                    />
-                  )}
-                  
-                  {formatTime(timeLeft)}
-                </div>
-                
-                {/* Progress bar under time display */}
-                <div 
-                  className="w-full h-2 bg-muted rounded-full overflow-hidden"
-                  style={{ 
-                    boxShadow: isRunning ? `0 0 10px ${mode === 'focus' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}` : 'none' 
-                  }}
-                >
-                  <div 
-                    className={cn(
-                      "h-full transition-all duration-1000 ease-linear rounded-full",
-                      mode === 'focus' ? "bg-primary" : "bg-green-500"
-                    )} 
-                    style={{ width: `${getProgressPercentage()}%` }}
-                  />
-                </div>
-                
-                {/* Control buttons */}
-                <div className="flex space-x-4 mt-4">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant={isRunning ? "secondary" : "default"} 
-                          size="icon" 
-                          onClick={isRunning ? pauseTimer : startTimer}
-                          className={cn(
-                            isRunning && "animate-subtle-pulse shadow-lg",
-                            isRunning && mode === 'focus' && "shadow-blue-500/20",
-                            isRunning && mode === 'break' && "shadow-green-500/20"
-                          )}
-                        >
-                          {isRunning ? (
-                            <Pause className="h-5 w-5" />
-                          ) : (
-                            <Play className="h-5 w-5" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{isRunning ? "Pause" : "Start"} Timer</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="outline" size="icon" onClick={resetTimer}>
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Reset Timer</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="outline" size="icon" onClick={skipToNextSession}>
-                          <SkipForward className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Skip to {mode === 'focus' ? 'Break' : 'Next Focus Session'}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </Card>
-            </TabsContent>
-            
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="mt-0">
-              <Card className={cn(
-                "p-6",
-                background === 'ambient' ? "bg-card/80 backdrop-blur-sm" : "bg-card",
-                "text-card-foreground",
-                theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
-              )}>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                      <Settings className="h-4 w-4" />
-                      Focus Strategy
-                    </h4>
-                    <div className="grid gap-3">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs">Focus Period</span>
-                          <span className="text-xs">{focusStrategy.focusMinutes} minutes</span>
-                        </div>
-                        <Slider 
-                          defaultValue={[focusStrategy.focusMinutes]} 
-                          min={10} 
-                          max={60} 
-                          step={5} 
-                          className="z-10"
-                          onValueChange={(value) => {
-                            setFocusStrategy(prev => ({
-                              ...prev, 
-                              focusMinutes: value[0],
-                              totalSessions: Math.floor((prev.totalHours * 60) / (value[0] + prev.breakMinutes))
-                            }));
-                            if (mode === 'focus' && !isRunning) {
-                              setTimeLeft(value[0] * 60);
-                            }
-                          }}
-                        />
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs">Break Length</span>
-                          <span className="text-xs">{focusStrategy.breakMinutes} minutes</span>
-                        </div>
-                        <Slider 
-                          defaultValue={[focusStrategy.breakMinutes]} 
-                          min={1} 
-                          max={20} 
-                          step={1} 
-                          className="z-10"
-                          onValueChange={(value) => {
-                            setFocusStrategy(prev => ({
-                              ...prev, 
-                              breakMinutes: value[0],
-                              totalSessions: Math.floor((prev.totalHours * 60) / (prev.focusMinutes + value[0]))
-                            }));
-                            if (mode === 'break' && !isRunning) {
-                              setTimeLeft(value[0] * 60);
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
-                      <Bell className="h-4 w-4" />
-                      Notifications
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Notification status: {notificationPermission === 'granted' ? 
-                        'Enabled ✓' : notificationPermission === 'denied' ? 
-                        'Blocked ✗' : 'Not set'}
-                    </p>
-                    {notificationPermission !== 'granted' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={requestNotificationPermission}
-                      >
-                        Enable Notifications
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
-          
-          {/* Dialog footer */}
-          <DialogFooter className="flex items-center justify-between mt-4 pt-2 border-t border-border">
-            <div className="text-xs text-muted-foreground flex items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onOpenChange(false)}
-                className="mr-2"
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Focus duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 hour</SelectItem>
+                    <SelectItem value="2">2 hours</SelectItem>
+                    <SelectItem value="3">3 hours</SelectItem>
+                    <SelectItem value="4">4 hours</SelectItem>
+                    <SelectItem value="5">5 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={toggleBackground}
+                className={cn(
+                  background === 'ambient' && "text-primary"
+                )}
               >
-                <X className="h-4 w-4 mr-1" />
-                Close Focus Mode
+                <Monitor className="h-4 w-4 mr-1" />
+                {background === 'ambient' ? 'Hide Visual' : 'Show Visual'}
               </Button>
             </div>
-          </DialogFooter>
-        </div>
-      </DialogContent>
+            
+            <Tabs defaultValue="timer" className="mt-2" onValueChange={setActiveTab}>
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="timer">Timer</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+              
+              {/* Timer Tab */}
+              <TabsContent value="timer" className="mt-0">
+                <Card className={cn(
+                  "p-6 flex flex-col items-center justify-center space-y-4",
+                  background === 'ambient' ? "bg-card/80 backdrop-blur-sm" : "bg-card",
+                  "text-card-foreground", // Ensure card text uses the correct theme color
+                  theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
+                )}>
+                  {/* Mode indicator */}
+                  <div className="w-full flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium flex items-center gap-1" style={{ color: getModeColor() }}>
+                      {mode === 'focus' ? (
+                        <>
+                          <Focus className="h-4 w-4" />
+                          Focus Session
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="h-4 w-4" />
+                          Break Time
+                        </>
+                      )}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {currentSession}/{focusStrategy.totalSessions}
+                    </span>
+                  </div>
+                  
+                  {/* Session roadmap - A visual map of all sessions with current highlighted */}
+                  <div className="w-full flex items-center justify-between gap-1 mb-2">
+                    {Array.from({ length: focusStrategy.totalSessions }).map((_, idx) => (
+                      <div key={idx} className="flex-1 flex gap-1">
+                        {/* Focus period box */}
+                        <div 
+                          className={cn(
+                            "h-2 rounded flex-1",
+                            idx + 1 === currentSession && mode === 'focus' 
+                              ? "bg-primary animate-pulse" 
+                              : idx + 1 < currentSession 
+                                ? "bg-primary/80" 
+                                : "bg-primary/20"
+                          )}
+                        ></div>
+                        
+                        {/* Break period box (don't show after last focus) */}
+                        {idx + 1 < focusStrategy.totalSessions && (
+                          <div 
+                            className={cn(
+                              "h-2 rounded w-1/5",
+                              idx + 1 === currentSession && mode === 'break' 
+                                ? "bg-green-500 animate-pulse" 
+                                : idx + 1 < currentSession 
+                                  ? "bg-green-500/80" 
+                                  : "bg-green-500/20"
+                            )}
+                          ></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Time display with glowing effect when timer is running */}
+                  <div 
+                    className={cn(
+                      "text-6xl font-semibold my-4 relative",
+                      isRunning && "animate-subtle-pulse"
+                    )}
+                  >
+                    {/* Glowing backdrop when timer is running */}
+                    {isRunning && (
+                      <div 
+                        className={cn(
+                          "absolute inset-0 -m-8 rounded-full blur-xl opacity-20",
+                          mode === 'focus' ? "bg-primary" : "bg-green-500"
+                        )}
+                          style={{ zIndex: -1 }} 
+                      />
+                    )}
+                    
+                    {formatTime(timeLeft)}
+                  </div>
+                  
+                  {/* Progress bar under time display */}
+                  <div 
+                    className="w-full h-2 bg-muted rounded-full overflow-hidden"
+                    style={{ 
+                      boxShadow: isRunning ? `0 0 10px ${mode === 'focus' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}` : 'none' 
+                    }}
+                  >
+                    <div 
+                      className={cn(
+                        "h-full transition-all duration-1000 ease-linear rounded-full",
+                        mode === 'focus' ? "bg-primary" : "bg-green-500"
+                      )} 
+                      style={{ width: `${getProgressPercentage()}%` }}
+                    />
+                  </div>
+                  
+                  {/* Control buttons */}
+                  <div className="flex space-x-4 mt-4">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant={isRunning ? "secondary" : "default"} 
+                            size="icon" 
+                            onClick={isRunning ? pauseTimer : startTimer}
+                            className={cn(
+                              isRunning && "animate-subtle-pulse shadow-lg",
+                              isRunning && mode === 'focus' && "shadow-blue-500/20",
+                              isRunning && mode === 'break' && "shadow-green-500/20"
+                            )}
+                          >
+                            {isRunning ? (
+                              <Pause className="h-5 w-5" />
+                            ) : (
+                              <Play className="h-5 w-5" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isRunning ? "Pause" : "Start"} Timer</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={resetTimer}>
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Reset Timer</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={skipToNextSession}>
+                            <SkipForward className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Skip to {mode === 'focus' ? 'Break' : 'Next Focus Session'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </Card>
+              </TabsContent>
+              
+              {/* Settings Tab */}
+              <TabsContent value="settings" className="mt-0">
+                <Card className={cn(
+                  "p-6",
+                  background === 'ambient' ? "bg-card/80 backdrop-blur-sm" : "bg-card",
+                  "text-card-foreground",
+                  theme === 'retro' && "border-2 border-solid border-[#DFDFDF] border-r-[#808080] border-b-[#808080]"
+                )}>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                        <Settings className="h-4 w-4" />
+                        Focus Strategy
+                      </h4>
+                      <div className="grid gap-3">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Focus Period</span>
+                            <span className="text-xs">{focusStrategy.focusMinutes} minutes</span>
+                          </div>
+                          <Slider 
+                            defaultValue={[focusStrategy.focusMinutes]} 
+                            min={10} 
+                            max={60} 
+                            step={5} 
+                            className="z-10"
+                            onValueChange={(value) => {
+                              setFocusStrategy(prev => ({
+                                ...prev, 
+                                focusMinutes: value[0],
+                                totalSessions: Math.floor((prev.totalHours * 60) / (value[0] + prev.breakMinutes))
+                              }));
+                              if (mode === 'focus' && !isRunning) {
+                                setTimeLeft(value[0] * 60);
+                              }
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Break Length</span>
+                            <span className="text-xs">{focusStrategy.breakMinutes} minutes</span>
+                          </div>
+                          <Slider 
+                            defaultValue={[focusStrategy.breakMinutes]} 
+                            min={1} 
+                            max={20} 
+                            step={1} 
+                            className="z-10"
+                            onValueChange={(value) => {
+                              setFocusStrategy(prev => ({
+                                ...prev, 
+                                breakMinutes: value[0],
+                                totalSessions: Math.floor((prev.totalHours * 60) / (prev.focusMinutes + value[0]))
+                              }));
+                              if (mode === 'break' && !isRunning) {
+                                setTimeLeft(value[0] * 60);
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                        <Bell className="h-4 w-4" />
+                        Notifications
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Notification status: {notificationPermission === 'granted' ? 
+                          'Enabled ✓' : notificationPermission === 'denied' ? 
+                          'Blocked ✗' : 'Not set'}
+                      </p>
+                      {notificationPermission !== 'granted' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={requestNotificationPermission}
+                        >
+                          Enable Notifications
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+            </Tabs>
+            
+            {/* Dialog footer */}
+            <DialogFooter className="flex items-center justify-between mt-4 pt-2 border-t border-border">
+              <div className="text-xs text-muted-foreground flex items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClose}
+                  className="mr-2"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Close Focus Mode
+                </Button>
+              </div>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </DialogPrimitive.Portal>
     </Dialog>
   );
 }

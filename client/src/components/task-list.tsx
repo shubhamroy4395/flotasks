@@ -4,11 +4,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2, Calendar } from "lucide-react";
+import { ArrowUpDown, Clock, Plus, X, Sparkles, Info, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import type { Task } from "@shared/schema";
 import { trackEvent, Events } from "@/lib/amplitude";
-import { showCalendarExportPopup } from "@/lib/calendar-export";
 
 // Helper function to convert time string to minutes
 const convertTimeToMinutes = (time: string): number => {
@@ -402,6 +401,14 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
         taskId: taskToDelete.id,
         category: title === "Today's Tasks" ? "today" : "other"
       });
+    } else if (entry.content) {
+      // If task doesn't exist in database but has content, just track the UI deletion
+      const eventName = title === "Today's Tasks" ? Events.TaskToday.Deleted : Events.TaskOther.Deleted;
+      trackEvent(eventName, {
+        taskId: 0, // No database ID
+        category: title === "Today's Tasks" ? "today" : "other",
+        uiOnly: true
+      });
     }
     
     // Update local state to immediately reflect deletion
@@ -413,7 +420,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
   }, [entries, onDelete, tasks, title]);
 
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu card-enhanced">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-t-4 border-t-primary transform-gpu card-enhanced overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between border-b border-border flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -463,7 +470,7 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="group flex items-center gap-3 px-3 pr-5 py-2.5 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300 interactive-row"
+                className="group flex items-center gap-3 px-3 pr-5 py-2.5 border-b border-dashed border-border cursor-pointer relative hover:bg-card/70 transition-all duration-300 interactive-row overflow-hidden"
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
                 layout
@@ -509,8 +516,8 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                   >
                     <div className="flex flex-col w-full space-y-2">
                       {/* Task input row with close button */}
-                      <div className="flex items-center gap-2 w-full">
-                        <div className="flex-1">
+                      <div className="flex items-center gap-2 w-full overflow-hidden">
+                        <div className="flex-1 min-w-0">
                           <Input
                             autoFocus
                             value={activeTask.content}
@@ -682,10 +689,10 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                     }`}
                     layout
                   >
-                    <span>{entry.content || " "}</span>
+                    <span className="truncate mr-2 min-w-0 flex-1">{entry.content || " "}</span>
                     {entry.content && (
                       <motion.div
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 flex-shrink-0"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.1 }}
@@ -894,45 +901,15 @@ function TaskListComponent({ title, tasks, onSave, onDelete, onUpdate }: TaskLis
                           </div>
                         )}
                         
-                        {/* Calendar export button */}
-                        {tasks[index]?.id && entry.content && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              
-                              // Get the task directly from the tasks array by index
-                              const taskToExport = tasks[index];
-                              if (taskToExport) {
-                                // Track calendar export event
-                                trackEvent(
-                                  title === "Today's Tasks" ? Events.TaskToday.Exported : Events.TaskOther.Exported, 
-                                  {
-                                    taskId: taskToExport.id,
-                                    content: taskToExport.content,
-                                    category: title === "Today's Tasks" ? "today" : "other"
-                                  }
-                                );
-                                
-                                showCalendarExportPopup(taskToExport);
-                              }
-                            }}
-                          >
-                            <Calendar className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                        
-                        {/* Delete button */}
-                        {tasks[index]?.id && (
+                        {/* Delete button - Making it display consistently for any task with content */}
+                        {entry.content && (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity active-scale"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(tasks[index].id, index);
+                              handleDelete(tasks[index]?.id || 0, index);
                             }}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
