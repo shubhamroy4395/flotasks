@@ -358,19 +358,20 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
     return mode === 'focus' ? 'rgb(59, 130, 246)' : 'rgb(16, 185, 129)';
   };
 
-  // Handle close button click only, prevent outside clicks from closing
+  // Handle close button click
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
+  // Modified to prevent accidental closing
   const handleOpenChange = (open: boolean) => {
-    // Only allow closing through the explicit close button
-    if (!open) {
-      // Do nothing - don't allow automatic closing
+    // Allow closing when explicitly called by the close button
+    // But prevent closing from outside clicks or escape key
+    if (open === false) {
+      // We'll handle this in onInteractOutside and onEscapeKeyDown
       return;
     }
     onOpenChange(open);
-  };
-
-  // This function will be called when the user deliberately clicks the close button
-  const handleClose = () => {
-    onOpenChange(false);
   };
 
   // Select a lofi song
@@ -429,39 +430,37 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
           )}
           onInteractOutside={(e) => {
             // Prevent closing on outside clicks
-            e.preventDefault(); 
+            e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
             // Prevent closing with Escape key
             e.preventDefault();
           }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Focus className={cn(
-                "h-5 w-5",
-                isRunning && mode === 'focus' && "text-primary animate-pulse"
-              )} />
-              <span className={cn(
-                "text-xl font-semibold",
-                isRunning && mode === 'focus' && "text-primary"
-              )}>
-                {isRunning && mode === 'focus' ? "LASER FOCUS" : "Focus Mode"}
-              </span>
-              <Badge variant="outline" className="ml-2">
-                Session {currentSession}/{focusStrategy.totalSessions}
-              </Badge>
-            </div>
-            
-            {/* Single close button in the header */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none"
+            onClick={handleClose}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Button>
+          
+          <div className="flex items-center gap-2 mb-2">
+            <Focus className={cn(
+              "h-5 w-5",
+              isRunning && mode === 'focus' && "text-primary animate-pulse"
+            )} />
+            <span className={cn(
+              "text-xl font-semibold",
+              isRunning && mode === 'focus' && "text-primary"
+            )}>
+              {isRunning && mode === 'focus' ? "LASER FOCUS" : "Focus Mode"}
+            </span>
+            <Badge variant="outline" className="ml-2">
+              Session {currentSession}/{focusStrategy.totalSessions}
+            </Badge>
           </div>
           
           <p className="text-sm text-muted-foreground mb-4">
