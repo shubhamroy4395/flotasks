@@ -30,7 +30,24 @@ export default defineConfig({
   },
   root: path.resolve(__dirname, "client"),
   build: {
-    outDir: path.resolve(__dirname, "dist/public"),
+    outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      external: [
+        // Add any problematic dependencies here that are causing Netlify build issues
+        'ws',
+        'bufferutil',
+        'utf-8-validate'
+      ],
+    },
+  },
+  server: {
+    port: 3000, // Use a different port from your API server
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      }
+    }
   },
 });
