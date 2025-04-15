@@ -9,7 +9,8 @@ import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
 import { NotesSection } from "@/components/notes-section";
-import { DailySummary } from "@/components/daily-summary";
+// Temporarily commenting out DailySummary due to progress card issues in production
+// import { DailySummary } from "@/components/daily-summary";
 import { EnhancedThemeToggle } from "@/components/enhanced-theme-toggle";
 
 
@@ -125,6 +126,8 @@ export default function Home() {
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Daily Summary - Top Full Width Card Row */}
+        {/* Temporarily commenting out DailySummary due to progress card issues in production */}
+        {/*
         <div className="mb-6">
           <DailySummary 
             todayTasks={todayTasks || []} 
@@ -132,6 +135,7 @@ export default function Home() {
             goals={goals || []}
           />
         </div>
+        */}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column - Today's Tasks (wider) */}
