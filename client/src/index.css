@@ -49,7 +49,7 @@
   /* Dark theme - Enhanced for accessibility and contrast */
   .theme-dark {
     --background: 230 30% 7%;    /* Deeper background #121212 */
-    --foreground: 0 0% 97%;      /* Almost white for text #F7F7F7 */
+    --foreground: 0 0% 97%;      /* Almost white text #F7F7F7 */
 
     --card: 225 15% 12%;         /* Much darker grey card background #181819 */
     --card-foreground: 0 0% 98%; /* Almost white card text #FAFAFA */
@@ -88,7 +88,7 @@
     --popover: 150 30% 88%;
     --popover-foreground: 150 40% 20%;
     
-    --primary: 150 60% 40%;
+    --primary: 142 71% 45%;      /* More vibrant green #1A9B5F */
     --primary-foreground: 0 0% 100%;
     
     --secondary: 150 30% 80%;
@@ -97,15 +97,15 @@
     --muted: 150 20% 85%; 
     --muted-foreground: 150 30% 40%;
     
-    --accent: 150 50% 55%;
+    --accent: 142 71% 45%;       /* Match primary */
     --accent-foreground: 150 40% 20%;
     
-    --destructive: 0 70% 50%;
+    --destructive: 0 84% 60%;    /* Brighter red */
     --destructive-foreground: 210 50% 98%;
     
     --border: 150 30% 75%;
     --input: 150 30% 75%;
-    --ring: 150 60% 40%;
+    --ring: 142 71% 45%;         /* Match primary */
   }
 
   /* Winter theme - Darker grays with bolder blue accents */
@@ -119,7 +119,7 @@
     --popover: 215 20% 16%;      /* Match card background */
     --popover-foreground: 210 40% 98%; /* Match card text */
     
-    --primary: 195 90% 50%;      /* Bright blue for better visibility */
+    --primary: 195 97% 50%;      /* Bright ice blue #00B7FF */
     --primary-foreground: 210 40% 98%;
     
     --secondary: 217 25% 20%;    /* Darker secondary background */
@@ -128,15 +128,15 @@
     --muted: 217 20% 25%;
     --muted-foreground: 215 30% 75%; /* Lighter muted text for readability */
     
-    --accent: 195 90% 50%;
+    --accent: 195 97% 50%;       /* Match primary */
     --accent-foreground: 210 40% 98%;
     
-    --destructive: 0 70% 50%;
+    --destructive: 0 84% 60%;    /* Brighter red */
     --destructive-foreground: 210 40% 98%;
     
     --border: 215 30% 25%;
     --input: 215 30% 25%;
-    --ring: 195 90% 50%;
+    --ring: 195 97% 50%;         /* Match primary */
   }
   
   /* Retro Windows 98 Theme */
@@ -312,23 +312,60 @@
   
   /* Progress bar color matching for cards */
   /* Blue card progress bar */
-  .from-blue-500.to-blue-600 [role="progressbar"] > div > div {
-    background: #3b82f6 !important; /* Tailwind blue-500 */
+  .from-blue-500.to-blue-600 [role="progressbar"] > div > div,
+  div.from-blue-500.to-blue-600 [role="progressbar"] > div > div,
+  .progress-card-blue [role="progressbar"] > div > div,
+  div.progress-card-blue [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
   }
   
   /* Green card progress bar */
-  .from-emerald-500.to-emerald-600 [role="progressbar"] > div > div {
-    background: #10b981 !important; /* Tailwind emerald-500 */
+  .from-emerald-500.to-emerald-600 [role="progressbar"] > div > div,
+  div.from-emerald-500.to-emerald-600 [role="progressbar"] > div > div,
+  .progress-card-green [role="progressbar"] > div > div,
+  div.progress-card-green [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #10b981, #059669) !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
   }
   
   /* Purple card progress bar */
-  .from-purple-500.to-purple-600 [role="progressbar"] > div > div {
-    background: #8b5cf6 !important; /* Tailwind purple-500 */
+  .from-purple-500.to-purple-600 [role="progressbar"] > div > div,
+  div.from-purple-500.to-purple-600 [role="progressbar"] > div > div,
+  .progress-card-purple [role="progressbar"] > div > div,
+  div.progress-card-purple [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3) !important;
   }
   
   /* Amber card progress bar */
-  .from-amber-500.to-amber-600 [role="progressbar"] > div > div {
-    background: #f59e0b !important; /* Tailwind amber-500 */
+  .from-amber-500.to-amber-600 [role="progressbar"] > div > div,
+  div.from-amber-500.to-amber-600 [role="progressbar"] > div > div,
+  .progress-card-amber [role="progressbar"] > div > div,
+  div.progress-card-amber [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+  }
+
+  /* Add these as a fallback mechanism for progress cards */
+  [class*="progress-card-blue"] [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+  }
+
+  [class*="progress-card-green"] [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #10b981, #059669) !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+  }
+
+  [class*="progress-card-purple"] [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3) !important;
+  }
+
+  [class*="progress-card-amber"] [role="progressbar"] > div > div {
+    background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
   }
 
   /* Dark Mode and Winter Theme Enhanced Utilities */

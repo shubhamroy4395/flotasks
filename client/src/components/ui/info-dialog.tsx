@@ -36,8 +36,19 @@ export function InfoDialog() {
   const getReleaseNotes = () => {
     return [
       {
+        version: "1.3.1",
+        date: "March, 2024",
+        changes: [
+          "Enhanced Study With Me feature with YouTube mini player integration",
+          "Fixed font loading issues in production",
+          "Removed duplicate close buttons for better UX",
+          "Improved music playback controls",
+          "Added song title display in focus mode"
+        ]
+      },
+      {
         version: "1.3.0",
-        date: "March, 2025",
+        date: "March, 2024",
         changes: [
           "Added theme toggle with 5 themes (Default, Dark, Spring, Winter, Retro Windows 98)",
           "Added performance optimizations for all components",
