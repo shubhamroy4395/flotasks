@@ -207,6 +207,21 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
     }
   }, [isMuted, volume]);
 
+  // Update YouTube player reference when ready
+  useEffect(() => {
+    if (isPlayerReady && youtubePlayerRef.current) {
+      const player = new (window as any).YT.Player(youtubePlayerRef.current, {
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: (event: any) => {
+            // Handle player state changes if needed
+          }
+        }
+      });
+      playerInstanceRef.current = player;
+    }
+  }, [isPlayerReady, selectedSong]);
+
   const calculateFocusStrategy = (hours: number) => {
     const totalMinutes = hours * 60;
     const focusMinutes = 25;
@@ -382,30 +397,43 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
   // Handle volume change
   const handleVolumeChange = (newVolume: number) => {
     setVolume(newVolume);
-    if (playerInstanceRef.current && !isMuted) {
+    if (playerInstanceRef.current) {
       playerInstanceRef.current.setVolume(newVolume);
+      if (isMuted) {
+        playerInstanceRef.current.unMute();
+        setIsMuted(false);
+      }
     }
   };
   
   // Toggle mute
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    if (playerInstanceRef.current) {
+      if (isMuted) {
+        playerInstanceRef.current.unMute();
+      } else {
+        playerInstanceRef.current.mute();
+      }
+      setIsMuted(!isMuted);
+    }
   };
 
   // Handle when YouTube iframe is ready
   const onPlayerReady = (event: any) => {
-    playerInstanceRef.current = event.target;
-    // Initialize volume
-    event.target.setVolume(volume);
+    const player = event.target;
+    playerInstanceRef.current = player;
+    player.setVolume(volume);
     if (isMuted) {
-      event.target.mute();
+      player.mute();
+    } else {
+      player.unMute();
     }
   };
 
   // Prepare YouTube iframe when a song is selected
   const getYouTubeEmbedUrl = (song: LofiSong) => {
-    const videoId = song.embedUrl.split('/').pop();
-    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&controls=1&loop=1&playlist=${videoId}&modestbranding=1&rel=0`;
+    // Add enablejsapi=1 to allow JavaScript API control
+    return `${song.embedUrl}?enablejsapi=1&autoplay=1&controls=0`;
   };
 
   return (
@@ -506,38 +534,47 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                     {mode === 'focus' ? (isRunning ? 'DEEP FOCUS' : 'Focus Session') : 'Break Time'}
                   </span>
                   
-                  {/* Vibes dropdown menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex items-center gap-1 h-7">
-                        <Music className="h-3.5 w-3.5" />
-                        <span className="text-xs">{selectedSong ? 'Change Vibes' : 'Add Vibes'}</span>
-                        <ChevronDown className="h-3.5 w-3.5 ml-1" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[200px]">
-                      {LOFI_SONGS.map(song => (
-                        <DropdownMenuItem 
-                          key={song.id}
-                          onClick={() => selectLofiSong(song)}
-                          className={cn(
-                            "flex items-center gap-2 cursor-pointer py-2",
-                            selectedSong?.id === song.id && "bg-primary/10"
-                          )}
+                  {/* Music Selection Dropdown */}
+                  <div className="flex items-center gap-4 w-full max-w-sm">
+                    <Select
+                      value={selectedSong?.id || ""}
+                      onValueChange={(value) => {
+                        const song = LOFI_SONGS.find(s => s.id === value);
+                        if (song) selectLofiSong(song);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select music" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LOFI_SONGS.map((song) => (
+                          <SelectItem key={song.id} value={song.id}>
+                            {song.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {selectedSong && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={toggleMute}
+                          className="h-8 w-8"
                         >
-                          <img 
-                            src={song.thumbnailUrl} 
-                            alt={song.title}
-                            className="w-8 h-8 object-cover rounded-sm"
-                          />
-                          <span className="text-sm truncate">{song.title}</span>
-                          {selectedSong?.id === song.id && (
-                            <span className="ml-auto w-2 h-2 rounded-full bg-primary"></span>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                          <Music className={cn("h-4 w-4", isMuted && "text-muted-foreground")} />
+                        </Button>
+                        <Slider
+                          value={[volume]}
+                          max={100}
+                          step={1}
+                          className="w-24"
+                          onValueChange={(value) => handleVolumeChange(value[0])}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Session roadmap */}
@@ -600,80 +637,6 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                     <SkipForward />
                   </Button>
                 </div>
-                
-                {/* YouTube video player embedded directly in timer tab */}
-                {selectedSong && (
-                  <div className="mt-4 pt-4 border-t border-dashed">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="animate-pulse h-2 w-2 bg-primary rounded-full"></div>
-                        <span className="text-sm font-medium">Now Playing: {selectedSong.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={toggleMute}
-                        >
-                          {isMuted ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path></svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                          )}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="h-6 text-xs"
-                          onClick={() => setSelectedSong(null)}
-                        >
-                          Stop
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Enlarged YouTube player with iframe API */}
-                    <div className="rounded-md overflow-hidden aspect-video h-48 mb-3">
-                      <iframe 
-                        id="youtube-player"
-                        width="100%" 
-                        height="100%" 
-                        src={getYouTubeEmbedUrl(selectedSong)}
-                        title={selectedSong.title}
-                        frameBorder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowFullScreen
-                        onLoad={() => {
-                          if (window.YT && isPlayerReady) {
-                            new window.YT.Player("youtube-player", {
-                              events: {
-                                onReady: onPlayerReady,
-                              },
-                            });
-                          }
-                        }}
-                      ></iframe>
-                    </div>
-                    
-                    {/* Volume control */}
-                    <div className="space-y-2 mb-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm">Volume</span>
-                        <span className="text-sm">{volume}%</span>
-                      </div>
-                      <Slider
-                        value={[volume]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onValueChange={(values) => handleVolumeChange(values[0])}
-                        disabled={isMuted}
-                        className={isMuted ? "opacity-50" : ""}
-                      />
-                    </div>
-                  </div>
-                )}
               </Card>
             </TabsContent>
             

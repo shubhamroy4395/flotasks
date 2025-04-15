@@ -1,7 +1,6 @@
 [build]
-  command = "npm run netlify:build"
+  command = "bash netlify.sh"
   publish = "dist"
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ./client/"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -13,7 +12,7 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/index"
   status = 200
 
 [[redirects]]
