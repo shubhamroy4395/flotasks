@@ -33,7 +33,17 @@ export default defineConfig({
     outDir: path.join(__dirname, "dist"),
     emptyOutDir: true,
     copyPublicDir: true,
+    cssCodeSplit: false,
+    cssMinify: true,
     rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name.endsWith('.css')) {
+            return 'assets/styles.[hash].css';
+          }
+          return 'assets/[name].[hash].[ext]';
+        },
+      },
       external: [
         // Add any problematic dependencies here that are causing Netlify build issues
         'ws',
