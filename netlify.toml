@@ -1,6 +1,6 @@
 [build]
   command = "bash netlify.sh"
-  publish = "dist"
+  publish = "client/dist"
 
 [build.environment]
   NODE_VERSION = "18"

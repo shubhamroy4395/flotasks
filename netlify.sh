@@ -6,22 +6,24 @@ echo "Current directory: $(pwd)"
 echo "Node version: $(node -v)"
 echo "NPM version: $(npm -v)"
 
-# Clean up any existing dist
-echo "Cleaning up existing dist directory..."
-rm -rf dist
-mkdir -p dist
+# Clean up any existing dist directories
+echo "Cleaning up existing dist directories..."
+rm -rf dist client/dist
 
-# Install dependencies
-echo "Installing dependencies..."
+# Install root dependencies
+echo "Installing root dependencies..."
 npm install
 
-# Build the client
+# Install client dependencies and build
 echo "Building client..."
-npm run build:clean
+cd client
+npm install
+npm run build
+cd ..
 
-# Check if dist directory exists and has content
-echo "Checking dist directory content..."
-ls -la dist
+# Check if client/dist directory exists and has content
+echo "Checking client/dist directory content..."
+ls -la client/dist
 
 # Create functions directory if it doesn't exist
 echo "Setting up functions directory..."
