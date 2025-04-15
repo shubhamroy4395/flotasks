@@ -697,28 +697,49 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                     {/* Music Selection Dropdown */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1">
+                        <Button variant="ghost" size="sm" className={cn(
+                          "h-8 gap-1 transition-all", 
+                          selectedSong && "bg-primary/10 text-primary hover:bg-primary/20"
+                        )}>
                           <Music className="h-4 w-4" />
-                          <span className="text-xs">Music</span>
+                          <span className="text-xs">{selectedSong ? "Now Playing" : "Music"}</span>
                           <ChevronDown className="h-3 w-3 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent align="end" className="w-56">
+                        <div className="py-2 px-3 text-xs font-medium text-muted-foreground border-b">
+                          Select Lofi Music
+                        </div>
                         {LOFI_SONGS.map((song) => (
                           <DropdownMenuItem 
                             key={song.id}
                             onClick={() => selectLofiSong(song)}
                             className={cn(
-                              "flex items-center gap-2 cursor-pointer",
-                              selectedSong?.id === song.id && "bg-primary/10"
+                              "flex items-center gap-2 cursor-pointer py-2",
+                              selectedSong?.id === song.id && "bg-primary/10 text-primary"
                             )}
                           >
-                            <img 
-                              src={song.thumbnailUrl} 
-                              alt={song.title} 
-                              className="w-6 h-6 object-cover rounded"
-                            />
-                            <span className="text-xs">{song.title}</span>
+                            <div className="relative flex-shrink-0">
+                              <img 
+                                src={song.thumbnailUrl} 
+                                alt={song.title} 
+                                className="w-8 h-8 object-cover rounded-sm"
+                              />
+                              {selectedSong?.id === song.id && (
+                                <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
+                                  <div className="w-2 h-2 rounded-full bg-white" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium">{song.title}</span>
+                              <span className="text-[10px] text-muted-foreground">Lofi Music</span>
+                            </div>
+                            {selectedSong?.id === song.id && (
+                              <div className="ml-auto">
+                                <Volume2 className="h-3 w-3 text-primary" />
+                              </div>
+                            )}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
@@ -748,7 +769,10 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                   
                   {/* Timer display with toggle between circle and pie view */}
                   <div className="flex flex-col items-center justify-center mb-4">
-                    <div className="relative w-36 h-36 mb-1">
+                    <div className={cn(
+                      "relative w-36 h-36 mb-1",
+                      isRunning && mode === 'focus' && "shadow-glow animate-pulse-subtle"
+                    )}>
                       {timerView === 'circle' ? (
                         <>
                           {/* Focus/Break Timer Circle */}
@@ -782,6 +806,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                                       r={2.5}
                                       fill={isActive ? "var(--primary)" : "var(--muted)"}
                                       opacity={isActive ? 1 : 0.5}
+                                      className={isActive && idx === currentIdx ? "animate-pulse" : ""}
                                     />
                                     {focusStrategy.totalSessions <= 8 && (
                                       <text
@@ -818,7 +843,7 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className={cn(
                           "text-4xl font-semibold transition-all duration-300",
-                          isRunning && mode === 'focus' && "text-primary tracking-tighter"
+                          isRunning && mode === 'focus' && "text-primary tracking-tighter drop-shadow-glow"
                         )}>
                           {formatTime(timeLeft)}
                         </span>
@@ -837,22 +862,40 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                   </div>
                   
                   {/* Control buttons */}
-                  <div className="flex justify-center gap-4">
+                  <div className="flex justify-center gap-4 mt-4">
                     <Button
                       variant={isRunning ? "secondary" : "default"}
                       size="icon"
                       onClick={isRunning ? pauseTimer : startTimer}
-                      className={isRunning && mode === 'focus' ? "ring-1 ring-primary" : ""}
+                      className={cn(
+                        "h-10 w-10 transition-all",
+                        isRunning && mode === 'focus' ? "ring-2 ring-primary shadow-glow" : "",
+                        !isRunning && "bg-primary hover:bg-primary/90"
+                      )}
                     >
-                      {isRunning ? <Pause /> : <Play />}
+                      {isRunning ? (
+                        <Pause className="h-5 w-5" />
+                      ) : (
+                        <Play className="h-5 w-5 ml-0.5" />
+                      )}
                     </Button>
                     
-                    <Button variant="outline" size="icon" onClick={resetTimer}>
-                      <RotateCcw />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={resetTimer}
+                      className="h-10 w-10 border-2 hover:bg-background hover:text-primary"
+                    >
+                      <RotateCcw className="h-4 w-4" />
                     </Button>
                     
-                    <Button variant="outline" size="icon" onClick={skipToNextSession}>
-                      <SkipForward />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={skipToNextSession}
+                      className="h-10 w-10 border-2 hover:bg-background hover:text-primary"
+                    >
+                      <SkipForward className="h-4 w-4" />
                     </Button>
                   </div>
                 </Card>
@@ -879,10 +922,13 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                     
                     <div className="flex items-center gap-2">
                       <Button
-                        variant="ghost"
+                        variant={isMuted ? "secondary" : "ghost"}
                         size="icon"
                         onClick={toggleMute}
-                        className="h-8 w-8"
+                        className={cn(
+                          "h-8 w-8 transition-all",
+                          !isMuted && "hover:text-primary"
+                        )}
                       >
                         {isMuted ? (
                           <VolumeX className="h-4 w-4" />
@@ -891,17 +937,33 @@ export function StudyWithMe({ open, onOpenChange }: StudyWithMeProps) {
                         )}
                       </Button>
                       
-                      <Slider
-                        value={[volume]}
-                        max={100}
-                        step={1}
-                        className="w-32"
-                        onValueChange={(values) => handleVolumeChange(values[0])}
-                        disabled={isMuted}
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {isMuted ? "Muted" : `${volume}%`}
-                      </span>
+                      <div className="relative w-32 h-5">
+                        <Slider
+                          value={[volume]}
+                          max={100}
+                          step={1}
+                          className={cn(
+                            "w-32",
+                            isMuted && "opacity-50"
+                          )}
+                          onValueChange={(values) => handleVolumeChange(values[0])}
+                          disabled={isMuted}
+                        />
+                        <div 
+                          className="absolute -bottom-4 left-0 right-0 flex justify-between px-1"
+                        >
+                          <span className="text-[10px] text-muted-foreground">0%</span>
+                          <span className="text-[10px] text-muted-foreground">100%</span>
+                        </div>
+                      </div>
+                      <div className="w-10 text-right">
+                        <span className={cn(
+                          "text-xs",
+                          isMuted ? "text-muted-foreground" : "text-foreground font-medium"
+                        )}>
+                          {isMuted ? "Muted" : `${volume}%`}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}

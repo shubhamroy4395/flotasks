@@ -836,7 +836,7 @@
   }
 
   .shadow-glow {
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.7);
+    box-shadow: 0 0 15px 2px var(--primary);
   }
 
   @keyframes pulse-subtle {
@@ -844,12 +844,12 @@
       opacity: 1;
     }
     50% {
-      opacity: 0.85;
+      opacity: 0.8;
     }
   }
 
   .animate-pulse-subtle {
-    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   /* Force all progress bars to display properly in production */
