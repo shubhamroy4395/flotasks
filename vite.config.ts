@@ -30,8 +30,9 @@ export default defineConfig({
   },
   root: path.resolve(__dirname, "client"),
   build: {
-    outDir: path.resolve(__dirname, "dist"),
+    outDir: path.join(__dirname, "dist"),
     emptyOutDir: true,
+    copyPublicDir: true,
     rollupOptions: {
       external: [
         // Add any problematic dependencies here that are causing Netlify build issues
