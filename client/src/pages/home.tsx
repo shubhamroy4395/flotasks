@@ -115,7 +115,7 @@ export default function Home() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <h1 className="text-4xl font-bold tracking-tight text-primary font-tangerine hover:text-accent-foreground transition-all duration-300 hover:scale-105">
+            <h1 className="text-4xl font-bold tracking-tight text-primary font-tangerine hover:text-accent-foreground transition-all duration-300 hover:scale-105 flo-logo">
               Flo Tasks
             </h1>
             <EnhancedThemeToggle />

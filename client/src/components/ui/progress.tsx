@@ -14,14 +14,18 @@ const Progress = React.forwardRef<
       className
     )}
     {...props}
+    aria-valuenow={value || 0}
   >
-    <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary transition-all progress-bar-indicator"
-      style={{ 
-        transform: `translateX(-${100 - (value || 0)}%)`,
-        width: `${value || 0}%`,
-      }}
-    />
+    <div className="w-full h-full overflow-hidden rounded-full progress-bar-container">
+      <ProgressPrimitive.Indicator
+        className="h-full w-full flex-1 bg-primary transition-all progress-bar-indicator"
+        style={{ 
+          transform: `translateX(-${100 - (value || 0)}%)`,
+          width: `${value || 0}%`,
+        }}
+        data-value={value || 0}
+      />
+    </div>
   </ProgressPrimitive.Root>
 ))
 Progress.displayName = ProgressPrimitive.Root.displayName

@@ -31,6 +31,197 @@
       window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
       window.amplitude.init('ad21a3a1e9ba786379ac4ae8a6fdb010', {"autocapture":{"elementInteractions":true}});
     </script>
+    <!-- Fix for progress bars on Vercel and Netlify -->
+    <style>
+      /* Force progress bar styling to be properly applied */
+      [role="progressbar"],
+      div[role="progressbar"],
+      .progress,
+      .progress-bar {
+        display: block !important;
+        position: relative !important;
+        overflow: hidden !important;
+        height: 100% !important;
+        width: 100% !important;
+        border-radius: 9999px !important;
+        background-color: hsl(var(--muted, 210 40% 96.1%)) !important;
+      }
+
+      [role="progressbar"] > div,
+      div[role="progressbar"] > div,
+      .progress-bar-container {
+        height: 100% !important;
+        width: 100% !important;
+        position: relative !important;
+        overflow: hidden !important;
+        border-radius: 9999px !important;
+      }
+
+      [role="progressbar"] > div > div,
+      div[role="progressbar"] > div > div,
+      .progress-bar-indicator {
+        position: absolute !important;
+        height: 100% !important;
+        left: 0 !important;
+        top: 0 !important;
+        transition: width 0.3s ease !important;
+        border-radius: 9999px !important;
+        transform: none !important; /* Override any transform */
+      }
+
+      /* Ensure logo displays correctly */
+      .flo-logo {
+        display: block !important;
+        max-width: 100% !important;
+        height: auto !important;
+      }
+
+      /* Progress card styling - enhanced specificity */
+      .progress-card-blue [role="progressbar"] > div > div,
+      .progress-card-blue div[role="progressbar"] > div > div,
+      .progress-card-blue .progress-bar-indicator {
+        background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+      }
+
+      .progress-card-green [role="progressbar"] > div > div,
+      .progress-card-green div[role="progressbar"] > div > div,
+      .progress-card-green .progress-bar-indicator {
+        background: linear-gradient(90deg, #10b981, #059669) !important;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+      }
+
+      .progress-card-purple [role="progressbar"] > div > div,
+      .progress-card-purple div[role="progressbar"] > div > div,
+      .progress-card-purple .progress-bar-indicator {
+        background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.3) !important;
+      }
+
+      .progress-card-amber [role="progressbar"] > div > div,
+      .progress-card-amber div[role="progressbar"] > div > div,
+      .progress-card-amber .progress-bar-indicator {
+        background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+      }
+    </style>
+    <script>
+      // Fix progress bars after the DOM has loaded
+      document.addEventListener('DOMContentLoaded', function() {
+        // Function to apply inline styles to progress bars
+        function fixProgressBars() {
+          // Apply styles to all progress indicators
+          const progressBars = document.querySelectorAll('[role="progressbar"] > div > div, .progress-bar-indicator');
+          progressBars.forEach(bar => {
+            // Set basic styles
+            bar.style.position = 'absolute';
+            bar.style.height = '100%';
+            bar.style.left = '0';
+            bar.style.top = '0';
+            bar.style.borderRadius = '9999px';
+            bar.style.transform = 'none'; // Override transforms that might interfere
+            
+            // Get the value from the aria-valuenow attribute or data-value attribute
+            let value = 0;
+            const progressRoot = bar.closest('[role="progressbar"]');
+            if (progressRoot && progressRoot.getAttribute('aria-valuenow')) {
+              value = parseFloat(progressRoot.getAttribute('aria-valuenow'));
+            } else if (bar.getAttribute('data-value')) {
+              value = parseFloat(bar.getAttribute('data-value'));
+            }
+            
+            // Directly set the width based on the value
+            if (!isNaN(value)) {
+              bar.style.width = `${value}%`;
+            }
+            
+            // Find parent with progress-card-* class to apply color
+            let parent = bar.parentElement;
+            while (parent && !Array.from(parent.classList).some(c => c.includes('progress-card-'))) {
+              parent = parent.parentElement;
+            }
+            
+            if (parent) {
+              // Apply specific gradient based on card type
+              const classes = Array.from(parent.classList);
+              if (classes.some(c => c.includes('progress-card-blue'))) {
+                bar.style.background = 'linear-gradient(90deg, #3b82f6, #2563eb)';
+                bar.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.3)';
+              } else if (classes.some(c => c.includes('progress-card-green'))) {
+                bar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                bar.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.3)';
+              } else if (classes.some(c => c.includes('progress-card-purple'))) {
+                bar.style.background = 'linear-gradient(90deg, #8b5cf6, #7c3aed)';
+                bar.style.boxShadow = '0 0 10px rgba(139, 92, 246, 0.3)';
+              } else if (classes.some(c => c.includes('progress-card-amber'))) {
+                bar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+                bar.style.boxShadow = '0 0 10px rgba(245, 158, 11, 0.3)';
+              }
+            }
+          });
+        }
+        
+        // Run immediately and again after a short delay to catch dynamically loaded components
+        fixProgressBars();
+        setTimeout(fixProgressBars, 500);
+        setTimeout(fixProgressBars, 1000);
+        
+        // Add click event listener for task/goal checkboxes
+        document.addEventListener('click', function(e) {
+          // Check if clicked element might be a task checkbox or completion toggle
+          if (e.target && 
+             (e.target.type === 'checkbox' || 
+              e.target.closest('[role="checkbox"]') ||
+              e.target.closest('.task-item') ||
+              e.target.closest('.goal-item'))) {
+            // Wait for state updates to propagate
+            setTimeout(fixProgressBars, 50);
+            setTimeout(fixProgressBars, 200);
+          }
+        });
+        
+        // Set up MutationObserver to watch for DOM changes
+        const observer = new MutationObserver(function(mutations) {
+          let shouldFix = false;
+          
+          mutations.forEach(function(mutation) {
+            // If attributes changed on progress elements
+            if (mutation.type === 'attributes' && 
+                mutation.target.hasAttribute('role') && 
+                mutation.target.getAttribute('role') === 'progressbar') {
+              shouldFix = true;
+            }
+            
+            // If DOM changed and might include progress elements
+            if (mutation.type === 'childList') {
+              Array.from(mutation.addedNodes).forEach(function(node) {
+                if (node.nodeType === 1 && 
+                   (node.querySelector('[role="progressbar"]') || 
+                    (node.hasAttribute && node.hasAttribute('role') && 
+                     node.getAttribute('role') === 'progressbar'))) {
+                  shouldFix = true;
+                }
+              });
+            }
+          });
+          
+          if (shouldFix) {
+            fixProgressBars();
+          }
+        });
+        
+        // Start observing the document for DOM changes
+        observer.observe(document.body, { 
+          childList: true, 
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['aria-valuenow', 'style', 'data-value']
+        });
+        
+        // Make fixProgressBars available globally
+        window.fixProgressBars = fixProgressBars;
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

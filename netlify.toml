@@ -20,6 +20,16 @@
   to = "/index.html"
   status = 200
 
+[[headers]]
+  for = "/assets/*.css"
+  [headers.values]
+    Content-Type = "text/css"
+
+[[headers]]
+  for = "/assets/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+
 [dev]
   command = "npm run dev"
   port = 3000

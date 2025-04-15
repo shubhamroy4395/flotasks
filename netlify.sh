@@ -30,16 +30,16 @@ echo "Copying build output to dist directory..."
 mkdir -p dist
 cp -r client/dist/* dist/
 
-# Create _redirects file for Netlify
+# Create _redirects file for Netlify SPA handling
 echo "Creating _redirects file for Netlify..."
-cat > dist/_redirects << 'EOL'
-/api/*  /.netlify/functions/index  200
-/*      /index.html                200
-EOL
+if [ ! -f "dist/_redirects" ]; then
+  echo "/* /index.html 200" > dist/_redirects
+  echo "✅ Created _redirects file"
+fi
 
 # Add a special CSS fix directly to dist
 echo "Adding CSS fix for progress bars..."
-cat >> dist/assets/index*.css << 'EOL'
+cat >> dist/assets/styles*.css << 'EOL'
 /* Progress bar fixes for Netlify */
 [role="progressbar"] > div > div {
   background: var(--theme-progress-foreground, hsl(var(--primary))) !important;
@@ -61,6 +61,13 @@ cat >> dist/assets/index*.css << 'EOL'
 .progress-card-amber [role="progressbar"] > div > div {
   background: linear-gradient(90deg, #f59e0b, #d97706) !important;
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Fix for the logo */
+.flo-logo {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
 }
 EOL
 
@@ -114,6 +121,7 @@ fi
 
 echo "Final dist directory content:"
 ls -la dist/
+ls -la dist/assets/
 
 echo "Build process completed!"
 exit 0 
