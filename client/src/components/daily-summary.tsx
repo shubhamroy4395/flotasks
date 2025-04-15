@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Task } from "@shared/schema";
 import { motion } from "framer-motion";
 import { List, Target, Clock, BarChart3, Info, ArrowLeft } from "lucide-react";
+import { fixProgressBars, setupProgressBarObserver } from "./daily-summary/fix";
 
 interface DailySummaryProps {
   todayTasks: Task[];
@@ -124,8 +125,8 @@ function ProgressCard({
                 value={percentage} 
                 className={
                   theme === 'retro'
-                    ? "h-3 mt-1"
-                    : `h-1.5 ${color.bgAccent}`
+                    ? "h-3 mt-1 progress-bar-element"
+                    : `h-1.5 ${color.bgAccent} progress-bar-element`
                 } 
                 style={{
                   // Ensure consistent background color based on theme
@@ -309,6 +310,79 @@ export function DailySummary({ todayTasks, otherTasks, goals }: DailySummaryProp
       description: "This card shows your combined progress across all activities. It aggregates your tasks and goals to give you an overall completion percentage for the day."
     }
   ];
+
+  // Enhanced fix for progress bars - this is the main improvement
+  const updateProgressBars = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      // First reset and fix all progress bars
+      fixProgressBars();
+      
+      // Get all progress elements
+      const progressElements = document.querySelectorAll('[role="progressbar"]');
+      
+      // Update each progress element with the correct value
+      progressElements.forEach(el => {
+        // Get the progress root parent - going up to find the card type
+        let parent = el;
+        let cardType = '';
+        
+        while (parent && !cardType) {
+          const classes = Array.from(parent.classList || []);
+          if (classes.some(c => c.includes('progress-card-blue'))) cardType = 'tasks';
+          if (classes.some(c => c.includes('progress-card-green'))) cardType = 'goals';
+          if (classes.some(c => c.includes('progress-card-purple'))) cardType = 'priority';
+          if (classes.some(c => c.includes('progress-card-amber'))) cardType = 'overall';
+          parent = parent.parentElement;
+          if (!parent) break;
+        }
+        
+        // Set the value based on card type
+        let percentage = 0;
+        if (cardType === 'tasks') percentage = taskCompletionPercentage;
+        else if (cardType === 'goals') percentage = goalCompletionPercentage;
+        else if (cardType === 'priority') percentage = highPriorityPercentage;
+        else if (cardType === 'overall') percentage = totalCompletionPercentage;
+        
+        // Update the aria-valuenow attribute
+        el.setAttribute('aria-valuenow', percentage.toString());
+        
+        // Also directly update the progress bar indicator width
+        const indicator = el.querySelector('[class*="progress-bar-indicator"], div > div');
+        if (indicator) {
+          indicator.setAttribute('style', `width: ${percentage}% !important; transform: none !important; transition: width 0.3s ease !important;`);
+        }
+      });
+    }
+  }, [taskCompletionPercentage, goalCompletionPercentage, highPriorityPercentage, totalCompletionPercentage]);
+
+  // Fix progress bars on mount and component updates
+  useEffect(() => {
+    // Fix progress bars when component mounts or data changes
+    fixProgressBars();
+    
+    // Apply our enhanced update method
+    updateProgressBars();
+    
+    // Setup observer to watch for DOM changes
+    const observer = setupProgressBarObserver();
+    
+    // Cleanup observer on unmount
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [todayTasks, otherTasks, goals, updateProgressBars]);
+  
+  // Add effect to run when tasks or goals change values
+  useEffect(() => {
+    // Set a timer to update progress bars after state changes propagate
+    const timer = setTimeout(() => {
+      updateProgressBars();
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [todayTasks, otherTasks, goals, updateProgressBars]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

@@ -9,7 +9,8 @@ import { format } from "date-fns";
 import type { Task } from "@shared/schema";
 import { GoalsSection } from "@/components/goals-section";
 import { NotesSection } from "@/components/notes-section";
-import { DailySummary } from "@/components/daily-summary";
+// Temporarily commenting out DailySummary due to progress card issues in production
+// import { DailySummary } from "@/components/daily-summary";
 import { EnhancedThemeToggle } from "@/components/enhanced-theme-toggle";
 
 
@@ -115,7 +116,7 @@ export default function Home() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <h1 className="text-4xl font-bold tracking-tight text-primary font-tangerine hover:text-accent-foreground transition-all duration-300 hover:scale-105">
+            <h1 className="text-4xl font-bold tracking-tight text-primary font-tangerine hover:text-accent-foreground transition-all duration-300 hover:scale-105 flo-logo">
               Flo Tasks
             </h1>
             <EnhancedThemeToggle />
@@ -125,6 +126,8 @@ export default function Home() {
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Daily Summary - Top Full Width Card Row */}
+        {/* Temporarily commenting out DailySummary due to progress card issues in production */}
+        {/*
         <div className="mb-6">
           <DailySummary 
             todayTasks={todayTasks || []} 
@@ -132,6 +135,7 @@ export default function Home() {
             goals={goals || []}
           />
         </div>
+        */}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column - Today's Tasks (wider) */}
