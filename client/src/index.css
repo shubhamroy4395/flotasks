@@ -311,61 +311,106 @@
   }
   
   /* Progress bar color matching for cards */
-  /* Blue card progress bar */
+  /* Blue card progress bar - enhanced with more selector variations */
   .from-blue-500.to-blue-600 [role="progressbar"] > div > div,
   div.from-blue-500.to-blue-600 [role="progressbar"] > div > div,
   .progress-card-blue [role="progressbar"] > div > div,
-  div.progress-card-blue [role="progressbar"] > div > div {
+  div.progress-card-blue [role="progressbar"] > div > div,
+  [class*="progress-card-blue"] [role="progressbar"] > div > div,
+  .progress-card-blue div[role="progressbar"] > div > div,
+  div.progress-card-blue div[role="progressbar"] > div > div,
+  div[class*="progress-card-blue"] [role="progressbar"] > div > div,
+  div[class*="progress-card-blue"] div[role="progressbar"] > div > div {
     background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
   }
   
-  /* Green card progress bar */
+  /* Green card progress bar - enhanced with more selector variations */
   .from-emerald-500.to-emerald-600 [role="progressbar"] > div > div,
   div.from-emerald-500.to-emerald-600 [role="progressbar"] > div > div,
   .progress-card-green [role="progressbar"] > div > div,
-  div.progress-card-green [role="progressbar"] > div > div {
+  div.progress-card-green [role="progressbar"] > div > div,
+  [class*="progress-card-green"] [role="progressbar"] > div > div,
+  .progress-card-green div[role="progressbar"] > div > div,
+  div.progress-card-green div[role="progressbar"] > div > div,
+  div[class*="progress-card-green"] [role="progressbar"] > div > div,
+  div[class*="progress-card-green"] div[role="progressbar"] > div > div {
     background: linear-gradient(90deg, #10b981, #059669) !important;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
   }
   
-  /* Purple card progress bar */
+  /* Purple card progress bar - enhanced with more selector variations */
   .from-purple-500.to-purple-600 [role="progressbar"] > div > div,
   div.from-purple-500.to-purple-600 [role="progressbar"] > div > div,
   .progress-card-purple [role="progressbar"] > div > div,
-  div.progress-card-purple [role="progressbar"] > div > div {
+  div.progress-card-purple [role="progressbar"] > div > div,
+  [class*="progress-card-purple"] [role="progressbar"] > div > div,
+  .progress-card-purple div[role="progressbar"] > div > div,
+  div.progress-card-purple div[role="progressbar"] > div > div,
+  div[class*="progress-card-purple"] [role="progressbar"] > div > div,
+  div[class*="progress-card-purple"] div[role="progressbar"] > div > div {
     background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
     box-shadow: 0 0 10px rgba(139, 92, 246, 0.3) !important;
   }
   
-  /* Amber card progress bar */
+  /* Amber card progress bar - enhanced with more selector variations */
   .from-amber-500.to-amber-600 [role="progressbar"] > div > div,
   div.from-amber-500.to-amber-600 [role="progressbar"] > div > div,
   .progress-card-amber [role="progressbar"] > div > div,
-  div.progress-card-amber [role="progressbar"] > div > div {
+  div.progress-card-amber [role="progressbar"] > div > div,
+  [class*="progress-card-amber"] [role="progressbar"] > div > div,
+  .progress-card-amber div[role="progressbar"] > div > div,
+  div.progress-card-amber div[role="progressbar"] > div > div,
+  div[class*="progress-card-amber"] [role="progressbar"] > div > div,
+  div[class*="progress-card-amber"] div[role="progressbar"] > div > div {
     background: linear-gradient(90deg, #f59e0b, #d97706) !important;
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
   }
 
-  /* Add these as a fallback mechanism for progress cards */
-  [class*="progress-card-blue"] [role="progressbar"] > div > div {
+  /* Add these as a fallback mechanism for progress cards - now simplified with direct targeting */
+  [class*="progress-card-blue"] [role="progressbar"] > div > div,
+  [class*="progress-card-blue"] div[role="progressbar"] > div > div,
+  .progress-card .progress-card-blue [role="progressbar"] > div > div {
     background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
   }
 
-  [class*="progress-card-green"] [role="progressbar"] > div > div {
+  [class*="progress-card-green"] [role="progressbar"] > div > div,
+  [class*="progress-card-green"] div[role="progressbar"] > div > div,
+  .progress-card .progress-card-green [role="progressbar"] > div > div {
     background: linear-gradient(90deg, #10b981, #059669) !important;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
   }
 
-  [class*="progress-card-purple"] [role="progressbar"] > div > div {
+  [class*="progress-card-purple"] [role="progressbar"] > div > div,
+  [class*="progress-card-purple"] div[role="progressbar"] > div > div,
+  .progress-card .progress-card-purple [role="progressbar"] > div > div {
     background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
     box-shadow: 0 0 10px rgba(139, 92, 246, 0.3) !important;
   }
 
-  [class*="progress-card-amber"] [role="progressbar"] > div > div {
+  [class*="progress-card-amber"] [role="progressbar"] > div > div,
+  [class*="progress-card-amber"] div[role="progressbar"] > div > div,
+  .progress-card .progress-card-amber [role="progressbar"] > div > div {
     background: linear-gradient(90deg, #f59e0b, #d97706) !important;
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+  }
+
+  /* Additional fallback selectors for progress bars using direct targeting */
+  [role="progressbar"] > div > div {
+    transition: all 0.2s ease;
+  }
+
+  /* Direct parent-child targeting for progress bars - in case class-based targeting fails */
+  div[role="progressbar"] > div > div {
+    height: 100%;
+    border-radius: 9999px;
+  }
+
+  /* Force height on progress bars */
+  [role="progressbar"] > div {
+    height: 100% !important;
+    border-radius: 9999px !important;
   }
 
   /* Dark Mode and Winter Theme Enhanced Utilities */

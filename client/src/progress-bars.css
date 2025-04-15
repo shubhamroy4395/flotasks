@@ -1,0 +1,71 @@
+/* Progress bars styling for Netlify deployment */
+
+/* Default progress bar styling */
+.progress-bar-element {
+  background-color: var(--muted) !important;
+  overflow: hidden !important;
+  border-radius: 9999px !important;
+}
+
+.progress-bar-element > div {
+  height: 100% !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+}
+
+.progress-bar-element > div > div {
+  height: 100% !important;
+  border-radius: 9999px !important;
+  transition: width 0.2s ease !important;
+}
+
+/* Blue progress bar */
+.progress-card-blue .progress-bar-element > div > div,
+div.progress-card-blue .progress-bar-element > div > div {
+  background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Green progress bar */
+.progress-card-green .progress-bar-element > div > div,
+div.progress-card-green .progress-bar-element > div > div {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Purple progress bar */
+.progress-card-purple .progress-bar-element > div > div,
+div.progress-card-purple .progress-bar-element > div > div {
+  background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Amber progress bar */
+.progress-card-amber .progress-bar-element > div > div,
+div.progress-card-amber .progress-bar-element > div > div {
+  background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Ensure progress bars are visible regardless of parent styles */
+[role="progressbar"] {
+  position: relative !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  border-radius: 9999px !important;
+}
+
+[role="progressbar"] > div {
+  position: relative !important;
+  height: 100% !important;
+  width: 100% !important;
+  border-radius: 9999px !important;
+}
+
+[role="progressbar"] > div > div {
+  position: absolute !important;
+  height: 100% !important;
+  left: 0 !important;
+  top: 0 !important;
+  border-radius: 9999px !important;
+} 

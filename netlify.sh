@@ -25,6 +25,45 @@ cd ..
 echo "Checking client/dist directory content..."
 ls -la client/dist
 
+# Copy build output to the correct dist directory
+echo "Copying build output to dist directory..."
+mkdir -p dist
+cp -r client/dist/* dist/
+
+# Create _redirects file for Netlify
+echo "Creating _redirects file for Netlify..."
+cat > dist/_redirects << 'EOL'
+/api/*  /.netlify/functions/index  200
+/*      /index.html                200
+EOL
+
+# Add a special CSS fix directly to dist
+echo "Adding CSS fix for progress bars..."
+cat >> dist/assets/index*.css << 'EOL'
+/* Progress bar fixes for Netlify */
+[role="progressbar"] > div > div {
+  background: var(--theme-progress-foreground, hsl(var(--primary))) !important;
+  height: 100% !important;
+  border-radius: 9999px !important;
+}
+.progress-card-blue [role="progressbar"] > div > div {
+  background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+}
+.progress-card-green [role="progressbar"] > div > div {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;  
+}
+.progress-card-purple [role="progressbar"] > div > div {
+  background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3) !important;
+}
+.progress-card-amber [role="progressbar"] > div > div {
+  background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+}
+EOL
+
 # Create functions directory if it doesn't exist
 echo "Setting up functions directory..."
 mkdir -p functions
@@ -72,6 +111,9 @@ exports.handler = async function(event, context) {
 };
 EOL
 fi
+
+echo "Final dist directory content:"
+ls -la dist/
 
 echo "Build process completed!"
 exit 0 

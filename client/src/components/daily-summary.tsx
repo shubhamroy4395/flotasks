@@ -124,8 +124,8 @@ function ProgressCard({
                 value={percentage} 
                 className={
                   theme === 'retro'
-                    ? "h-3 mt-1"
-                    : `h-1.5 ${color.bgAccent}`
+                    ? "h-3 mt-1 progress-bar-element"
+                    : `h-1.5 ${color.bgAccent} progress-bar-element`
                 } 
                 style={{
                   // Ensure consistent background color based on theme
