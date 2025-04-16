@@ -4,13 +4,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile view fixes */
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100vh;
+  /* Mobile viewport fix */
+  min-height: -webkit-fill-available;
+  min-height: calc(var(--vh, 1vh) * 100);
+  @apply font-sans antialiased bg-background text-foreground;
+}
+
+/* Fix for mobile keyboard opening */
+body.keyboard-open {
+  height: auto;
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Fix for mobile overflow handling */
+.overflow-fix {
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive adjustments for small devices */
+@media (max-width: 640px) {
+  .max-w-7xl {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  .card-header {
+    padding: 1rem !important;
+  }
+  
+  .card-content {
+    padding: 1rem !important;
+  }
+  
+  /* Reduce padding on small devices */
+  .p-6 {
+    padding: 1rem !important;
+  }
+  
+  /* Ensure buttons are large enough for touch targets */
+  button {
+    min-height: 2.5rem !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .max-w-7xl {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-[hsl(var(--border))];
-  }
-
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
   }
 
   /* Theme variables */
